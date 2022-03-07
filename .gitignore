@@ -1,23 +1,15 @@
 .vscode
 __pycache__
 .ipynb_checkpoints
-/oracletool/build*/*
-/oracletool/results/
-/examples/
-oracletool/examples/
 
 simulations/py-env
 
-
-/QSP/build*/*
-
-
-!/oracletool/build*/tobuild
-!/oracletool/build*/test*/
-!/oracletool/build*/test*/*
-!/QSP/build*/tobuild
-
 CMakeFiles
+framework/build_*/CMakeCache.txt
+framework/build_*/Makefile
+framework/build_*/QuEST
+framework/build_*/oracletool
+framework/build_*/qsvt
 
 *.png
 *.jpg
@@ -30,8 +22,8 @@ CMakeFiles
 *.tgn
 *.ris
 *.log
+*.cmake
 
-buildcpu
 python3
 magick
 

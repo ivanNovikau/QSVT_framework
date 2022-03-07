@@ -1,0 +1,14 @@
+CPPFiles="../src/QCircuit.cpp;"
+CPPFiles="${CPPFiles};../src/QLib.cpp;"
+CPPFiles="${CPPFiles};../src/QGates.cpp";
+CPPFiles="${CPPFiles};../src/oracletool.cpp";
+CPPFiles="${CPPFiles};../src/launch_oracle.cpp";
+export CPPFiles;
+
+cmake \
+    -DOUTPUT_EXE="oracletool" \
+    -DUSER_SOURCE="${CPPFiles}" \
+    -DGPUACCELERATED=1 \
+    -DGPU_COMPUTE_CAPABILITY=75 \
+    ${QuESTHome}
+    

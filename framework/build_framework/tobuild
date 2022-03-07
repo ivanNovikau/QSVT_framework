@@ -1,0 +1,19 @@
+CPPFiles="../src/QCircuit.cpp;"
+CPPFiles="${CPPFiles};../src/QLib.cpp;"
+CPPFiles="${CPPFiles};../src/QGates.cpp";
+CPPFiles="${CPPFiles};../src/oracletool.cpp";
+CPPFiles="${CPPFiles};../src/QSP.cpp";
+CPPFiles="${CPPFiles};../src/QDYN.cpp";
+CPPFiles="${CPPFiles};../src/QMI.cpp";
+CPPFiles="${CPPFiles};../src/QSVT.cpp";
+CPPFiles="${CPPFiles};../src/launch_framework.cpp";
+export CPPFiles;
+
+
+cmake \
+    -DOUTPUT_EXE="qsvt" \
+    -DUSER_SOURCE="${CPPFiles}" \
+    -DGPUACCELERATED=1 \
+    -DGPU_COMPUTE_CAPABILITY=75 \
+    ${QuESTHome}
+    
