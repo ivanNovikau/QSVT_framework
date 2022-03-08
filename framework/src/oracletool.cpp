@@ -5,15 +5,9 @@ OracleTool__::OracleTool__(
     const QuESTEnv& env, 
     YCS pname, 
     YCS path_to_inputs, 
-    const bool& flag_compute_output,
-    const bool& flag_test,
-    const bool& flag_compute_iterator_output
+    const bool& flag_compute_output
 ){
-    flag_test_ = flag_test;
     flag_compute_output_ = flag_compute_output;
-    flag_compute_iterator_output_ = flag_compute_iterator_output;
-
-    if(flag_compute_iterator_output_) flag_compute_output_ = false;
 
     env_ = env;
 
@@ -297,7 +291,6 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
 
         if(YMIX::compare_strings(gate_name, "condR"))
         {
-            //oc->read_structure_gate_condR(istr, path_inputs_, flag_inv);
             oc->read_structure_gate_condR_split(istr, path_inputs_, flag_inv);
             return;
         }
@@ -466,93 +459,10 @@ void OracleTool__::read_state(YISS istr)
     std::map<string, vector<int>> one_state;
     vector<int> ids_qs;
 
-    if(flag_test_) YMIX::print_log(env_, "State number " + to_string(init_states_.size()));
     oc_to_launch_->read_reg_int(istr, ids_qs);
     one_state[gv.reg_whole_circuit] = ids_qs;
     init_states_.push_back(one_state); 
 }
-
-// void OracleTool__::launch()
-// {
-//     string str_wv, str_wv_nz;
-//     YMIX::YTimer timer_gen;
-//     YMIX::YTimer timer_comp;
-
-//     YMIX::print_log(
-//         env_, 
-//         "--- Analysis of a circuit " + oc_to_launch_->get_name() + " ---"
-//     );
-
-//     // work circuit object:
-//     shared_ptr<QCircuit> u_work;
-
-//     // oracle:
-//     if(flag_compute_output_)
-//     {
-//         u_work = 
-//     }
-
-//     // create an iterator:
-//     if(flag_compute_iterator_output_)
-//     {
-//         auto cu = make_shared<QCircuit>(oc_to_launch_);
-//         cu->controlled(oc_to_launch_->get_n_qubits());
-
-//     }
-
-
-//     int count_init_state = 0;
-//     for(auto const& state: init_states_)
-//     {
-//         // empty previous initial binary states:
-//         oc_to_launch_->empty_binary_states();
-
-//         // remove gates from the previous launch:
-//         oc_to_launch_->reset_qureg();
-        
-//         // set initial states:
-//         for(auto const& reg: state)
-//             oc_to_launch_->set_reg_state(reg.first, reg.second);
-//         oc_to_launch_->set_init_binary_state();
-
-//         // get 
-//         oc_to_launch_->get_wavefunction(
-//             oc_to_launch_->get_standart_output_format(), str_wv, str_wv_nz, 3
-//         );
-//         YMIX::print_log(
-//             env_,
-//             ".....................\n...Initial state " + to_string(count_init_state) + "...\n" + str_wv_nz
-//         );
-
-//         // output from an oracle
-//         if(flag_compute_output_)
-//         {
-//             int id_current_gate = 0;
-//             string stop_point_name;
-//             while(id_current_gate < oc_to_launch_->get_n_gates())
-//             {
-//                 // generate the circuit:
-//                 timer_gen.Start();
-//                 YMIX::print_log(env_, "Circuit generation... ", 0, false, false);
-//                 oc_to_launch_->generate(stop_point_name, id_current_gate, false);
-//                 timer_gen.Stop();
-//                 YMIX::print_log(env_, "duration: " + timer_gen.get_dur_str_s());
-
-//                 // compute the output state
-//                 timer_comp.Start();
-//                 YMIX::print_log(env_, "Circuit computation... ", 0, false, false);
-//                 oc_to_launch_->get_wavefunction(
-//                     oc_to_launch_->get_standart_output_format(), str_wv, str_wv_nz, 3
-//                 );
-//                 timer_comp.Stop();
-//                 YMIX::print_log(env_, "duration: " + timer_comp.get_dur_str_s());
-
-//                 YMIX::print_log(env_, "...Output state after " + stop_point_name + ": \n" + str_wv_nz);
-//             }
-//         }
-//         ++count_init_state;
-//     }
-// }
 
 
 void OracleTool__::launch()
@@ -576,73 +486,6 @@ void OracleTool__::launch()
         u_work = oc_to_launch_;
         str_work = "Oracle";
     }
-
-    // create the iterate W:
-    if(flag_compute_iterator_output_)
-    {
-        // qubits from the oracle:
-        map<string, unsigned> regs_oracle;
-        unsigned nqw = 0;
-        for(auto const& reg_name: oc_to_launch_->get_reg_names())
-        {
-            auto reg_nq = oc_to_launch_->get_nq_in_reg(reg_name);
-            regs_oracle[reg_name] = reg_nq;
-            nqw += reg_nq;
-        }
-
-        // controlled oracle
-        auto cu = make_shared<QCircuit>(oc_to_launch_);
-        cu->controlled(nqw);
-
-        // iterate object:
-        nqw += 1; // include q-register
-        u_work = make_shared<QCircuit>("W", env_, path_inputs_, nqw);
-
-        map<string, vector<int>> regs;
-        regs["q"] = u_work->add_register("q", 1);
-        for(auto const& reg_name: oc_to_launch_->get_reg_names())
-            regs[reg_name] = u_work->add_register(reg_name, regs_oracle[reg_name]); 
-        u_work->save_reg_names();
-        u_work->set_standart_output_format();
-
-        auto ts_box = YMATH::get_range(0,nqw-1);
-        YVIv cs_box = regs["q"];
-        auto rq = regs["q"][0];
-        auto ancs = oc_to_launch_->get_ancillae();
-
-        // gates of the iterate:
-        u_work->h(rq); // for outputing only
-
-        // add cU 
-        u_work->x(rq);
-        u_work->copy_gates_from(cu, YMATH::get_range(0, nqw), make_shared<Box__>("U", ts_box, cs_box));
-        u_work->x(rq);
-
-        // add cU*
-        auto conjU = make_shared<QCircuit>(cu);
-        conjU->conjugate_transpose();
-        u_work->copy_gates_from(conjU, YMATH::get_range(0, nqw), make_shared<Box__>("U*", ts_box, cs_box));
-
-        // add a reflector operator 
-        // cw_->x(rq);  // operator S !!! QSP works without this operator !!!
-        u_work->h(rq);
-        u_work->x(rq);
-
-        for(auto& anc1: ancs)
-            u_work->x(anc1);
-        u_work->phase(rq, M_PI, ancs);
-        for(auto& anc1: ancs)
-            u_work->x(anc1);
-        u_work->phase(rq, M_PI);
-
-        u_work->x(rq);
-        u_work->h(rq);
-
-
-        u_work->h(rq); // for outputing only
-        str_work = "Iterate";
-    }
-
 
     int count_init_state = 0;
     for(auto const& state: init_states_)
@@ -668,7 +511,7 @@ void OracleTool__::launch()
         );
 
         // output from an oracle
-        if(flag_compute_output_ || flag_compute_iterator_output_)
+        if(flag_compute_output_)
         {
             int id_current_gate = 0;
             string stop_point_name;

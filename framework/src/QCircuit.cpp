@@ -48,6 +48,8 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
     }
 
     constants_ = map<string, qreal>(oc->constants_);
+
+    oo_layers_ = make_shared<CircuitLayers__>(oc->oo_layers_);
 }
 
 void QCircuit::create(YCU nq)
@@ -68,6 +70,8 @@ void QCircuit::create(YCU nq)
     c_ = createQureg(nq_, env_);
     create_circ_file();
     initZeroState(c_);
+
+    oo_layers_ = make_shared<CircuitLayers__>(nq_);
 }
 
 
@@ -634,22 +638,6 @@ void QCircuit::get_state_full(
     );
 }
 
-void QCircuit::add_cond_r(
-    YCS sp_name, 
-    YVIv reg_conds, 
-    YVIv reg_control, 
-    YCI t, 
-    YCVQ as,  
-    YCB flag_inv
-)
-{
-    auto oo = make_shared<condR_sep__>(sp_name, reg_conds, t, as);
-    if(flag_inv) oo->conjugate_transpose();
-
-    oo->add_control_qubits(reg_control);
-    gates_.push_back(oo);
-}
-
 void QCircuit::controlled(YCVI cs)
 {
     for(auto& gate: gates_)
@@ -813,76 +801,6 @@ void QCircuit::read_reg_int(YISS istr, YVI ids_target, YCS word_start)
     }
 }
 
-void QCircuit::read_structure_gate_condR(YISS istr, YCS path_in, YCB flag_inv)
-{
-    string name;
-    YVIv ids_target, ids_cond, ids_control, ids_x;
-    int int_sel_flag = 0;
-    long long size_cond;
-    vector<qreal> as; // profile of rotation angles;
-
-    // --- name of the conditinal rotation gate ---
-    istr >> name;
-
-    // --- read target qubits ---
-    read_reg_int(istr, ids_target);
-
-    // --- read conditional qubits ---
-    read_reg_int(istr, ids_cond);
-    size_cond = pow(2, ids_cond.size());
-    as = YVQv(size_cond);
-
-    // --- read end of gate structure ---
-    YVVIv ids_control_it, ids_x_it;
-    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
-
-    // -------------------------------------------
-    // --- read a file with condR parameters ---
-    string data;
-    string ifname = path_in + "/" + name + FORMAT_PROFILE;
-    char cdata[YSIZE_CHAR_ARRAY];
-    if(env_.rank == 0)
-    {
-        ifstream ff(ifname);
-        if(!ff.is_open()) throw "Error: there is not a file: " + ifname;
-        data = string((istreambuf_iterator<char>(ff)), istreambuf_iterator<char>());
-        ff.close();
-    }
-
-    int size_data;
-    if(env_.rank == 0) 
-    {
-        if(YSIZE_CHAR_ARRAY < data.size()) 
-            throw "Error: Size of a char array is too small to save the input file."s;
-
-        strcpy(cdata, data.c_str());
-        size_data = data.size();
-    }
-    if(YMPI) MPI_Bcast(&size_data, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
-    if(YMPI) MPI_Bcast(cdata, size_data+1, MPI_CHAR, 0, MPI_COMM_WORLD);
-    if(env_.rank > 0) data = string(cdata);
-
-    istringstream iss(data);
-
-    // --- read value profiles ---
-    qreal vv;
-    for(unsigned i = 0; i < size_cond; ++i)
-    {
-        iss >> vv; // value from a profile that has to be normalized to 1
-        as[i] = 2.0 * acos(vv); // angle of rotation
-    }
-
-    // -----------------------------------------
-    // --- create conditional rotation gates ---
-    sort(ids_cond.begin(),    ids_cond.end());
-    sort(ids_control.begin(), ids_control.end());
-
-    x(ids_x);
-    for(auto const& id_target: ids_target) 
-        add_cond_r(name, ids_cond, ids_control, id_target, as, flag_inv);
-    x(ids_x);
-}
-
 void QCircuit::read_structure_gate_condR_split(YISS istr, YCS path_in, YCB flag_inv)
 {
     string name;
@@ -923,7 +841,7 @@ void QCircuit::read_structure_gate_condR_split(YISS istr, YCS path_in, YCB flag_
     if(env_.rank == 0) 
     {
         if(YSIZE_CHAR_ARRAY < data.size()) 
-            throw "Error: Size of a char array is too small to save the input file."s;
+            throw "Error: Size of the char array is too small to save the input file."s;
 
         strcpy(cdata, data.c_str());
         size_data = data.size();

@@ -2,6 +2,7 @@
 #define QCIRCUIT_H
 
 #include "QGates.h"
+#include "CircuitLayers.h"
 
 /**
  * @brief Circuit class.
@@ -207,7 +208,7 @@ class QCircuit{
         YVI ids_control, YVI ids_x, 
         YVVI ids_control_it, YVVI ids_x_it
     );
-    void read_structure_gate_condR(YISS istr, YCS path_in, YCB flag_inv=false);
+    
     void read_structure_gate_condR_split(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_adder1(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_subtractor1(YISS istr, YCS path_in, YCB flag_inv=false);
@@ -349,7 +350,7 @@ class QCircuit{
         YCI count_target, YCVVI ids_control_it, YCVVI ids_x_it, YCVI ids_control, 
         YVI ids_control_res, YVI ids_x_it_for_one_target
     ){
-        // take a control node from every set: one set is one "control" or "ocontrol"
+        // take a control node from each set: one set is one "control" or "ocontrol"
         YVIv ids_c_it_for_one_target;
         ids_x_it_for_one_target = YVIv {};
         for(auto const& ids_c_set: ids_control_it) 
@@ -376,6 +377,9 @@ class QCircuit{
         if(!cs.empty())
             oo->add_control_qubits(cs);
         gates_.push_back(oo);
+
+        oo_layers_->add_gate(oo);
+
         return get_the_circuit();
     }
 
@@ -389,10 +393,13 @@ class QCircuit{
         if(!cs.empty())
             oo->add_control_qubits(cs);
         gates_.push_back(oo);
+
+        oo_layers_->add_gate(oo);
+
         return get_the_circuit();
     }
 
-    // add a single-qubit gate with two parameters with several control nodes: 
+    // add a single-qubit gate with two parameters and with several control nodes: 
     template<class TGate>
     YQCP add_sq_rg(YCI t, YCQR a1, YCQR a2, YVIv cs = {}, YCB flag_inv=false)
     {
@@ -402,6 +409,9 @@ class QCircuit{
         if(!cs.empty())
             oo->add_control_qubits(cs);
         gates_.push_back(oo);
+
+        oo_layers_->add_gate(oo);
+
         return get_the_circuit();
     }
 
@@ -455,9 +465,7 @@ class QCircuit{
      * @param[in] ay angle of the Ry-rotation;
      * @return pointer to the circuit.
      * */
-    inline YQCP rc(YCI t, YCQR az, YCQR ay, YVIv cs = {}, YCB flag_inv = false){ 
-        return add_sq_rg<Rc__>(t, az, ay, cs, flag_inv); 
-    }
+    inline YQCP rc(YCI t, YCQR az, YCQR ay, YVIv cs = {}, YCB flag_inv = false){ return add_sq_rg<Rc__>(t, az, ay, cs, flag_inv); }
 
     /** Set a phase shift gate.   
      * @param[in] t target qubit;
@@ -475,7 +483,6 @@ class QCircuit{
 
     /** @brief Add a swap operator between qubits \p t1 and \p t2. */
     YQCP swap(YCI t1, YCI t2, YVIv cs = {});
-    // inline YQCP swap(YCI t1, YCI t2, YVIv cs = {}){ return cnot(t1, t2)->cnot(t2, t1)->cnot(t1, t2); }
 
     /**
      * @brief Add a Stop gate to a quantum state at this point.
@@ -604,19 +611,11 @@ class QCircuit{
     inline uint32_t get_na() const {return ancs_.size();}
 
 private:
-    void add_cond_r(
-        YCS sp_name,
-        YVIv reg_conds, 
-        YVIv reg_control, 
-        YCI t,
-        YCVQ as,
-        YCB flag_inv = false
-    );
     qreal get_value_from_word(YCS word);
 
 
 private:
-    // if one addes a new property, do not forget to add it to a constructor.
+    // if one addes a new property, do not forget to add it to the copy constructor.
 
     std::string name_; // name of the circuit;
     QuESTEnv env_; // QuEST execution environment;
@@ -653,6 +652,9 @@ private:
     std::map<std::string, qreal> constants_;
 
     YVIv ancs_; // position of ancilla qubits (unordered vector);
+
+    // object to organise gates in layers:
+    std::shared_ptr<CircuitLayers__> oo_layers_;
 
 
 };

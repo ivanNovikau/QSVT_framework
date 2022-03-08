@@ -70,63 +70,29 @@ int main(int argc, char *argv[])
             env, 
             pname, 
             path_input, 
-            false, 
             false
         );
         YSQ oc_oracle = oo->get_copy_of_an_oracle();
         delete oo;
 
-        // if(case_to_sim.compare("qsp") == 0)
-        // {
-        //     cout << "*** QSP SIMULATION ***" << endl;
-
-
-        //     // --- Create a QSP framework ---
-        //     QSP__ qsp = QSP__(env, pname, path_input);
-
-        //     // --- pass the oracle to the QSP framework to create a QSP circuit ---
-        //     qsp.create_circuit("QSP", oc_oracle);
-
-        //     // --- Print initial QSP parameters ---
-        //     qsp.print_init_data();
-
-        //     // --- Set an initial state ---
-        //     qsp.set_init_vector();
-
-        //     // --- Qubitisation ---
-        //     qsp.qubitization();
-
-        //     // // --- test oracle ---
-        //     // qsp.test_U(oc_oracle.get());
-
-        //     // // --- test iterator ---
-        //     // qsp.test_W("W");
-
-        //     // --- get measurement ---
-        //     // set_measurement(qsp);
-
-        //     // --- perform the QSP simulation ---
-        //     qsp.QuantumSignalProcessing();
-        // }
-
-        QSVT__* qsvd;
+        shared_ptr<QSVT__> qsvd;
 
         // --- QSP: Simulation of the time evolution using QSP ---
         if(case_to_sim.compare("qsp") == 0)
         {
-            qsvd = new QSP__(env, pname, path_input);
+            qsvd = make_shared<QSP__>(env, pname, path_input);
         }
 
-        // --- QSVT: Simulation of the time evolution ---
+        // --- QSVT: time evolution ---
         if(case_to_sim.compare("qsvt-dyn") == 0)
         {
-            qsvd = new QDYN__(env, pname, path_input);
+            qsvd = make_shared<QDYN__>(env, pname, path_input);
         }
         
-        // -- QSVT: Simulation of the matrix inversion ---
+        // -- QSVT: matrix inversion ---
         if(case_to_sim.compare("qsvt-mi") == 0)
         {
-            qsvd = new QMI__(env, pname, path_input);
+            qsvd = make_shared<QMI__>(env, pname, path_input);
         }
 
         // --- Read QSVD angles ---
@@ -146,9 +112,6 @@ int main(int argc, char *argv[])
 
         // --- perform the QSVD simulation ---
         qsvd->launch();
-
-        delete qsvd;
-        
     }
     catch(const string& e)
     {

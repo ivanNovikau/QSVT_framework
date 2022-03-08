@@ -22,9 +22,7 @@ public:
         const QuESTEnv& env, 
         YCS project_name, 
         YCS path_to_inputs, 
-        const bool& flag_compute_output = true,
-        const bool& flag_test = false,
-        const bool& flag_compute_iterator_output = false
+        const bool& flag_compute_output = true
     );
     ~OracleTool__();
 
@@ -66,13 +64,12 @@ private:
     std::map<std::string, qreal> constants_; // constants
     YSQ oc_to_launch_ = nullptr; // a circuit to launch
 
-    bool flag_test_; // flag to output more data for the code analysis
     bool flag_compute_output_; // if True, compute output states from an oracle
-    bool flag_compute_iterator_output_; // if True, compute output states from an iterator
 
-    /** several initial states:
-     * every init. state represents several registers, where several qubits might be set to 1.
-    */
+    /** 
+     * several initial states:
+     * every init. state is represented by several registers, where several qubits might be set to 1.
+     */
     std::vector<std::map<std::string, std::vector<int>>> init_states_;
 
 

@@ -11,7 +11,12 @@
 class Gate__
 {
     public:
-        Gate__(YCS name) : name_orig_(name){name_ = name_orig_;}
+        Gate__(YCS name) : name_orig_(name)
+        {
+            name_ = name_orig_;
+            id_layer_ = -1;
+            flag_conj_ = false;
+        }
         ~Gate__(){}
 
         /**
@@ -27,7 +32,6 @@ class Gate__
             ts_ = YVIv(oo.ts_);
             cs_ = YVIv(oo.cs_);
             conds_ = YVIv(oo.conds_);
-            cs_add_ = YVIv(oo.cs_add_);
 
             copy_matrix2(oo.u2_, this->u2_);
             if(oo.un_a_ != nullptr)
@@ -38,13 +42,16 @@ class Gate__
             pars_ = YVQv(oo.pars_);
 
             add_inf_ = std::string(oo.add_inf_);
+
+            id_layer_ = oo.get_layer();
+            flag_conj_ = oo.flag_conj_;
         }
 
         // copy this gate to a new gate:
         virtual YSG copy_gate() const { return std::make_shared<Gate__>(*this); }
-        virtual void conjugate_transpose(){};
+        virtual void conjugate_transpose(){ flag_conj_ = !flag_conj_; };
         virtual void generate(Qureg& oc){};
-        virtual void write_to_file(YMIX::File& cf){}
+        virtual void write_to_file(YMIX::File& cf){ write_to_file_base(cf); };
 
         /**
          * @brief Modiffy a circuit matrix accordingly to the gate action.
@@ -86,6 +93,19 @@ class Gate__
         inline 
         std::string get_type(){ return type_; }
 
+        void get_gubits_act_on(YVI ids_qubit_act_on)
+        {
+            ids_qubit_act_on = YVIv(ts_);
+            if(!cs_.empty())
+                ids_qubit_act_on.insert(ids_qubit_act_on.end(), cs_.begin(), cs_.end());
+            if(!conds_.empty())
+                ids_qubit_act_on.insert(ids_qubit_act_on.end(), conds_.begin(), conds_.end());
+        }
+
+        void set_layer(const uint64_t& id_layer){ id_layer_ = id_layer; }
+
+        uint64_t get_layer() const { return id_layer_; }
+
     protected:
         inline
         void change_element(YVI v_new, YCVI v, YCI old_x, YCI new_x)
@@ -119,6 +139,34 @@ class Gate__
             copy_to.imag[1][1] = copy_from.imag[1][1];
         }
 
+        inline
+        void write_to_file_base(YMIX::File& cf, const bool& flag_new_line=true)
+        {
+            cf << name_ << " ";
+            
+            if(flag_conj_)
+                cf << "conj ";
+            else
+                cf << "orig "; 
+
+            cf << "layer " << id_layer_ << " ";
+            
+            cf << "targets " << ts_.size() << " ";
+            for(auto& x: ts_)
+                cf << x << " ";
+
+            cf << "controls " << cs_.size() << " ";
+            for(auto& x: cs_)
+                cf << x << " ";
+
+            cf << "pars " << pars_.size() << " ";
+            for(auto& x: pars_)
+                cf << x << " ";
+            
+            if(flag_new_line)
+                cf << "\n";
+        }
+
     public:
         const static std::string name_shared_;
 
@@ -131,7 +179,6 @@ class Gate__
         YVIv ts_; // target qubits;
         YVIv cs_; // control qubits;
         YVIv conds_; // condition qubits;
-        YVIv cs_add_; // additional control qubits to build multi-qubit unitary;
 
         ComplexMatrix2 u2_; // matrix for a single-target gate;
         YVQv pars_; // parameters of the gate (e.g. angles);
@@ -141,6 +188,9 @@ class Gate__
 
         YSM un_a_ = nullptr;
         YSM un_b_ = nullptr;
+
+        uint64_t id_layer_; // id of the circuit layer, where the gate sits on;
+        bool flag_conj_; // whether the gate is conjugated or not;
 };
 
 class GStop__ : public Gate__
@@ -173,15 +223,12 @@ class Box__ : public Gate__
         void write_to_file(YMIX::File& cf) override
         {
             cf << "Box ";
-            if(flag_start_) cf << "start ";
-            else cf << "end ";
-            cf << name_ << " " << ts_.size() << " ";
-            for(auto& x: ts_)
-                cf << x << " ";
-            cf << "controls " << cs_.size() << " ";
-            for(auto& x: cs_)
-                cf << x << " ";
-            cf << "\n";
+            if(flag_start_) 
+                cf << "start ";
+            else 
+                cf << "end ";
+
+            write_to_file_base(cf);
         }
 
         void modify_circuit_matrix(YSM Re, YSM Im){}
@@ -201,24 +248,9 @@ class SQGate__ : public Gate__
 
         YSG copy_gate() const {return std::make_shared<SQGate__>(*this);};
 
-        void conjugate_transpose(){}
+        void conjugate_transpose(){ flag_conj_ = !flag_conj_; }
 
         void generate(Qureg& oc){}
-
-        void write_to_file(YMIX::File& cf) override
-        { 
-            if(cs_.empty())
-            {
-                cf << name_ << " " << ts_[0] << "\n";
-            } 
-            else
-            {
-                cf << "mc" << name_ << " ";
-                for(auto& c1: cs_)
-                    cf << c1 << " ";
-                cf << ts_[0] << "\n";
-            } 
-        }
 
         void modify_circuit_matrix(YMATH::YMatrix& M){}
 };
@@ -379,24 +411,13 @@ class sR__ : public SQGate__
         }
 
         void conjugate_transpose(){
+            flag_conj_ = !flag_conj_;
+
             u2_ = YMATH::inv_matrix2(u2_);
             if(name_ == name_orig_)
                 name_ = name_orig_ + "*";
             else
                 name_ = name_orig_;
-        }
-
-        void write_to_file(YMIX::File& cf) override
-        { 
-            if(cs_.empty())
-                cf << name_ << " " << ts_[0] << " " << pars_[0] << "\n"; 
-            else
-            {
-                cf << "mc" + name_ + " ";
-                for(auto& c1: cs_)
-                    cf << c1 << " ";
-                cf << ts_[0] << " " << pars_[0] << "\n";
-            }
         }
 };
 
@@ -429,19 +450,6 @@ class sR2__ : public sR__
         }
 
         YSG copy_gate() const { return std::make_shared<sR2__>(*this); };
-
-        void write_to_file(YMIX::File& cf) override
-        { 
-            if(cs_.empty())
-                cf << name_ << " " << ts_[0] << " " << pars_[0] << " " << pars_[1] << "\n"; 
-            else
-            {
-                cf << "mc" + name_ + " ";
-                for(auto& c1: cs_)
-                    cf << c1 << " ";
-                cf << ts_[0] << " " << pars_[0] << " " << pars_[1] << "\n";
-            }
-        }
 };
 
 class Rc__ : public sR2__
@@ -468,52 +476,6 @@ class Phase__ : public sR__
         const static std::string name_shared_;
 };
 
-class condR_sep__ : public Gate__
-{
-    public:
-        condR_sep__(
-            YCS sp_name,
-            YVIv reg_conds, YCI t, 
-            YCVQ as
-        );
-
-        condR_sep__(const condR_sep__& oo) : Gate__(oo)
-        {
-            // caseI_   = oo.caseI_;  
-            sp_name_ = oo.sp_name_;  
-        }
-
-        YSG copy_gate() const { return std::make_shared<condR_sep__>(*this); };
-
-        void conjugate_transpose();
-
-        void generate(Qureg& oc);
-
-        void write_to_file(YMIX::File& cf) override
-        { 
-            cf << name_ << " ";
-
-            cf << sp_name_ << " ";
-
-            cf << "reg_conds " << size(conds_) << " ";
-            for(auto& x: conds_) cf << x << " ";
-
-            cf << "reg_control " << size(cs_) << " ";
-            for(auto& x: cs_) cf << x << " ";
-
-            cf << "target " << ts_[0] << " ";
-
-            cf.of << "\n";
-        }
-
-        public:
-            const static std::string name_shared_;
-
-        private:
-            std::string sp_name_;
-
-
-};
 
 
 #endif
