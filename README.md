@@ -25,9 +25,13 @@ To compile the framework:
 3. `make`
 
 ## Run the framework
-To run the oracle-tool:
+To run the oracle-tool, use the following command:
+
 `[path_to_QSVT_framework]/framework/build_oracle/oracletool [name of oracle] [path to the input file] [flag_output]`
+
 The `oracletool` searches for the file `[name of oracle].oracle` in the folder `[path to the input file]`.
-The flag `[flag_output] = 1` - then calculate output states for the specified input states from the `.oracle` file; `[flag_output] = 0` - then do not compute the output states (just produce `.circuit` and `.tex` files).
+
+The flag `[flag_output] = 1` - then calculate output states for the specified input states from the `.oracle` file;<br> 
+`[flag_output] = 0` - then do not compute the output states (just produce `.circuit` and `.tex` files).
 
 
