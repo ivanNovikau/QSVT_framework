@@ -40,9 +40,9 @@ The `oracletool` searches for the file `[name of oracle].oracle` in the folder `
 ## Run the framework
 To run the framework, use the following command
 
-`[path_to_QSVT_framework]/framework/qsvt [name of oracle] [work-folder-with the .qsp file] [case-to-sim]`
+`[path_to_QSVT_framework]/framework/qsvt [name of oracle] [work-folder with the .qsp file] [case-to-sim]`
 
-The framework searches for the following files:
+The framework searches for the following files in the directory `[work-folder with the .qsp file]`:
 
 `[name of oracle].qsp`: contains information about the QSVT(QSP) parameters such as the time interval for the Hamiltonian simulation;
 
@@ -52,7 +52,7 @@ The framework searches for the following files:
 
 `.angles`: file(s), which contain(s) the rotation angles for the QSP (QSVT) approximation.
 
-The `[name of oracle].oracle` file might also need one or several file(s) `.condR_profile`, which contains the profile of angles for the condition rotation gates.
+The `[name of oracle].oracle` file might also need one or several file(s) `.condR_profile`, which contains a profile of angles for the condition rotation gates.
 
 The framework can simulate QSP Hamiltonian simulations (only for hermitian Hamiltonians), QSVT Hamiltonian simulation, QSVT matrix inversion:<br>
 `[case-to-sim] = qsp`: QSP Hamiltonian simulation;<br>
@@ -75,7 +75,19 @@ For `[case-to-sim] = qsvt-mi`, the `.angles` file has the following name:
 `angles_odd_param[kappa*1000]_eps[-log10(eps)].angles`,
 
 where `kappa` is the condition number of the matrix to invert.
-The condition number is found as the ration between the max. and min. singular values.
+The condition number is found as the ratio between the max. and min. singular values.
+
+For `qsp`, the angles can be calculated by the following code: https://github.com/microsoft/Quantum-NC/tree/main/src/simulation/qsp
+
+For `qsvt`, the angles can be calculated by the following code: https://github.com/qsppack/QSPPACK
+
+## References
+1. QSP for simulating cold plasma waves: https://arxiv.org/abs/2112.06086<br>
+2. QuEST quantum simulator: https://www.nature.com/articles/s41598-019-47174-9<br>
+3. Hamiltonian Simulation by Qubitization: https://quantum-journal.org/papers/q-2019-07-12-163/<br>
+4. Quantum Singular Value Transformation (QSVT): https://dl.acm.org/doi/10.1145/3313276.3316366<br>
+5. Calculation of the QSP angles: https://quantum-journal.org/papers/q-2019-10-07-190/<br>
+6. Calculation of the QSVT angles: https://journals.aps.org/pra/abstract/10.1103/PhysRevA.103.042419<br>
 
 
 
