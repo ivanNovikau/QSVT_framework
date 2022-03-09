@@ -221,7 +221,7 @@ class QCircuit{
     {
         std::vector<int> ids_target, ids_control, ids_x;
         YVVIv ids_control_it, ids_x_it;
-        if(YMIX::compare_strings(gate_name, TGate::name_shared_, std::vector<std::string> {"X", "Z", "H"}))
+        if(YMIX::compare_strings(gate_name, TGate::name_shared_, std::vector<std::string> {"X", "Y", "Z", "H"}))
         {
             qreal par_gate = nan("1");
             read_structure_gate(istr, ids_target, par_gate, ids_control, ids_x, ids_control_it, ids_x_it);
@@ -265,7 +265,7 @@ class QCircuit{
     {
         std::vector<int> ids_target, ids_control, ids_x;
         YVVIv ids_control_it, ids_x_it;
-        if(YMIX::compare_strings(gate_name, TGate::name_shared_, std::vector<std::string> {"Ry", "Rz", "Phase"}))
+        if(YMIX::compare_strings(gate_name, TGate::name_shared_, std::vector<std::string> {"Rx", "Ry", "Rz", "Phase"}))
         {
             read_structure_gate(istr, ids_target, par_gate, ids_control, ids_x, ids_control_it, ids_x_it);
             if(ids_control_it.empty())
@@ -424,6 +424,15 @@ class QCircuit{
     inline YQCP x(YCI t, YVIv cs = {}){ return add_sqg<X__>(t, cs); }
     YQCP x(YCVI ts, YVIv cs = {});
 
+    /** Set Pauli Y gate at \p t target qubit. 
+     * CF: Y target
+     * @param[in] t target qubit;
+     * @param[in] cs control qubits;
+     * @return pointer to the circuit.
+     * */
+    inline YQCP y(YCI t, YVIv cs = {}){ return add_sqg<Y__>(t, cs); }
+    YQCP y(YCVI ts, YVIv cs = {});
+
     /** Set Hadamard gate at \p t target qubit.  
      * CF: H target
      * @param[in] t target qubit;
@@ -441,6 +450,14 @@ class QCircuit{
      * */
     inline YQCP z(YCI t, YVIv cs = {}){ return add_sqg<Z__>(t, cs); }
     YQCP z(YCVI ts, YVIv cs = {});
+
+    /** Set a Rx-rotation gate.   
+     * CF: Rx target angle
+     * @param[in] t target qubit;
+     * @param[in] a angle to rotate on;
+     * @return pointer to the circuit.
+     * */
+    inline YQCP rx(YCI t, YCQR a, YVIv cs = {}, YCB flag_inv = false){ return add_sq_rg<Rx__>(t, a, cs, flag_inv); }
 
     /** Set a Ry-rotation gate.   
      * CF: Ry target angle
@@ -595,13 +612,6 @@ class QCircuit{
      */
     void controlled(YCVI cs);
     void controlled(YCI c);
-
-    /**
-     * @brief Get a matrix of a circuit.
-     * @param Re resulting real matrix.
-     * @param Im resulting imaginary matrix.
-     */
-    void get_matrix(YSM Re, YSM Im);
 
     inline std::string get_name() const { return name_; }
 

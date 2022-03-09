@@ -4,14 +4,14 @@ using namespace std;
 
 const string Gate__::name_shared_ = "gate";
 const string X__::name_shared_ = "X";
+const string Y__::name_shared_ = "Y";
 const string Z__::name_shared_ = "Z";
 const string H__::name_shared_ = "H";
+const string Rx__::name_shared_ = "Rx";
 const string Ry__::name_shared_ = "Ry";
 const string Rz__::name_shared_ = "Rz";
 const string Rc__::name_shared_ = "Rc";
 const string Phase__::name_shared_ = "Phase";
-// const string condR_sep__::name_shared_ = "cond_R";
-
 
 void Gate__::correct_qubits(YCVI regs)
 {

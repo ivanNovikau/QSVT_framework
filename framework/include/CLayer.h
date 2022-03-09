@@ -25,6 +25,8 @@ public:
         gates_.push_back(gate);
     }
 
+    inline bool is_empty(){ return gates_.empty(); }
+
 
 protected:
     // gates in the circuit;

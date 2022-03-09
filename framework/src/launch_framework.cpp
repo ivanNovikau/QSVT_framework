@@ -6,7 +6,8 @@ using namespace std;
 
 /**
  * @brief To launch the QSVD framework.
- * @param argv qsp, [project_name], [path_to_input_files]
+ * @param argv qsp, [project_name], [path_to_input_files], [sel-sim]
+ * [sel-sym]: qsp, qsvt-dyn, qsvt-mi
  */
 int main(int argc, char *argv[])
 {

@@ -9,6 +9,8 @@ public:
     CircuitLayers__(YCU nq) : nq_(nq)
     {
         noc_layers_.resize(nq_, 0);
+
+        // create the zero-th layer:
         layers_.push_back(std::make_shared<CLayer__>());
     }
 
@@ -31,29 +33,49 @@ public:
         // get all qubits, at which the gate acts (target, control etc.)
         gate->get_gubits_act_on(ids_qubits_of_gate);
 
-        // find the first layer, which has enough free qubits to place the gate: 
-        uint64_t id_min_noc_layer = std::numeric_limits<uint64_t>::max();
-        int id_gate;
-        for(uint32_t ii = 0; ii < ids_qubits_of_gate.size(); ii++)
-        {
-            id_gate = ids_qubits_of_gate[ii];
+        // std::cout << "gate: " << gate->get_name() << "\n";
+        // std::cout << "acting on qubits: ";
+        // for(auto& id_q: ids_qubits_of_gate)
+        // {
+        //     std::cout << id_q << " ";
+        // }
+        // std::cout << std::endl;
 
-            if(id_min_noc_layer > noc_layers_[id_gate])
+        // find the first layer, which has enough free qubits to place the gate: 
+        uint64_t id_first_noc_layer = 0;
+        int id_gate;
+        for(auto& id_gate: ids_qubits_of_gate)
+        {
+            if(id_first_noc_layer < noc_layers_[id_gate])
             {
-                id_min_noc_layer = noc_layers_[id_gate];
+                id_first_noc_layer = noc_layers_[id_gate];
             }
         }
 
         // insert the gate into the first non-occupied layer:
-        gate->set_layer(id_min_noc_layer);
-        layers_[id_min_noc_layer]->add_gate(gate);
+        gate->set_layer(id_first_noc_layer);
+        layers_[id_first_noc_layer]->add_gate(gate);
 
         // shift the ids of non-occupied layers for the gate qubits:
-        for(uint32_t ii = 0; ii < ids_qubits_of_gate.size(); ii++)
+        uint64_t id_new_noc_layer = id_first_noc_layer + 1;
+        for(auto& id_gate: ids_qubits_of_gate)
         {
-            id_gate = ids_qubits_of_gate[ii];
-            noc_layers_[id_gate] = id_min_noc_layer;
+            noc_layers_[id_gate] = id_new_noc_layer;
         }
+
+        // create the next non-occupied layer if needed:
+        if(id_new_noc_layer >= layers_.size())
+            layers_.push_back(std::make_shared<CLayer__>());
+    }
+
+    /**
+     * @brief Return the number of non-empty layers
+     */
+    uint64_t get_n_layers(){ 
+        if(layers_.back()->is_empty())
+            return layers_.size() - 1; 
+        else
+            return layers_.size();
     }
 
 

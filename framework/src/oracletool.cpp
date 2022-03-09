@@ -279,9 +279,11 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
     try
     {
         if(oc->read_structure<X__>(gate_name, istr, flag_inv)) return;
+        if(oc->read_structure<Y__>(gate_name, istr, flag_inv)) return;
         if(oc->read_structure<Z__>(gate_name, istr, flag_inv)) return;
         if(oc->read_structure<H__>(gate_name, istr, flag_inv)) return;
 
+        if(oc->read_structure<Rx__>(gate_name, istr, par_gate, flag_inv)) return;
         if(oc->read_structure<Ry__>(gate_name, istr, par_gate, flag_inv)) return;
         if(oc->read_structure<Rz__>(gate_name, istr, par_gate, flag_inv)) return;
         if(oc->read_structure<Phase__>(gate_name, istr, par_gate, flag_inv)) return;

@@ -132,7 +132,6 @@ struct YGlobalVariables{
 
     qreal inv_sqrt2 = 1./sqrt(2);
 
-    // matrix of the X-gate
     const ComplexMatrix2 mX = 
     {
         .real = {
@@ -142,7 +141,18 @@ struct YGlobalVariables{
         .imag = {{0., 0.}, {0., 0.}}
     };
 
-    // matrix of the Z-gate
+    const ComplexMatrix2 mY = 
+    {
+        .real = {
+            {0., 0.}, 
+            {0., 0.}
+        },
+        .imag = {
+            {0., -1.}, 
+            {1.,  0.}
+        }
+    };
+
     const ComplexMatrix2 mZ = 
     {
         .real = {
@@ -152,7 +162,6 @@ struct YGlobalVariables{
         .imag = {{0., 0.}, {0., 0.}}
     };
 
-    // matrix of the Hadamard
     const ComplexMatrix2 mH = 
     {
         .real = {
@@ -161,6 +170,22 @@ struct YGlobalVariables{
         },
         .imag = {{0., 0.}, {0., 0.}}
     };
+
+    ComplexMatrix2 mRx(YCQR a)
+    {
+        qreal a2 = a/2.;
+        ComplexMatrix2 res = {
+            .real = {
+                {cos(a2),      0.},
+                {     0., cos(a2)}
+            },
+            .imag = {
+                {      0., -sin(a2)}, 
+                {-sin(a2),       0.}
+            }
+        };
+        return res;
+    }
 
     ComplexMatrix2 mRy(YCQR a)
     {

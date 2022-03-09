@@ -11,9 +11,8 @@
 class Gate__
 {
     public:
-        Gate__(YCS name) : name_orig_(name)
+        Gate__(YCS name) : name_(name)
         {
-            name_ = name_orig_;
             id_layer_ = -1;
             flag_conj_ = false;
         }
@@ -28,7 +27,6 @@ class Gate__
 
             name_ = oo.name_;
             type_ = oo.type_;
-            name_orig_ = oo.name_orig_;
             ts_ = YVIv(oo.ts_);
             cs_ = YVIv(oo.cs_);
             conds_ = YVIv(oo.conds_);
@@ -44,7 +42,9 @@ class Gate__
             add_inf_ = std::string(oo.add_inf_);
 
             id_layer_ = oo.get_layer();
+
             flag_conj_ = oo.flag_conj_;
+            flag_start_ = oo.flag_start_;
         }
 
         // copy this gate to a new gate:
@@ -52,16 +52,6 @@ class Gate__
         virtual void conjugate_transpose(){ flag_conj_ = !flag_conj_; };
         virtual void generate(Qureg& oc){};
         virtual void write_to_file(YMIX::File& cf){ write_to_file_base(cf); };
-
-        /**
-         * @brief Modiffy a circuit matrix accordingly to the gate action.
-         * @param Re real part of a circuit matrix.
-         * @param Im imaginary part of a circuit matrix.
-         */
-        virtual void modify_circuit_matrix(YSM Re, YSM Im)
-        { 
-            // !!! to do a general case !!!
-        };
 
         /**
          * @brief Add control qubits to the gate.
@@ -105,6 +95,8 @@ class Gate__
         void set_layer(const uint64_t& id_layer){ id_layer_ = id_layer; }
 
         uint64_t get_layer() const { return id_layer_; }
+
+        void set_flag_start(YCB flag_start){ flag_start_ = flag_start; }
 
     protected:
         inline
@@ -169,11 +161,9 @@ class Gate__
 
     public:
         const static std::string name_shared_;
-
+        
     protected:
         std::string name_;// current name of the gate;
-        std::string name_orig_;// original name of the gate;
-
         std::string type_;// type of the gate;
 
         YVIv ts_; // target qubits;
@@ -190,20 +180,17 @@ class Gate__
         YSM un_b_ = nullptr;
 
         uint64_t id_layer_; // id of the circuit layer, where the gate sits on;
+
         bool flag_conj_; // whether the gate is conjugated or not;
+        bool flag_start_ = true; // is it the left side of the box? 
 };
 
 class GStop__ : public Gate__
 {
 public:
-    GStop__(YCS name) : Gate__(name)
-    {
-        name_ = name;
-        type_ = "stop";
-    }
+    GStop__(YCS name) : Gate__(name){ type_ = "stop"; }
     YSG copy_gate() const { return std::make_shared<GStop__>(*this); }
-    void write_to_file(YMIX::File& cf) override{ cf << "GStop " << name_ << "\n"; }
-    void modify_circuit_matrix(YSM Re, YSM Im){}
+    void write_to_file(YMIX::File& cf){}
 };
 
 class Box__ : public Gate__
@@ -211,7 +198,6 @@ class Box__ : public Gate__
     public:
         Box__(YCS name, YCVI ts, YCVI cs) : Gate__(name)
         {
-            name_ = name;
             type_ = "box";
             ts_ = ts;
             cs_ = cs;
@@ -227,13 +213,8 @@ class Box__ : public Gate__
                 cf << "start ";
             else 
                 cf << "end ";
-
             write_to_file_base(cf);
         }
-
-        void modify_circuit_matrix(YSM Re, YSM Im){}
-
-        bool flag_start_ = true; // is it the left side of the box?
 };
 
 class SQGate__ : public Gate__
@@ -248,11 +229,12 @@ class SQGate__ : public Gate__
 
         YSG copy_gate() const {return std::make_shared<SQGate__>(*this);};
 
-        void conjugate_transpose(){ flag_conj_ = !flag_conj_; }
+        void conjugate_transpose(){
+            flag_conj_ = !flag_conj_;
+            u2_ = YMATH::inv_matrix2(u2_);
+        }
 
         void generate(Qureg& oc){}
-
-        void modify_circuit_matrix(YMATH::YMatrix& M){}
 };
 
 class X__ : public SQGate__
@@ -270,44 +252,28 @@ class X__ : public SQGate__
                 mc_st_u(oc, cs_, ts_[0], u2_); 
         }
 
-        void modify_circuit_matrix(YSM Re, YSM Im){
-            unsigned idt = ts_[0];
-            unsigned N = Re->get_nr();
-            unsigned nq = log2(N);
+        void conjugate_transpose(){}
 
-            YSM Re_copy = std::make_shared<YMATH::YMatrix>(Re);
+    public:
+        const static std::string name_shared_;
+};
 
-            unsigned Nb = 1 << (nq - idt - 1);
-            unsigned bl = 1 << (idt + 1);
-            unsigned bl_half = bl/2;
+class Y__ : public SQGate__
+{
+    public:
+        Y__(YCI t) : SQGate__(name_shared_, t){ u2_ = gv_.mY; }
+
+        YSG copy_gate() const { return std::make_shared<Y__>(*this); };
+
+        void generate(Qureg& oc) 
+        { 
             if(cs_.empty())
-            {
-                // --- modify a circuit matrix ---
-                unsigned idb, idr_loc, idr_loc_half, idr_new;
-                for(unsigned idr = 0; idr < N; ++idr)
-                {
-                    idb = idr / bl;
-                    idr_loc = idr % bl;
-                    idr_loc_half = idr % bl_half;
-                    idr_new = idb * bl;
-
-                    // std::cout << "idb = " << idb << std::endl;
-                    // std::cout << "idr_loc = " << idr_loc << std::endl;
-                    // std::cout << "idr_loc_half = " << idr_loc_half << std::endl;
-                    if(idr_loc < bl_half) 
-                        idr_new += bl_half + idr_loc_half;
-                    else 
-                        idr_new += idr_loc_half;
-                    // std::cout << "idr_new = " << idr_new << std::endl;
-
-                    for(unsigned idc = 0; idc < N; ++idc)
-                        (*Re)(idr, idc) = (*Re_copy)(idr_new, idc);
-                }
-            }else
-            {
-
-            }
+                pauliY(oc, ts_[0]);
+            else
+                mc_st_u(oc, cs_, ts_[0], u2_); 
         }
+
+        void conjugate_transpose(){}
 
     public:
         const static std::string name_shared_;
@@ -327,6 +293,8 @@ class Z__ : public SQGate__
             else
                 mc_st_u(oc, cs_, ts_[0], u2_); 
         }
+
+        void conjugate_transpose(){}
     
     public:
         const static std::string name_shared_;
@@ -347,46 +315,7 @@ class H__ : public SQGate__
                 mc_st_u(oc, cs_, ts_[0], u2_);
         }
 
-        void modify_circuit_matrix(YSM Re, YSM Im){
-            unsigned idt = ts_[0];
-            unsigned N = Re->get_nr();
-            unsigned nq = log2(N);
-            unsigned sbs = 1 << idt;           // size of a small block
-            unsigned Nb = 1 << (nq - idt - 1); // number of big blocks
-            qreal coef_sqrt_2 = 1./sqrt(2);
-
-            YSM Re_copy = std::make_shared<YMATH::YMatrix>(Re);
-            if(cs_.empty())
-            {
-                unsigned idr_0, idn;
-
-                // walk through all blocks on a diagonal
-                for(unsigned ib = 0; ib < Nb; ++ib)
-                {
-                    idr_0 = (2*sbs) * ib;
-
-                    // walk within a block
-                    for(unsigned idr = idr_0; idr < (idr_0 + sbs); ++idr)
-                    {
-                        idn  = idr + sbs; 
-
-                        // consider all columns
-                        for(unsigned idc = 0; idc < N; ++idc)
-                        {
-                            (*Re)(idr, idc) = coef_sqrt_2 * (
-                                (*Re_copy)(idr, idc) + (*Re_copy)(idn, idc)
-                            );
-                            (*Re)(idn, idc) = coef_sqrt_2 * (
-                                (*Re_copy)(idr, idc) - (*Re_copy)(idn, idc)
-                            );
-                        }  
-                    }
-                }
-            }else
-            {
-
-            }
-        }
+        void conjugate_transpose(){}
 
     public:
         const static std::string name_shared_;
@@ -395,13 +324,8 @@ class H__ : public SQGate__
 class sR__ : public SQGate__
 {
     public:
-        sR__(YCS name, YCI t, YCQR a) : SQGate__(name, t)
-        {   
-            pars_.push_back(a);
-        }
-
+        sR__(YCS name, YCI t, YCQR a) : SQGate__(name, t){ pars_.push_back(a); }
         YSG copy_gate() const { return std::make_shared<sR__>(*this); };
-
         void generate(Qureg& oc) 
         { 
             if(cs_.empty())
@@ -409,16 +333,16 @@ class sR__ : public SQGate__
             else 
                 mc_st_u(oc, cs_, ts_[0], u2_);
         }
+};
 
-        void conjugate_transpose(){
-            flag_conj_ = !flag_conj_;
+class Rx__ : public sR__
+{
+    public:
+        Rx__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRx(a); }
+        YSG copy_gate() const { return std::make_shared<Rx__>(*this); };
 
-            u2_ = YMATH::inv_matrix2(u2_);
-            if(name_ == name_orig_)
-                name_ = name_orig_ + "*";
-            else
-                name_ = name_orig_;
-        }
+    public:
+        const static std::string name_shared_;
 };
 
 class Ry__ : public sR__
@@ -452,9 +376,9 @@ class sR2__ : public sR__
         YSG copy_gate() const { return std::make_shared<sR2__>(*this); };
 };
 
+/** Ry(angle_ry) * Rz(angle_rz) */
 class Rc__ : public sR2__
 {
-    // Ry(angle_ry) * Rz(angle_rz)
     public:
         Rc__(YCI t, YCQR angle_rz, YCQR angle_ry) : sR2__(name_shared_, t, angle_rz, angle_ry)
         { 

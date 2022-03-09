@@ -152,6 +152,9 @@ void QCircuit::conjugate_transpose()
     {
         //cout << "Inversing " << gate->get_name() << endl;
         gate->conjugate_transpose();
+        gate->set_layer(
+            oo_layers_->get_n_layers() - gate->get_layer()
+        );
     }  
 }
 
@@ -171,6 +174,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
     if(box)
     {
         YSG oo = box->copy_gate();
+        oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
 
@@ -183,6 +187,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
             auto gate_copy = gate->copy_gate();
             gate_copy->conjugate_transpose();
             gate_copy->correct_qubits(regs_new);
+            oo_layers_->add_gate(gate_copy);
             gates_.push_back(gate_copy);
         }
     }
@@ -192,14 +197,16 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
         {
             auto gate_copy = gate->copy_gate();
             gate_copy->correct_qubits(regs_new);
+            oo_layers_->add_gate(gate_copy);
             gates_.push_back(gate_copy);
         }
     }
 
     if(box)
     {
-        YSB oo = box->copy_box();
-        oo->flag_start_ = false;
+        YSG oo = box->copy_box();
+        oo->set_flag_start(false);
+        oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
 }
@@ -209,16 +216,21 @@ void QCircuit::insert_gates_from(const QCircuit* of, YCCB box)
     if(box)
     {
         YSG oo = box->copy_gate();
+        oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
 
     for(const auto& gate: of->gates_)
+    {
+        // !!! do not correct here the gate layers !!!
         gates_.push_back(gate);
-
+    }
+        
     if(box)
     {
-        YSB oo = box->copy_box();
-        oo->flag_start_ = false;
+        YSG oo = box->copy_box();
+        oo->set_flag_start(false);
+        oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
 }
@@ -496,14 +508,19 @@ YQCP QCircuit::x(YCVI ts, YVIv cs)
     for(auto& t:ts) x(t, cs);
     return get_the_circuit();
 }
-YQCP QCircuit::h(YCVI ts, YVIv cs)
-{
-    for(auto& t:ts) h(t, cs);
+YQCP QCircuit::y(YCVI ts, YVIv cs)
+{ 
+    for(auto& t:ts) y(t, cs);
     return get_the_circuit();
 }
 YQCP QCircuit::z(YCVI ts, YVIv cs)
 { 
     for(auto& t:ts) z(t, cs);
+    return get_the_circuit();
+}
+YQCP QCircuit::h(YCVI ts, YVIv cs)
+{
+    for(auto& t:ts) h(t, cs);
     return get_the_circuit();
 }
 
@@ -1003,25 +1020,4 @@ qreal QCircuit::get_value_from_word(YCS word)
         throw "A constant with a name "s + const_name + " is not found."s;
 
     return constants_[const_name];
-}
-
-void QCircuit::get_matrix(YSM Re, YSM Im)
-{
-    // Here, the function returns the same matrix in all processors.
-    // There is no parallelization of the matrix calculation.
-
-    unsigned N = 1 << nq_;
-    Re->create_identity_matrix(N, N);
-    Im->create_zero_matrix(N, N);
-
-    // Re->create_x10_matrix(N, N);
-    // Re->print(0, false, 4);
-
-    for(auto it = gates_.begin(); it != gates_.end(); ++it)
-    {
-        // cout << "get a matrix of a gate " << (*it)->get_name() << endl;
-        (*it)->modify_circuit_matrix(Re, Im);
-
-        // Re->print(0,false,4);
-    }
 }
