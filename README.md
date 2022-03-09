@@ -34,8 +34,8 @@ To run the oracle-tool, use the following command:
 
 The `oracletool` searches for the file `[name of oracle].oracle` in the folder `[path to the input file]`.
 
-`[flag_output] = 1` - then calculate output states for the specified input states from the `.oracle` file;<br> 
-`[flag_output] = 0` - then do not compute the output states (just produce `.circuit` and `.tex` files).
+`[flag_output] = 1`: calculate output states for the specified input states from the `.oracle` file;<br> 
+`[flag_output] = 0`: do not compute the output states (just produce `.circuit` and `.tex` files).
 
 ## Run the framework
 To run the framework, use the following command
