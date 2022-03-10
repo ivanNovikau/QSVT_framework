@@ -21,7 +21,7 @@ OracleTool__::OracleTool__(
     {
         string current_path = filesystem::current_path();
         YMIX::print_log(env_, "Current path: " + current_path);
-        YMIX::print_log(env_, "\n*** Reading an INPUT FILE ***");
+        YMIX::print_log(env_, "\n*** Reading INPUT FILE ***");
         read_input_file(data);
     }
 
@@ -29,7 +29,7 @@ OracleTool__::OracleTool__(
     if(env_.rank == 0) 
     {
         if(YSIZE_CHAR_ARRAY < data.size()) 
-            throw "Error: Size of a char array is too small to save the input file."s;
+            throw "Error: Size of the char array is too small to save the input file."s;
 
         strcpy(cdata, data.c_str());
         size_data = data.size();
@@ -58,7 +58,7 @@ void OracleTool__::read_input_file(YS data)
     data = string((istreambuf_iterator<char>(ff)), istreambuf_iterator<char>());
     ff.close();
 
-    // clean the buffer from empty lines and comments
+    // clean the buffer from empty lines and comments:
     istringstream istr(data);
     string data_clr = "";
     string line;
@@ -105,7 +105,7 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
     for(auto const& it: ocs_)
         it.second->print_gates(true);
 
-    // set an output format for the circuit of interest:
+    // set the output format for the circuit of interest:
     oc_to_launch_->set_standart_output_format();
 
     YMIX::print_log(env_, "Oracle prepared.\n");
@@ -117,21 +117,29 @@ void OracleTool__::read_constants(YISS istr)
     qreal constant_value;
     YMIX::print_log(env_, "Reading constants...");
 
-    while(istr >> word)
+    try
     {
-        if(YMIX::compare_strings(word, "END_CONSTANTS"))
-            break;
+        while(istr >> word)
+        {
+            if(YMIX::compare_strings(word, "END_CONSTANTS"))
+                break;
 
-        // name of the constant
-        constant_name = word; 
+            // name of the constant
+            constant_name = word; 
 
-        // value of the constant
-        istr >> word;
-        constant_value = get_value_from_word(word);
+            // value of the constant
+            istr >> word;
+            constant_value = get_value_from_word(word);
 
-        // save the constant:
-        constants_[constant_name] = constant_value;
+            // save the constant:
+            constants_[constant_name] = constant_value;
+        }
     }
+    catch(YCS e)
+    {
+        throw "Eroor in the CONSTANTS section when one reads the constant "s + constant_name + ": "s + e;
+    }
+    
 }
 
 qreal OracleTool__::get_value_from_word(YCS word)
@@ -140,7 +148,8 @@ qreal OracleTool__::get_value_from_word(YCS word)
     {
         istringstream sstr(word);
         qreal res_value;
-        sstr >> res_value;
+        if(!(sstr >> res_value))
+            throw "wrong format"s;
         return res_value;
     }
 
@@ -156,63 +165,76 @@ qreal OracleTool__::get_value_from_word(YCS word)
 
 void OracleTool__::read_circuit_declaration(YISS istr)
 {
-    string word, circ_name;
-    
+    string word, circ_name, current_field;
     int n_regs, n_qubits_in_reg;
 
     YMIX::print_log(env_, "Reading declaration of circuits...");
-    while(istr >> word)
+
+    try
     {
-        if(YMIX::compare_strings(word, "END_CIRCUITS_DECLARATION"))
-            break;
-
-        // name of the circuit
-        circ_name = word; 
-        
-        // number of registers in the circuit
-        istr >> word;
-        n_regs = get_value_from_word(word);
-
-        // registers are organized from the high to low priority
-        // (from top to bottom qubits):
-        vector<int> saved_nqs_in_regs(n_regs);
-        vector<string> saved_reg_names(n_regs);
-        vector<bool> anc_flags(n_regs);
-        int nq_circ = 0;
-        YVIv ancs;
-        for(unsigned i = 0; i < n_regs; i++)
+        while(istr >> word)
         {
-            // register name
-            istr >> saved_reg_names[i];
+            if(YMIX::compare_strings(word, "END_CIRCUITS_DECLARATION"))
+                break;
 
-            // number of qubits in the register
+            // name of the circuit
+            circ_name = word; 
+            
+            // number of registers in the circuit
+            current_field = "the number of registers"s; 
             istr >> word;
-            saved_nqs_in_regs[i] = get_value_from_word(word);
+            n_regs = get_value_from_word(word);
 
-            nq_circ += saved_nqs_in_regs[i];
+            // registers are organized from the high to low priority
+            // (from top to bottom qubits):
+            vector<int> saved_nqs_in_regs(n_regs);
+            vector<string> saved_reg_names(n_regs);
+            vector<bool> anc_flags(n_regs);
+            int nq_circ = 0;
+            YVIv ancs;
+            for(unsigned i = 0; i < n_regs; i++)
+            {
+                // register name
+                current_field = "the name of the " + to_string(i) + "-th register";
+                istr >> saved_reg_names[i];
 
-            // ancilla flag
-            istr >> word;
-            anc_flags[i] = int(get_value_from_word(word));
+                // number of qubits in the register
+                current_field = "the number of qubits in the " + to_string(i) + "-th register";
+                istr >> word;
+                saved_nqs_in_regs[i] = get_value_from_word(word);
+
+                nq_circ += saved_nqs_in_regs[i];
+
+                // ancilla flag
+                current_field = "the ancilla flag of the " + to_string(i) + "-th register";
+                istr >> word;
+                anc_flags[i] = int(get_value_from_word(word));
+            }
+
+            // create a circuit if necessary; choose a circuit:
+            if(ocs_.find(circ_name) != ocs_.end())
+            {
+                ostringstream inf;
+                inf << "Warning: The circuit " << circ_name <<  " is declared several times. " <<
+                        "The first declaration is taken.\n";
+                YMIX::print_log(env_, inf.str());          
+            }
+            else
+                ocs_[circ_name] = make_shared<QCircuit>(circ_name, env_, path_inputs_, nq_circ, constants_);
+            YSQ oc = ocs_[circ_name];
+
+            // add the registers to the chosen circuit
+            for(unsigned i = 0; i < n_regs; i++)
+                oc->add_register(saved_reg_names[i], saved_nqs_in_regs[i], anc_flags[i]);
+            oc->save_regs();
         }
-
-        // create a circuit if necessary; choose a circuit:
-        if(ocs_.find(circ_name) != ocs_.end())
-        {
-            ostringstream inf;
-            inf << "Warning: The circuit " << circ_name <<  " is declared several times. " <<
-                    "The first declaration is taken.\n";
-            YMIX::print_log(env_, inf.str());          
-        }
-        else
-            ocs_[circ_name] = make_shared<QCircuit>(circ_name, env_, path_inputs_, nq_circ, constants_);
-        YSQ oc = ocs_[circ_name];
-
-        // add the registers to the chosen circuit
-        for(unsigned i = 0; i < n_regs; i++)
-            oc->add_register(saved_reg_names[i], saved_nqs_in_regs[i], anc_flags[i]);
-        oc->save_reg_names();
     }
+    catch(YCS e)
+    {
+        throw "Error when one reads "s + current_field + " in the circuit "s + circ_name + ": "s + e;
+    }
+
+    
 
     // information about the declared circuits
     for(const auto& it: ocs_) 
@@ -239,12 +261,12 @@ void OracleTool__::read_circuit_structure(YISS istr)
 
     // choose the circuit according to its name:
     istr >> word;
-    YMIX::print_log(env_, "Reading structure of a circuit " + word);
+    YMIX::print_log(env_, "Reading structure of the circuit " + word);
     if(ocs_.find(word) == ocs_.end()) 
     {
         YMIX::print_log(
             env_, 
-            "Warning: No circuit with a name " + word + " has been declared. Skip it.", 1);
+            "Warning: No circuit with the name " + word + " has been declared. Skip it.", 1);
         return;
     }
     curr_circuit_name = word;
@@ -316,8 +338,8 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
     catch(YCS e)
     {
         ostringstream ostr;
-        ostr << "--- Error in a structure of a circuit " << oc->get_name() 
-             << ", in a gate " << gate_name << " ---\n" <<
+        ostr << "--- Error in the structure of the circuit " << oc->get_name() 
+             << ", in the gate " << gate_name << " ---\n" <<
                 "--- " << e << " ---\n";
         throw ostr.str();
     }
@@ -337,18 +359,20 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
     if(ocs_.find(subcircuit_name) == ocs_.end())
     {
         string warn_line;
-        warn_line  = "--- Warning: setting the structure of a circuit " + curr_circuit_name + " ---\n";
+        warn_line = "\n\n-------------------------------------------------------------------------------\n";
+        warn_line += "--- Warning: setting the structure of the circuit " + curr_circuit_name + " ---\n";
         warn_line += "The subcircuit " + subcircuit_name + " is not found. We skip it.\n";
-        warn_line += "--------------------------------------------------\n";
+        warn_line += "-------------------------------------------------------------------------------\n";
         YMIX::print_log(env_, warn_line);
         flag_skip = true;
     }
     if(YMIX::compare_strings(subcircuit_name, curr_circuit_name))
     {
         string warn_line;
-        warn_line  = "--- Warning: setting the structure of a circuit " + curr_circuit_name + " ---\n";
-        warn_line += "Self-insertion: the circuit has itself as a subcircuit. We skip it.\n";
-        warn_line += "--------------------------------------------------\n";
+        warn_line = "\n\n-------------------------------------------------------------------------------\n";
+        warn_line += "--- Warning: setting the structure of the circuit " + curr_circuit_name + " ---\n";
+        warn_line += "Self-insertion: circuit cannot include itself as a subcircuit. We skip it.\n";
+        warn_line += "-------------------------------------------------------------------------------\n";
         YMIX::print_log(env_, warn_line);
         flag_skip = true;
     }
@@ -405,7 +429,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
             }  
             catch(...)
             {
-                throw "error while reading flag_output for a subcircuit " + subcircuit_name + 
+                throw "error while reading flag_output for the subcircuit " + subcircuit_name + 
                       ": the word \"" + word + "\" cannot be converted into flag_output.";
             }
         }
@@ -446,7 +470,7 @@ void OracleTool__::read_input_states(YISS istr)
                 break;
         }
     }
-    catch(const string& e)
+    catch(YCS e)
     {
         ostringstream ostr;
         ostr << "--- Error while reading initial states: ---"  <<

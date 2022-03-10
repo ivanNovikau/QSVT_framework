@@ -35,9 +35,9 @@ public:
     void launch();
 
     /**
-     * @brief Return a shared pointer to an oracletool.
+     * @brief Return shared pointer to the oracle.
      */
-    inline YSQ get_copy_of_an_oracle() const { return std::make_shared<QCircuit>(oc_to_launch_); }
+    inline YSQ get_oracle_copy() const { return std::make_shared<QCircuit>(oc_to_launch_); }
 
 private:
     void read_constants(YISS str);

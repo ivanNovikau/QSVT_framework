@@ -18,39 +18,6 @@ QCircuit::QCircuit(YCS name, const QuESTEnv& env, YCS path_to_output,
     constants_ = map<string, qreal>(constants);
 }
 
-QCircuit::QCircuit(YCCQ oc, YCS cname)
-{
-    timer_.Start();
-
-    if(cname.empty())
-        name_ = oc->name_;
-    else
-        name_ = cname;
-    env_ = oc->env_;
-    nq_ = oc->nq_;
-    c_ = createQureg(nq_, env_);
-
-    path_to_output_ = oc->path_to_output_;
-    init_state_     = vector<INIT_STATE__>(oc->init_state_);
-    regs_           = map<string, YVIv>(oc->regs_);
-    regnames_       = vector<string>(oc->regnames_);
-    ancs_           = YVIv(oc->ancs_);
-    ib_state_       = vector<short>(oc->ib_state_);
-    id_start_       = oc->id_start_;
-    standart_output_format_ = oc->standart_output_format_;
-
-    cfname_ = path_to_output_ + "/" + name_ + FORMAT_CIRCUIT;
-
-    for(auto const& gate: oc->gates_)
-    {
-        auto gate_copy = gate->copy_gate();
-        gates_.push_back(gate_copy);
-    }
-
-    constants_ = map<string, qreal>(oc->constants_);
-
-    oo_layers_ = make_shared<CircuitLayers__>(oc->oo_layers_);
-}
 
 void QCircuit::create(YCU nq)
 {
@@ -69,9 +36,59 @@ void QCircuit::create(YCU nq)
     nq_ = nq;
     c_ = createQureg(nq_, env_);
     create_circ_file();
+    // create_tex_file();
     initZeroState(c_);
 
     oo_layers_ = make_shared<CircuitLayers__>(nq_);
+}
+
+
+QCircuit::QCircuit(YCCQ oc, YCS cname)
+{
+    timer_.Start();
+
+    if(cname.empty())
+        name_ = oc->name_ + "-copy";
+    else
+        name_ = cname;
+    env_ = oc->env_;
+    nq_ = oc->nq_;
+    c_ = createQureg(nq_, env_);
+    initZeroState(c_);
+
+    path_to_output_ = oc->path_to_output_;
+    init_state_     = vector<INIT_STATE__>(oc->init_state_);
+    regs_           = map<string, YVIv>(oc->regs_);
+    regnames_       = vector<string>(oc->regnames_);
+    ancs_           = YVIv(oc->ancs_);
+    ib_state_       = vector<short>(oc->ib_state_);
+    id_start_       = oc->id_start_;
+    standart_output_format_ = oc->standart_output_format_;
+
+    create_circ_file();
+    // create_tex_file();
+    save_regs();
+
+    for(auto const& gate: oc->gates_)
+    {
+        auto gate_copy = gate->copy_gate();
+        gates_.push_back(gate_copy);
+    }
+    constants_ = map<string, qreal>(oc->constants_);
+    oo_layers_ = make_shared<CircuitLayers__>(oc->oo_layers_);
+}
+
+
+QCircuit::~QCircuit()
+{
+    // finish_tex_file();
+    destroyQureg(c_, env_);
+    timer_.Stop();
+    if(env_.rank == 0)
+    {
+        YMIX::LogFile cf;
+        cf << "Circuit " << name_ << ": Life time is " << scientific << setprecision(3) << timer_.get_dur() << " ms\n";
+    }
 }
 
 
@@ -85,18 +102,68 @@ void QCircuit::create_circ_file()
     }
 }
 
+// void QCircuit::create_tex_file()
+// {
+//     texname_ = path_to_output_ + "/" + name_ + FORMAT_TEX;
+//     if(env_.rank == 0)
+//     {
+//         YMIX::File cf(texname_, true);
 
-QCircuit::~QCircuit()
-{
-    // YMIX::print_log(env_, "Destruction of a circuit " + name_);
-    destroyQureg(c_, env_);
-    timer_.Stop();
-    if(env_.rank == 0)
-    {
-        YMIX::LogFile cf;
-        cf << "Circuit " << name_ << ": Life time is " << scientific << setprecision(3) << timer_.get_dur() << " ms\n";
-    }
-}
+//         cf << "\\documentclass{article}\n";
+//         // cf << "\\usepackage[utf8]{inputenc}\n";
+//         cf << "\\usepackage[dvipsnames]{xcolor}\n";
+//         cf << "\\usepackage{amsmath}\n";
+//         cf << "\\usepackage{amsfonts,amssymb}\n";
+//         cf << "\\usepackage{tikz}\n";
+//         cf << "\\usetikzlibrary{quantikz}\n";
+//         cf << "\n";
+//         cf << "\\newcommand{\\yi}{\\mathrm{i}}\n";
+//         cf << "\n";
+//         cf << "\\begin{document}\n";
+//         cf << "\n\n";
+//         cf << "\\begin{figure}[t!]\n";
+//         cf << "\\centering\n";
+//         cf << "\\begin{quantikz}[row sep={0.5cm,between origins},column sep={0.3cm}]\n";
+
+//         // --- describe the circuit as a matrix of strings ---
+//         tex_lines_.resize(nq_);
+//     } 
+// }
+
+
+// void QCircuit::finish_tex_file()
+// {
+//     if(env_.rank == 0)
+//     {
+//         YMIX::File cf(texname_, false);
+
+//         //
+
+//         // --- write the matrix of strings to the file ---
+//         int counter_row = -1;
+//         for(auto const & one_row_vec: tex_lines_)
+//         {
+//             counter_row++;
+//             string line_row = "";
+//             for(auto const& one_phrase: one_row_vec)
+//             {
+//                 line_row += one_phrase;
+//             }   
+//             if(counter_row < tex_lines_.size())
+//                 line_row += "\\\\"s;
+//             cf << line_row << "\n";
+//         }
+
+//         // --- finish the .tex file ---
+//         cf << "\\end{quantikz}\n";
+//         cf << "\\caption{Figure of the circuit: " << name_ << "}\n";
+//         cf << "\\end{figure}\n";
+//         cf << "\n\n";
+//         cf << "\\end{document}\n";
+//     }
+// }
+
+
 
 void QCircuit::generate(const bool& flag_print)
 {
@@ -120,7 +187,7 @@ void QCircuit::generate(const bool& flag_print)
     }
     id_start_ += gates_.end() - start;
 
-    if(flag_print) print_gates(flag_print); 
+    print_gates(flag_print); 
 }
 
 void QCircuit::generate(string& stop_name, int& id_current, const bool& flag_print)
@@ -142,7 +209,7 @@ void QCircuit::generate(string& stop_name, int& id_current, const bool& flag_pri
     id_start_ += it_end - start;
     id_current = id_start_;
 
-    if(flag_print) print_gates(flag_print);
+    print_gates(flag_print);
 }
 
 void QCircuit::conjugate_transpose()
@@ -161,12 +228,23 @@ void QCircuit::conjugate_transpose()
 void QCircuit::print_gates(const bool& flag_print)
 {
     if(env_.rank == 0)
+    {
         if(flag_print)
         {
+            // --- print gates to the .circuit file ---
             YMIX::File cf(cfname_);
             for(auto& gate: gates_)
                 gate->write_to_file(cf);
+
+            // // --- print gates to the .tex file ---
+            // for(auto& gate: gates_)
+            // {
+            //     gate->get_tex_representation();
+
+
+            // }
         }
+    }
 }
 
 void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
@@ -263,16 +341,6 @@ YVIv QCircuit::add_register(YCS name, YCU n_qubits, YCB flag_ancilla)
     return qubits_positions;
 }
 
-void QCircuit::print_reg_positions() const
-{
-    for(auto const& reg_name: regnames_)
-    {
-        cout << reg_name;
-        for(auto& id_q: regs_.at(reg_name))
-            cout << " " << id_q;
-        cout << endl;
-    }
-}
 void QCircuit::print_reg_positions(std::ofstream& of) const
 {
     for(auto const& reg_name: regnames_)
@@ -304,7 +372,7 @@ void QCircuit::set_standart_output_format()
     if(diff > 0) standart_output_format_.push_back(diff);
 }
 
-void QCircuit::save_reg_names()
+void QCircuit::save_regs()
 {
     if(env_.rank == 0) 
     {
@@ -316,6 +384,17 @@ void QCircuit::save_reg_names()
                 cf << reg_name << " " << regs_[reg_name].size() << " ";
             cf.of << endl;
         }
+
+        // for(auto const& [reg_name, reg_qs] : regs_)
+        // {
+        //     auto reg_nq = reg_qs.size();
+        //     for(auto i = 0; i < reg_nq; i++)
+        //     {
+        //         tex_lines_[i].push_back(
+        //             "\\lstick{$" + reg_name + "_" + to_string(reg_nq - i - 1) + "$}"
+        //         );
+        //     }
+        // }
     }
 }
 
@@ -676,7 +755,7 @@ void QCircuit::read_structure_gate(
     // --- read target qubits ---
     read_reg_int(istr, ids_target);
     
-    // --- read a parameter of the gate ---     
+    // --- read the parameter of the gate ---     
     if(!isnan(par_gate))
     {
         istr >> word;
@@ -697,7 +776,7 @@ void QCircuit::read_structure_gate(
     // --- read target qubits ---
     read_reg_int(istr, ids_target);
     
-    // --- read a parameter of the gate ---     
+    // --- read parameters of the gate ---     
     if(!isnan(par_gate1))
     {
         istr >> word;
@@ -788,9 +867,9 @@ void QCircuit::read_reg_int(YISS istr, YVI ids_target, YCS word_start)
         if(flag_read_reg_name) istr >> reg_name;
         if(!YMIX::is_present(regnames_, reg_name))
         {
-            MPI_Barrier(MPI_COMM_WORLD);
-            throw "no register with a name " + reg_name;
-            MPI_Barrier(MPI_COMM_WORLD);
+            if(YMPI) MPI_Barrier(MPI_COMM_WORLD);
+            throw "no register with the name " + reg_name;
+            if(YMPI) MPI_Barrier(MPI_COMM_WORLD);
         }
 
         try
@@ -811,9 +890,9 @@ void QCircuit::read_reg_int(YISS istr, YVI ids_target, YCS word_start)
                 if(binArray[n_bitA - id_bit - 1] == 1)
                     ids_target.push_back(reg_chosen[id_bit]);
         }
-        catch(const std::exception& e)
+        catch(YCS e)
         {
-            throw "a wrong format of a number of qubits in the register " + reg_name;
+            throw "wrong format of the number of qubits in the register " + reg_name + ": " + e;
         }
     }
 }
@@ -1008,7 +1087,8 @@ qreal QCircuit::get_value_from_word(YCS word)
     {
         istringstream sstr(word);
         qreal res_value;
-        sstr >> res_value;
+        if(!(sstr >> res_value))
+            throw "Wrong format"s;
         return res_value;
     }
 
@@ -1017,7 +1097,6 @@ qreal QCircuit::get_value_from_word(YCS word)
     string const_name = word.substr(first+1,last-first-1);
 
     if(constants_.find(const_name) == constants_.end())
-        throw "A constant with a name "s + const_name + " is not found."s;
-
+        throw "A constant with the name "s + const_name + " is not found."s;
     return constants_[const_name];
 }

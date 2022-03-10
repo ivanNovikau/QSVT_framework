@@ -12,43 +12,8 @@ QSVT__::QSVT__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
 {
     timer_.Start();
 
-    // --- Set name of a restart file ---
+    // --- Set the name of the restart file ---
     rf_.set_name(path_inputs_ + "/" + project_name_ + ENDING_FORMAT_RESTART);
-
-    // --- Read a restart counter from a restart file ---
-    string str_res_counter = "";
-    restart_counter_ = 0;
-    if(flag_restart_)
-    {
-        YMIX::print_log(env_, "Initial state is to be read from the restart file.");
-        rf_.open_r();
-        rf_.read_scalar(restart_counter_, "restart-counter", "parameters");
-        str_res_counter = "_" + to_string(restart_counter_);
-        rf_.close();
-    }
-    string fname_output = path_inputs_ + "/" + project_name_ + str_res_counter + ENDING_FORMAT_OUTPUT;
-
-    // --- Create an output .hdf5 file ---
-    YMIX::print_log(env_, "Creating the output .hdf5 file...");
-    hfo_.create(fname_output);
-    
-    // add directories to the file:
-    hfo_.add_group("basic"); // paths, basic circuit description, qsp parameters
-                            // qsp parameters, angles, number of gates
-    hfo_.add_group("states"); // initial and output states
-
-    // date of simulation
-    string str_date_time;
-    YMIX::get_current_date_time(str_date_time);
-    hfo_.add_scalar(str_date_time, "date-of-simulation", "basic");
-
-    // save the project name and the path to input files:
-    hfo_.add_scalar(project_name_, "project-name", "basic");
-    hfo_.add_scalar(path_inputs_, "path-inputs", "basic");
-    hfo_.add_scalar(filesystem::current_path(), "launch-path", "basic");
-
-    // close the file:
-    hfo_.close();
 }
 
 
@@ -149,6 +114,45 @@ void QSVT__::read_main_parameters()
             continue;
     }
     ff.close();
+}
+
+
+void QSVT__::prepare_hdf5_files()
+{
+    // --- Read a restart counter from a restart file ---
+    string str_res_counter = "";
+    restart_counter_ = 0;
+    if(flag_restart_)
+    {
+        YMIX::print_log(env_, "Initial state is to be read from the restart file.");
+        rf_.open_r();
+        rf_.read_scalar(restart_counter_, "restart-counter", "parameters");
+        str_res_counter = "_" + to_string(restart_counter_);
+        rf_.close();
+    }
+    string fname_output = path_inputs_ + "/" + project_name_ + str_res_counter + ENDING_FORMAT_OUTPUT;
+
+    // --- Create an output .hdf5 file ---
+    YMIX::print_log(env_, "Creating the output .hdf5 file...");
+    hfo_.create(fname_output);
+    
+    // add directories to the file:
+    hfo_.add_group("basic"); // paths, basic circuit description, qsp parameters
+                            // qsp parameters, angles, number of gates
+    hfo_.add_group("states"); // initial and output states
+
+    // date of simulation:
+    string str_date_time;
+    YMIX::get_current_date_time(str_date_time);
+    hfo_.add_scalar(str_date_time, "date-of-simulation", "basic");
+
+    // save the project name and the path to input files:
+    hfo_.add_scalar(project_name_, "project-name", "basic");
+    hfo_.add_scalar(path_inputs_, "path-inputs", "basic");
+    hfo_.add_scalar(filesystem::current_path(), "launch-path", "basic");
+
+    // close the file:
+    hfo_.close();
 }
 
 
@@ -436,7 +440,7 @@ void QSVT__::create_circuit(YCS name, YCCQ U)
     regs_["qb"] = oc_->add_register("qb", na_qsvt);
     for(auto const& reg_name: U->get_reg_names())
         regs_[reg_name] = oc_->add_register(reg_name, regs_oracle[reg_name]);
-    oc_->save_reg_names();
+    oc_->save_regs();
     oc_->set_standart_output_format();
 
     // indicate the position of ancillae:
@@ -478,7 +482,7 @@ void QSVT__::create_circuit_component_def_parity(
     circ = make_shared<QCircuit>("C-" + line_parity, env_, path_inputs_, nq_);
     auto  q      = circ->add_register("a-qsvt", na_qsvt)[0]; // get the least singificant QSVT ancilla;
     auto  ureg   = circ->add_register("ureg", nq_ - na_qsvt); 
-    circ->save_reg_names();
+    circ->save_regs();
 
     // --- Structure the circuit component ---
     timer.StartPrint(env_, "creating... ");
@@ -531,9 +535,6 @@ void QSVT__::create_controlled_component(const YSQ circ, YSQ& circ_controlled)
     auto b = nq_ - 1;
     circ_controlled = make_shared<QCircuit>(circ, circ->get_name() + "-CONTROLLED");
     circ_controlled->controlled({b});
-
-    circ_controlled->create_circ_file();
-    circ_controlled->save_reg_names();
     circ_controlled->print_gates(flag_print_gates_to_file_);
 }
 

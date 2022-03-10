@@ -22,6 +22,7 @@ public:
     ~QSVT__();
 
     void read_main_parameters();
+    void prepare_hdf5_files();
     void print_init_data();
 
     /**

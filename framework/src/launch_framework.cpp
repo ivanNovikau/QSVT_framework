@@ -6,7 +6,7 @@ using namespace std;
 
 /**
  * @brief To launch the QSVD framework.
- * @param argv qsp, [project_name], [path_to_input_files], [sel-sim]
+ * @param argv qsvt, [project_name], [path_to_input_files], [sel-sim]
  * [sel-sym]: qsp, qsvt-dyn, qsvt-mi
  */
 int main(int argc, char *argv[])
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
             path_input, 
             false
         );
-        YSQ oc_oracle = oo->get_copy_of_an_oracle();
+        YSQ oc_oracle = oo->get_oracle_copy();
         delete oo;
 
         shared_ptr<QSVT__> qsvd;
@@ -96,6 +96,12 @@ int main(int argc, char *argv[])
             qsvd = make_shared<QMI__>(env, pname, path_input);
         }
 
+        // --- Read input parameters ---
+        qsvd->read_main_parameters();
+
+        // --- Prepare .hdf5 files --- 
+        qsvd->prepare_hdf5_files();
+
         // --- Read QSVD angles ---
         qsvd->read_angles();
 
@@ -114,7 +120,7 @@ int main(int argc, char *argv[])
         // --- perform the QSVD simulation ---
         qsvd->launch();
     }
-    catch(const string& e)
+    catch(YCS e)
     {
         if(env.rank == 0) std::cerr << "\n" << "Error: " << e << endl;
         return -1;

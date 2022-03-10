@@ -104,6 +104,7 @@
 #define FORMAT_ORACLETOOL ".oracle"s 
 #define FORMAT_PROFILE    ".condR_profile"s
 #define FORMAT_CIRCUIT    ".circuit"s
+#define FORMAT_TEX        ".tex"s
 #define FORMAT_ANGLES     ".angles"s
 #define FORMAT_LOG        ".log"s
 #define FORMAT_QSP        ".qsp"s

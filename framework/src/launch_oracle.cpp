@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     }
     YMIX::print_log(env, "Number of ranks: " + to_string(env.numRanks));
 
-    // flag to compute output from an oracle
+    // flag to compute output from the oracle
     bool flag_compute_output = true;
     if(argc > 3) flag_compute_output = stoi(string (argv[3]));
     if(flag_compute_output) YMIX::print_log(env, "Flag compute output oracle = true");
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     
     try
     {
-        // create the tool for the analysis of an oracle
+        // create the tool for the oracle analysis: 
         OracleTool__ oo = OracleTool__(
             env, 
             pname, 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
         // launch the circuit with different input states:
         oo.launch();
     }
-    catch(const string& e)
+    catch(YCS e)
     {
         if(env.rank == 0) std::cerr << "\n" << e << endl;
         destroyQuESTEnv(env);

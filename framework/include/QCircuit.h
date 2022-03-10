@@ -45,8 +45,10 @@ class QCircuit{
     void create(YCU nq);
 
     void create_circ_file();
+    // void create_tex_file();
+    // void finish_tex_file();
 
-    void print_gates(const bool& flag_print = false);
+    void print_gates(YCB flag_print = false);
 
     inline std::string get_name(){ return name_; }
     inline unsigned get_n_qubits(){ return nq_; }
@@ -128,15 +130,14 @@ class QCircuit{
     inline YVUv get_standart_output_format(){ return standart_output_format_; }
 
     /**
-     * @brief Print qubits where every register is placed.
+     * @brief Print locations of the qubit registers.
      */
-    void print_reg_positions() const;
     void print_reg_positions(std::ofstream& of) const;
 
     /**
-     * @brief Save the register names into the circuit file.
+     * @brief Save the qubit registers into the .circuit and .tex files.
      */
-    void save_reg_names();
+    void save_regs();
 
     /** @return pointer to the circuit. */
     YQCP get_the_circuit();
@@ -637,7 +638,8 @@ private:
 
     std::vector<INIT_STATE__> init_state_; // initial state (as a vector)
 
-    std::string cfname_;  // name of the file where the circuit is written to;
+    std::string cfname_;  // name of the .circuit file;
+    std::string texname_; // name of the .tex file;
 
     // registers:
     // regs_[rname][i] is the i-th qubit in the register "rname";
@@ -665,6 +667,9 @@ private:
 
     // object to organise gates in layers:
     std::shared_ptr<CircuitLayers__> oo_layers_;
+
+    // circ_lines[i][j]: j-th phrase in the i-th line from the top:
+    // std::vector<std::vector<std::string>> tex_lines_;
 
 
 };

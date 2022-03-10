@@ -7,9 +7,6 @@ QSP__::QSP__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
     : QSVT__(env, project_name, path_inputs)
 {
     nq_ = 2; // the circuit has two specific ancillar (+ qubits from the oracle)
-
-    // --- Read the input file ---
-    read_main_parameters();
 }
 
 QSP__::~QSP__()
@@ -164,7 +161,7 @@ void QSP__::create_W()
     int  rb   = cw_->add_register("b", 1)[0];
     int  rq   = cw_->add_register("q", 1)[0];
     YVIv ureg = cw_->add_register("ureg", nq_-2); 
-    cw_->save_reg_names();
+    cw_->save_regs();
 
     auto ts_box = YMATH::get_range(0,nq_-2);
     YVIv cs_box = {rq};
@@ -202,13 +199,12 @@ void QSP__::create_W()
     cw_->print_gates(flag_print_gates_to_file_);
 }
 
+
 void QSP__::create_iW()
 {
     YMIX::print_log(env_, "-> icW creation...\n");
-    icw_ = make_shared<QCircuit>("W*", env_, path_inputs_, nq_);
-    icw_->copy_gates_from(cw_, YMATH::get_range(0, nq_));
+    icw_ = make_shared<QCircuit>(cw_, "W*");
     icw_->conjugate_transpose();
-
     icw_->print_gates(flag_print_gates_to_file_);
 }
 

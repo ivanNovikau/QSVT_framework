@@ -7,9 +7,9 @@ One needs to clone the QuEST repository.
 Then, create the global bash variable $QuESTHome to store the absolute path to the QuEST/ folder.
 
 One also needs `cmake` to compile the framework and `python` to analyse the simulations.
-In particular, one needs the `qiskit` module:
+In particular, one needs the `qiskit` and `h5py` modules:
 
-`pip install qiskit`
+`pip install qiskit h5py`
 
 Correct the `-DGPU_COMPUTE_CAPABILITY` in the `tobuild` files according to your GPU device
 (https://developer.nvidia.com/cuda-gpus#compute).
@@ -36,6 +36,9 @@ The `oracletool` searches for the file `[name of oracle].oracle` in the folder `
 
 `[flag_output] = 1`: calculate output states for the specified input states from the `.oracle` file;<br> 
 `[flag_output] = 0`: do not compute the output states (just produce `.circuit` and `.tex` files).
+
+To understand the format of the `.oracle` file, see the wiki page:<br> 
+https://github.com/ivanNovikau/QSVT_framework/wiki
 
 ## Run the framework
 To run the framework, use the following command
