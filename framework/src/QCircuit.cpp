@@ -36,7 +36,7 @@ void QCircuit::create(YCU nq)
     nq_ = nq;
     c_ = createQureg(nq_, env_);
 
-    tex_noc_.resize(nq_);
+    tex_noc_.resize(nq_, 1);
     tex_lines_.resize(nq_);
 
     create_circ_file();
@@ -69,8 +69,8 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
     id_start_       = oc->id_start_;
     standart_output_format_ = oc->standart_output_format_;
 
-    tex_noc_ = vector<uint64_t>(tex_noc_);
-    tex_lines_ = vector<vector<string>>(tex_lines_);
+    tex_noc_ = vector<uint64_t>(oc->tex_noc_);
+    tex_lines_ = vector<vector<string>>(oc->tex_lines_);
 
     create_circ_file();
     create_tex_file();
@@ -141,6 +141,29 @@ void QCircuit::finish_tex_file()
     {
         YMIX::File cf(texname_, false);
 
+        // --- adjust the widths of the .tex phrases ---
+        auto n_layers = tex_lines_[0].size();
+        uint32_t width_max, width_curr;
+        vector<uint32_t> q_widths(nq_);
+        for(auto id_layer = 1; id_layer < n_layers; id_layer++)
+        {
+            for(auto id_q = 0; id_q < nq_; id_q++)
+                q_widths[id_q] += tex_lines_[id_q][id_layer-1].length();
+
+            width_max = 0;
+            for(auto id_q = 0; id_q < nq_; id_q++)
+                if(width_max < q_widths[id_q])
+                    width_max = q_widths[id_q];
+
+            for(auto id_q = 0; id_q < nq_; id_q++)
+            {
+                width_curr = q_widths[id_q];
+                string line_padding(width_max - width_curr, ' ');
+
+                tex_lines_[id_q][id_layer] = line_padding + tex_lines_[id_q][id_layer];
+            }
+        }
+
         // --- write the matrix of strings to the file ---
         int counter_row = -1;
         for(auto const & one_row_vec: tex_lines_)
@@ -174,18 +197,7 @@ void QCircuit::generate(const bool& flag_print)
     auto start = gates_.begin() + id_start_;
     for(auto it = start; it != gates_.end(); ++it)
     {
-        // // // if(env_.rank == 0) cout << env_.rank << " Generating " << (*it)->get_name() << endl;
-        // if(YMIX::compare_strings((*it)->get_name(), "cond_R") || YMIX::compare_strings((*it)->get_name(), "cond_R*"))
-        //     timer.StartPrint(env_, "CondR generation... ");
-        // if(YMIX::compare_strings((*it)->get_name(), "H"))
-        //     timer.StartPrint(env_, "H generation... ");
-
         (*it)->generate(c_);
-
-        // if(YMIX::compare_strings((*it)->get_name(), "cond_R") || YMIX::compare_strings((*it)->get_name(), "cond_R*"))
-        //     timer.StopPrint(env_);
-        // if(YMIX::compare_strings((*it)->get_name(), "H"))
-        //     timer.StopPrint(env_);
     }
     id_start_ += gates_.end() - start;
 
@@ -229,22 +241,56 @@ void QCircuit::conjugate_transpose()
 
 void QCircuit::print_gates(const bool& flag_print)
 {
-    if(env_.rank == 0)
+    if(env_.rank == 0 && flag_print)
     {
-        if(flag_print)
+        // -------------------------------------------------
+        // --- print gates to the .circuit file ---
+        YMIX::File cf(cfname_);
+        for(auto& gate: gates_)
+            gate->write_to_file(cf);
+
+        // -------------------------------------------------
+        // --- print gates to the .tex file ---
+        YVIv ids_qubits_of_gate, ids_range, ids_targets, ids_controls;
+        uint64_t id_first_noc_layer = 0;
+        uint64_t id_new_noc_layer;
+        int id_b, id_t;
+        bool flag_box = false;
+        for(auto& gate: gates_)
         {
-            // --- print gates to the .circuit file ---
-            YMIX::File cf(cfname_);
-            for(auto& gate: gates_)
-                gate->write_to_file(cf);
+            if(YMIX::compare_strings(gate->get_type(), "stop"))
+                continue;
 
-            // // --- print gates to the .tex file ---
-            // for(auto& gate: gates_)
-            // {
-            //     gate->get_tex_representation();
+            if(YMIX::compare_strings(gate->get_type(), "box"))
+                if(gate->get_flag_start())
+                    flag_box = true;
+                else
+                    flag_box = false;
 
+            if(flag_box)
+                continue;
 
-            // }
+            gate->get_gubits_act_on(ids_qubits_of_gate);
+            id_t = *(max_element(ids_qubits_of_gate.begin(), ids_qubits_of_gate.end()));
+            id_b = *(min_element(ids_qubits_of_gate.begin(), ids_qubits_of_gate.end()));
+
+            // --- find the first layer in .tex, where there is enough free qubits to place the gate ---
+            for(auto id_qubit = id_b; id_qubit <= id_t; id_qubit++)
+                if(id_first_noc_layer < tex_noc_[id_qubit])
+                    id_first_noc_layer = tex_noc_[id_qubit];
+
+            // --- put the gate to the .tex layer ---
+            gate->write_tex(tex_lines_, id_first_noc_layer, nq_);
+
+            // --- shift the ids of non-occupied layers in the .tex ---
+            id_new_noc_layer = id_first_noc_layer + 1;
+            for(auto id_qubit = id_b; id_qubit <= id_t; id_qubit++)
+                tex_noc_[nq_ - id_qubit - 1] = id_new_noc_layer;
+
+            // --- if necessary, add next empty .tex layer ---
+            if(id_new_noc_layer >= tex_lines_[0].size())
+                for(auto id_q = 0; id_q < nq_; id_q++)
+                    tex_lines_[id_q].push_back("&\\qw"s);
         }
     }
 }
@@ -387,14 +433,21 @@ void QCircuit::save_regs()
             cf.of << endl;
         }
 
+        int counter_q = -1;
         for(auto const& [reg_name, reg_qs] : regs_)
         {
             auto reg_nq = reg_qs.size();
             for(auto i = 0; i < reg_nq; i++)
             {
-                tex_lines_[i].push_back(
+                counter_q++;
+
+                // register name and qubit id within the register:
+                tex_lines_[counter_q].push_back(
                     "\\lstick{$" + reg_name + "_" + to_string(reg_nq - i - 1) + "$}"
                 );
+
+                // first layer:
+                tex_lines_[counter_q].push_back("&\\qw");
             }
         }
     }
@@ -453,7 +506,7 @@ void QCircuit::set_init_binary_state(const bool& flag_mpi_bcast)
 }
 
 /**
- * !!! ATTENTION !!!: seem to be incorrect, qb odes not give correct position of an element within a state vector
+ * !!! ATTENTION !!!: seem to be incorrect, qb does not give correct position of an element within a state vector
  */
 void QCircuit::set_init_vector(YCI qb, YCI nq, YVQ ampl_vec_real, YVQ ampl_vec_imag)
 {

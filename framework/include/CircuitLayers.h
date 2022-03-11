@@ -33,22 +33,14 @@ public:
         // get all qubits, at which the gate acts (target, control etc.)
         gate->get_gubits_act_on(ids_qubits_of_gate);
 
-        // std::cout << "gate: " << gate->get_name() << "\n";
-        // std::cout << "acting on qubits: ";
-        // for(auto& id_q: ids_qubits_of_gate)
-        // {
-        //     std::cout << id_q << " ";
-        // }
-        // std::cout << std::endl;
-
         // find the first layer, which has enough free qubits to place the gate: 
         uint64_t id_first_noc_layer = 0;
-        int id_gate;
-        for(auto& id_gate: ids_qubits_of_gate)
+        int id_qubit;
+        for(auto& id_qubit: ids_qubits_of_gate)
         {
-            if(id_first_noc_layer < noc_layers_[id_gate])
+            if(id_first_noc_layer < noc_layers_[id_qubit])
             {
-                id_first_noc_layer = noc_layers_[id_gate];
+                id_first_noc_layer = noc_layers_[id_qubit];
             }
         }
 
@@ -58,9 +50,9 @@ public:
 
         // shift the ids of non-occupied layers for the gate qubits:
         uint64_t id_new_noc_layer = id_first_noc_layer + 1;
-        for(auto& id_gate: ids_qubits_of_gate)
+        for(auto& id_qubit: ids_qubits_of_gate)
         {
-            noc_layers_[id_gate] = id_new_noc_layer;
+            noc_layers_[id_qubit] = id_new_noc_layer;
         }
 
         // create the next non-occupied layer if needed:

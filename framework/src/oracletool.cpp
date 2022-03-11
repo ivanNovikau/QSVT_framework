@@ -416,7 +416,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
         }
         oc->copy_gates_from(oc_sub, ids_q, YSB(nullptr), flag_inv);
 
-        // read flag whether it is necesasry to show output after the subcircuit:
+        // read flag whether it is necessary to show output after the subcircuit:
         int flag_output = 1;
         istr >> word;
         if(YMIX::compare_strings(word, "end_circuit"))
