@@ -35,8 +35,12 @@ void QCircuit::create(YCU nq)
 
     nq_ = nq;
     c_ = createQureg(nq_, env_);
+
+    tex_noc_.resize(nq_);
+    tex_lines_.resize(nq_);
+
     create_circ_file();
-    // create_tex_file();
+    create_tex_file();
     initZeroState(c_);
 
     oo_layers_ = make_shared<CircuitLayers__>(nq_);
@@ -65,8 +69,11 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
     id_start_       = oc->id_start_;
     standart_output_format_ = oc->standart_output_format_;
 
+    tex_noc_ = vector<uint64_t>(tex_noc_);
+    tex_lines_ = vector<vector<string>>(tex_lines_);
+
     create_circ_file();
-    // create_tex_file();
+    create_tex_file();
     save_regs();
 
     for(auto const& gate: oc->gates_)
@@ -81,7 +88,7 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
 
 QCircuit::~QCircuit()
 {
-    // finish_tex_file();
+    finish_tex_file();
     destroyQureg(c_, env_);
     timer_.Stop();
     if(env_.rank == 0)
@@ -102,66 +109,61 @@ void QCircuit::create_circ_file()
     }
 }
 
-// void QCircuit::create_tex_file()
-// {
-//     texname_ = path_to_output_ + "/" + name_ + FORMAT_TEX;
-//     if(env_.rank == 0)
-//     {
-//         YMIX::File cf(texname_, true);
+void QCircuit::create_tex_file()
+{
+    texname_ = path_to_output_ + "/" + name_ + FORMAT_TEX;
+    if(env_.rank == 0)
+    {
+        YMIX::File cf(texname_, true);
 
-//         cf << "\\documentclass{article}\n";
-//         // cf << "\\usepackage[utf8]{inputenc}\n";
-//         cf << "\\usepackage[dvipsnames]{xcolor}\n";
-//         cf << "\\usepackage{amsmath}\n";
-//         cf << "\\usepackage{amsfonts,amssymb}\n";
-//         cf << "\\usepackage{tikz}\n";
-//         cf << "\\usetikzlibrary{quantikz}\n";
-//         cf << "\n";
-//         cf << "\\newcommand{\\yi}{\\mathrm{i}}\n";
-//         cf << "\n";
-//         cf << "\\begin{document}\n";
-//         cf << "\n\n";
-//         cf << "\\begin{figure}[t!]\n";
-//         cf << "\\centering\n";
-//         cf << "\\begin{quantikz}[row sep={0.5cm,between origins},column sep={0.3cm}]\n";
-
-//         // --- describe the circuit as a matrix of strings ---
-//         tex_lines_.resize(nq_);
-//     } 
-// }
+        cf << "\\documentclass{article}\n";
+        // cf << "\\usepackage[utf8]{inputenc}\n";
+        cf << "\\usepackage[dvipsnames]{xcolor}\n";
+        cf << "\\usepackage{amsmath}\n";
+        cf << "\\usepackage{amsfonts,amssymb}\n";
+        cf << "\\usepackage{tikz}\n";
+        cf << "\\usetikzlibrary{quantikz}\n";
+        cf << "\n";
+        cf << "\\newcommand{\\yi}{\\mathrm{i}}\n";
+        cf << "\n";
+        cf << "\\begin{document}\n";
+        cf << "\n\n";
+        cf << "\\begin{figure}[t!]\n";
+        cf << "\\centering\n";
+        cf << "\\begin{quantikz}[row sep={0.5cm,between origins},column sep={0.3cm}]\n";   
+    } 
+}
 
 
-// void QCircuit::finish_tex_file()
-// {
-//     if(env_.rank == 0)
-//     {
-//         YMIX::File cf(texname_, false);
+void QCircuit::finish_tex_file()
+{
+    if(env_.rank == 0)
+    {
+        YMIX::File cf(texname_, false);
 
-//         //
+        // --- write the matrix of strings to the file ---
+        int counter_row = -1;
+        for(auto const & one_row_vec: tex_lines_)
+        {
+            counter_row++;
+            string line_row = "";
+            for(auto const& one_phrase: one_row_vec)
+            {
+                line_row += one_phrase;
+            }   
+            if(counter_row < tex_lines_.size())
+                line_row += "\\\\"s;
+            cf << line_row << "\n";
+        }
 
-//         // --- write the matrix of strings to the file ---
-//         int counter_row = -1;
-//         for(auto const & one_row_vec: tex_lines_)
-//         {
-//             counter_row++;
-//             string line_row = "";
-//             for(auto const& one_phrase: one_row_vec)
-//             {
-//                 line_row += one_phrase;
-//             }   
-//             if(counter_row < tex_lines_.size())
-//                 line_row += "\\\\"s;
-//             cf << line_row << "\n";
-//         }
-
-//         // --- finish the .tex file ---
-//         cf << "\\end{quantikz}\n";
-//         cf << "\\caption{Figure of the circuit: " << name_ << "}\n";
-//         cf << "\\end{figure}\n";
-//         cf << "\n\n";
-//         cf << "\\end{document}\n";
-//     }
-// }
+        // --- finish the .tex file ---
+        cf << "\\end{quantikz}\n";
+        cf << "\\caption{Figure of the circuit: " << name_ << "}\n";
+        cf << "\\end{figure}\n";
+        cf << "\n\n";
+        cf << "\\end{document}\n";
+    }
+}
 
 
 
@@ -385,16 +387,16 @@ void QCircuit::save_regs()
             cf.of << endl;
         }
 
-        // for(auto const& [reg_name, reg_qs] : regs_)
-        // {
-        //     auto reg_nq = reg_qs.size();
-        //     for(auto i = 0; i < reg_nq; i++)
-        //     {
-        //         tex_lines_[i].push_back(
-        //             "\\lstick{$" + reg_name + "_" + to_string(reg_nq - i - 1) + "$}"
-        //         );
-        //     }
-        // }
+        for(auto const& [reg_name, reg_qs] : regs_)
+        {
+            auto reg_nq = reg_qs.size();
+            for(auto i = 0; i < reg_nq; i++)
+            {
+                tex_lines_[i].push_back(
+                    "\\lstick{$" + reg_name + "_" + to_string(reg_nq - i - 1) + "$}"
+                );
+            }
+        }
     }
 }
 

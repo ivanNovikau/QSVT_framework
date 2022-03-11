@@ -45,8 +45,8 @@ class QCircuit{
     void create(YCU nq);
 
     void create_circ_file();
-    // void create_tex_file();
-    // void finish_tex_file();
+    void create_tex_file();
+    void finish_tex_file();
 
     void print_gates(YCB flag_print = false);
 
@@ -669,9 +669,10 @@ private:
     std::shared_ptr<CircuitLayers__> oo_layers_;
 
     // circ_lines[i][j]: j-th phrase in the i-th line from the top:
-    // std::vector<std::vector<std::string>> tex_lines_;
+    std::vector<std::vector<std::string>> tex_lines_;
 
-
+    // tex_noc_[i] = id of the next non-occupied position on the i-th qubit:
+    std::vector<uint64_t> tex_noc_;
 };
 
 
