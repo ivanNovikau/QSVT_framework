@@ -15,6 +15,7 @@ class Gate__
         {
             id_layer_ = -1;
             flag_conj_ = false;
+            tex_name_ = name_;
         }
         ~Gate__(){}
 
@@ -27,6 +28,8 @@ class Gate__
 
             name_ = oo.name_;
             type_ = oo.type_;
+            tex_name_ = oo.tex_name_;
+            
             ts_ = YVIv(oo.ts_);
             cs_ = YVIv(oo.cs_);
             conds_ = YVIv(oo.conds_);
@@ -106,24 +109,7 @@ class Gate__
             std::vector<std::vector<std::string>>& tex_lines, 
             const uint64_t& id_layer,
             YCU nq
-        ){
-            std::string l_nq_gate, l_name;
-
-            // gate the most-signficant target qubit:
-            auto id_top_q = get_most_signif_target_qubit();
-            
-            // width of the gate (take into account the number of target qubits):
-            l_nq_gate = tex_gate_width(tex_lines, id_layer, nq, id_top_q);
-
-            // write down the gate parameters:
-            l_name = tex_get_gate_name(tex_lines, id_layer, nq);
-
-            // combine the gate information:
-            tex_lines[nq - id_top_q - 1][id_layer] = "&\\gate" + l_nq_gate + "{" + l_name + "}";
-
-            // add the control qubits 
-            tex_add_control(tex_lines, id_layer, nq, id_top_q);
-        }
+        );
 
     protected:
         inline
@@ -205,23 +191,24 @@ class Gate__
         std::string tex_get_gate_name(
             std::vector<std::vector<std::string>>& tex_lines, 
             const uint64_t& id_layer,
-            YCU nq
+            YCU nq,
+            YCS l_brackets = "()"
         ){
-            std::stringstream sstr;
             std::string l_name, l_par;
-            l_name = name_;
+            l_name = tex_name_;
             if(pars_.size())
             {
-                l_name += std::string("(");
+                l_name.push_back(l_brackets[0]);
                 for(auto id_p = 0; id_p < pars_.size(); id_p++)
                 {
+                    std::stringstream sstr;
                     sstr << pars_[id_p];
                     sstr >> l_par;
                     if(id_p > 0)
                         l_name += std::string(", ");
                     l_name += l_par;
                 }
-                l_name += std::string(")");
+                l_name.push_back(l_brackets[1]);
             }
             return l_name;
         }
@@ -250,6 +237,7 @@ class Gate__
     protected:
         std::string name_;// current name of the gate;
         std::string type_;// type of the gate;
+        std::string tex_name_;// gate name as it is shown in the. tex file;
 
         YVIv ts_; // target qubits;
         YVIv cs_; // control qubits;
@@ -286,11 +274,14 @@ public:
 class Box__ : public Gate__
 {
     public:
-        Box__(YCS name, YCVI ts, YCVI cs) : Gate__(name)
+        Box__(YCS name, YCVI ts, YCVI cs, YCS tex_name="") : Gate__(name)
         {
             type_ = "box";
             ts_ = ts;
             cs_ = cs;
+
+            if(!tex_name.empty())
+                tex_name_ = tex_name;
         }
 
         YSG copy_gate() const {return std::make_shared<Box__>(*this);}
@@ -349,13 +340,17 @@ class X__ : public SQGate__
             const uint64_t& id_layer,
             YCU nq
         ){
-            std::string l_nq_gate, l_name;
+            std::string l_nq_gate;
 
             // gate the most-signficant target qubit:
             auto id_top_q = get_most_signif_target_qubit();
 
             // combine the gate information:
-            tex_lines[nq - id_top_q - 1][id_layer] = "&\\targ{}";
+
+            if(cs_.size() > 0)
+                tex_lines[nq - id_top_q - 1][id_layer] = "&\\targ{}";
+            else
+                tex_lines[nq - id_top_q - 1][id_layer] = "&\\gate{X}";
 
             // add the control qubits 
             tex_add_control(tex_lines, id_layer, nq, id_top_q);
@@ -445,7 +440,7 @@ class sR__ : public SQGate__
 class Rx__ : public sR__
 {
     public:
-        Rx__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRx(a); }
+        Rx__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRx(a); tex_name_ = "R_x"; }
         YSG copy_gate() const { return std::make_shared<Rx__>(*this); };
 
     public:
@@ -455,7 +450,7 @@ class Rx__ : public sR__
 class Ry__ : public sR__
 {
     public:
-        Ry__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRy(a); }
+        Ry__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRy(a); tex_name_ = "R_y"; }
         YSG copy_gate() const { return std::make_shared<Ry__>(*this); };
 
     public:
@@ -465,7 +460,7 @@ class Ry__ : public sR__
 class Rz__ : public sR__
 {
     public:
-        Rz__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRz(a); }
+        Rz__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRz(a); tex_name_ = "R_z";}
         YSG copy_gate() const { return std::make_shared<Rz__>(*this); };
 
     public:
@@ -490,6 +485,7 @@ class Rc__ : public sR2__
         Rc__(YCI t, YCQR angle_rz, YCQR angle_ry) : sR2__(name_shared_, t, angle_rz, angle_ry)
         { 
             u2_ = gv_.mRc(angle_rz, angle_ry); 
+            tex_name_ = "R_c";
         }
         YSG copy_gate() const { return std::make_shared<Rc__>(*this); };
 
@@ -500,8 +496,28 @@ class Rc__ : public sR2__
 class Phase__ : public sR__
 {
     public:
-        Phase__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mPhase(a); }
+        Phase__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mPhase(a); tex_name_ = "\\phase"; }
         YSG copy_gate() const { return std::make_shared<Phase__>(*this); };
+
+        void write_tex(
+            std::vector<std::vector<std::string>>& tex_lines, 
+            const uint64_t& id_layer,
+            YCU nq
+        ){
+            std::string l_nq_gate, l_name;
+
+            // gate the most-signficant target qubit:
+            auto id_top_q = get_most_signif_target_qubit();
+
+            // write down the gate parameters:
+            l_name = tex_get_gate_name(tex_lines, id_layer, nq, "{}");
+
+            // combine the gate information:
+            tex_lines[nq - id_top_q - 1][id_layer] = "&" + l_name;
+
+            // add the control qubits 
+            tex_add_control(tex_lines, id_layer, nq, id_top_q);
+        }
 
     public:
         const static std::string name_shared_;

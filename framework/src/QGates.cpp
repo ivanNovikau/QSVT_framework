@@ -31,3 +31,27 @@ void Gate__::correct_qubits(YCVI regs)
     conds_ = YVIv(conds);
 }
 
+
+void Gate__::write_tex(
+            std::vector<std::vector<std::string>>& tex_lines, 
+            const uint64_t& id_layer,
+            YCU nq
+){
+    std::string l_nq_gate, l_name;
+
+    // gate the most-signficant target qubit:
+    auto id_top_q = get_most_signif_target_qubit();
+    
+    // width of the gate (take into account the number of target qubits):
+    l_nq_gate = tex_gate_width(tex_lines, id_layer, nq, id_top_q);
+
+    // write down the gate parameters:
+    l_name = tex_get_gate_name(tex_lines, id_layer, nq);
+
+    // combine the gate information:
+    tex_lines[nq - id_top_q - 1][id_layer] = "&\\gate" + l_nq_gate + "{" + l_name + "}";
+
+    // add the control qubits 
+    tex_add_control(tex_lines, id_layer, nq, id_top_q);
+}
+

@@ -37,12 +37,8 @@ public:
         uint64_t id_first_noc_layer = 0;
         int id_qubit;
         for(auto& id_qubit: ids_qubits_of_gate)
-        {
             if(id_first_noc_layer < noc_layers_[id_qubit])
-            {
                 id_first_noc_layer = noc_layers_[id_qubit];
-            }
-        }
 
         // insert the gate into the first non-occupied layer:
         gate->set_layer(id_first_noc_layer);

@@ -340,7 +340,7 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
         ostringstream ostr;
         ostr << "--- Error in the structure of the circuit " << oc->get_name() 
              << ", in the gate " << gate_name << " ---\n" <<
-                "--- " << e << " ---\n";
+                "" << e << " ---\n";
         throw ostr.str();
     }
 }

@@ -252,12 +252,13 @@ void QCircuit::print_gates(const bool& flag_print)
         // -------------------------------------------------
         // --- print gates to the .tex file ---
         YVIv ids_qubits_of_gate, ids_range, ids_targets, ids_controls;
-        uint64_t id_first_noc_layer = 0;
+        uint64_t id_first_noc_layer;
         uint64_t id_new_noc_layer;
         int id_b, id_t;
         bool flag_box = false;
         for(auto& gate: gates_)
         {
+            id_first_noc_layer = 0;
             if(YMIX::compare_strings(gate->get_type(), "stop"))
                 continue;
 
@@ -276,11 +277,31 @@ void QCircuit::print_gates(const bool& flag_print)
 
             // --- find the first layer in .tex, where there is enough free qubits to place the gate ---
             for(auto id_qubit = id_b; id_qubit <= id_t; id_qubit++)
-                if(id_first_noc_layer < tex_noc_[id_qubit])
-                    id_first_noc_layer = tex_noc_[id_qubit];
+            {
+                if(id_first_noc_layer < tex_noc_[nq_ - id_qubit - 1])
+                    id_first_noc_layer = tex_noc_[nq_ - id_qubit - 1];
+            }
 
             // --- put the gate to the .tex layer ---
             gate->write_tex(tex_lines_, id_first_noc_layer, nq_);
+
+
+            // cout << "\n\n";
+            // cout << "id_first_noc_layer: " << id_first_noc_layer << "\n";
+            // cout << "[" << id_b << ", " << id_t << "]\n";
+            // int counter_row = -1;
+            // for(auto const & one_row_vec: tex_lines_)
+            // {
+            //     counter_row++;
+            //     string line_row = "";
+            //     for(auto const& one_phrase: one_row_vec)
+            //         line_row += one_phrase;
+            //     cout << line_row << "\n";
+            // }
+            // cout << "--- current tex_noc ---\n";
+            // for(auto id_q = 0; id_q < nq_; id_q++)
+            //     cout << "tex_noc_[" << nq_ - id_q - 1 << "] = " << tex_noc_[id_q] << "\n";
+
 
             // --- shift the ids of non-occupied layers in the .tex ---
             id_new_noc_layer = id_first_noc_layer + 1;
@@ -810,12 +831,19 @@ void QCircuit::read_structure_gate(
     // --- read target qubits ---
     read_reg_int(istr, ids_target);
     
-    // --- read the parameter of the gate ---     
-    if(!isnan(par_gate))
+    // --- read the parameter of the gate ---  
+    try
     {
-        istr >> word;
-        par_gate = get_value_from_word(word);
-    } 
+        if(!isnan(par_gate))
+        {
+            istr >> word;
+            par_gate = get_value_from_word(word);
+        } 
+    }   
+    catch(YCS e)
+    {
+        throw "error in the format of the gate parameter: oracletool sees [" + word + "]: " + e;
+    }
 
     // --- read the end of the gate structure description ---
     read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);  
@@ -831,17 +859,24 @@ void QCircuit::read_structure_gate(
     // --- read target qubits ---
     read_reg_int(istr, ids_target);
     
-    // --- read parameters of the gate ---     
-    if(!isnan(par_gate1))
+    // --- read parameters of the gate ---  
+    try
+    {   
+        if(!isnan(par_gate1))
+        {
+            istr >> word;
+            par_gate1 = get_value_from_word(word);
+        } 
+        if(!isnan(par_gate2))
+        {
+            istr >> word;
+            par_gate2 = get_value_from_word(word);
+        } 
+    }
+    catch(YCS e)
     {
-        istr >> word;
-        par_gate1 = get_value_from_word(word);
-    } 
-    if(!isnan(par_gate2))
-    {
-        istr >> word;
-        par_gate2 = get_value_from_word(word);
-    } 
+        throw "error in the format of the gate parameter: oracletool sees [" + word + "]: " + e;
+    }
 
     // --- read the end of the gate structure description ---
     read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);  
