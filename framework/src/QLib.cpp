@@ -2,6 +2,7 @@
 using namespace std;
 
 std::string YMIX::LogFile::name_global_ = "output.log";
+int YGlobalVariables::tex_circuit_length = TEX_CIRCUIT_LENGTH;
 
 bool YMATH::is_zero(YCQR x)
 {

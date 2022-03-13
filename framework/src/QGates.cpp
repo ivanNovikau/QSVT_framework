@@ -46,7 +46,7 @@ void Gate__::write_tex(
     l_nq_gate = tex_gate_width(tex_lines, id_layer, nq, id_top_q);
 
     // write down the gate parameters:
-    l_name = tex_get_gate_name(tex_lines, id_layer, nq);
+    l_name = tex_get_gate_name(tex_lines, id_layer, nq);      
 
     // combine the gate information:
     tex_lines[nq - id_top_q - 1][id_layer] = "&\\gate" + l_nq_gate + "{" + l_name + "}";

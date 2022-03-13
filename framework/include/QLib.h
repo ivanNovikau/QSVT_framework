@@ -95,10 +95,17 @@
 #define YVVIv std::vector<std::vector<int>>
 
 
+#define YGV YGlobalVariables
+
+
 #define LOG_INDENT "    "
 #define WHITESPACE " \n\r\t\f\v"
 
 #define YSIZE_CHAR_ARRAY 100000
+
+#define TEX_BEGIN_CIRCUIT    "\\begin{quantikz}[row sep={0.5cm,between origins},column sep={0.3cm}]\n"
+#define TEX_VERTICAL_GAP     "\\vspace{20pt}"
+#define TEX_CIRCUIT_LENGTH 10
 
 #define COMMENT_ORACLE    "//"
 #define FORMAT_ORACLETOOL ".oracle"s 
@@ -130,6 +137,8 @@ struct INIT_STATE__
 struct YGlobalVariables{
 
     std::string reg_whole_circuit = "the_whole_circuit";
+
+    static int tex_circuit_length; // length of the circuit in the .tex file;
 
     qreal inv_sqrt2 = 1./sqrt(2);
 

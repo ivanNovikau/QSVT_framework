@@ -30,12 +30,14 @@ To compile the framework:
 ## Run the oracle-tool
 To run the oracle-tool, use the following command:
 
-`[path_to_QSVT_framework]/framework/build_oracle/oracletool [name of oracle] [path to the input file] [flag_output]`
+`[path_to_QSVT_framework]/framework/build_oracle/oracletool [name of oracle] [path to the input file] [flag_output] [tex-circuit-length]`
 
 The `oracletool` searches for the file `[name of oracle].oracle` in the folder `[path to the input file]`.
 
 `[flag_output] = 1`: calculate output states for the specified input states from the `.oracle` file;<br> 
 `[flag_output] = 0`: do not compute the output states (just produce `.circuit` and `.tex` files).
+
+`[tex-circuit-length]`: length of the row in the circuit, when it is printed to the .tex file.
 
 To understand the format of the `.oracle` file, see the wiki page:<br> 
 https://github.com/ivanNovikau/QSVT_framework/wiki

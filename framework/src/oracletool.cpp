@@ -97,9 +97,9 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
 
     YMIX::print_log(env_, "Finish reading file\n");
 
-    // check if a circuit to launch is defined:
+    // check if the circuit to launch is defined:
     if(!oc_to_launch_)
-        throw "Error: A circuit to launch is not defined (there is not a section INPUT_STATES)."s;
+        throw "Error: The circuit to launch is not defined (there is not a section INPUT_STATES)."s;
 
     // write circuits to corresponding files:
     for(auto const& it: ocs_)
@@ -360,8 +360,8 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
     {
         string warn_line;
         warn_line = "\n\n-------------------------------------------------------------------------------\n";
-        warn_line += "--- Warning: setting the structure of the circuit " + curr_circuit_name + " ---\n";
-        warn_line += "The subcircuit " + subcircuit_name + " is not found. We skip it.\n";
+        warn_line += "--- Warning: setting the structure of the circuit [" + curr_circuit_name + "] ---\n";
+        warn_line += "The subcircuit [" + subcircuit_name + "] is not found. We skip it.\n";
         warn_line += "-------------------------------------------------------------------------------\n";
         YMIX::print_log(env_, warn_line);
         flag_skip = true;
@@ -370,8 +370,18 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
     {
         string warn_line;
         warn_line = "\n\n-------------------------------------------------------------------------------\n";
-        warn_line += "--- Warning: setting the structure of the circuit " + curr_circuit_name + " ---\n";
+        warn_line += "--- Warning: setting the structure of the circuit [" + curr_circuit_name + "] ---\n";
         warn_line += "Self-insertion: circuit cannot include itself as a subcircuit. We skip it.\n";
+        warn_line += "-------------------------------------------------------------------------------\n";
+        YMIX::print_log(env_, warn_line);
+        flag_skip = true;
+    }
+    if(ocs_[subcircuit_name]->get_n_gates() == 0)
+    {
+        string warn_line;
+        warn_line = "\n\n-------------------------------------------------------------------------------\n";
+        warn_line += "--- Warning: setting the structure of the circuit [" + curr_circuit_name + "] ---\n";
+        warn_line += "The subcircuit [" + subcircuit_name + "] is empty. We skip it.\n";
         warn_line += "-------------------------------------------------------------------------------\n";
         YMIX::print_log(env_, warn_line);
         flag_skip = true;

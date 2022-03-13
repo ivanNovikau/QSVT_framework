@@ -60,20 +60,16 @@ class Gate__
          * @brief Add control qubits to the gate.
          * @param[in] reg_control control qubits to add.
          */
-        inline
-        void add_control_qubits(YCVI reg_control)
+        inline void add_control_qubits(YCVI reg_control)
         {
             copy(reg_control.begin(), reg_control.end(), back_inserter(cs_));
         }
-
-        inline
-        void add_control_qubits(YCI c)
+        inline void add_control_qubits(YCI c)
         {
             cs_.push_back(c);
         }
 
-        inline
-        std::string get_name(){ return name_; }
+        inline std::string get_name(){ return name_; }
 
         /**
          * @brief E.g. the gate has target qubit [1] and control qubits [2,0].
@@ -101,6 +97,7 @@ class Gate__
 
         inline void set_flag_start(YCB flag_start){ flag_start_ = flag_start; }
         inline bool get_flag_start(){ return flag_start_; }
+        inline bool get_flag_conj(){ return flag_conj_; }
 
         void get_target_qubits(YVI ids_t){ ids_t = YVIv(ts_); }
         void get_control_qubits(YVI ids_c){ ids_c = YVIv(cs_); }
@@ -192,17 +189,24 @@ class Gate__
             std::vector<std::vector<std::string>>& tex_lines, 
             const uint64_t& id_layer,
             YCU nq,
-            YCS l_brackets = "()"
+            YCS l_brackets = "()",
+            YCB flag_inv_par = false
         ){
             std::string l_name, l_par;
             l_name = tex_name_;
+            if(!flag_inv_par && flag_conj_)
+                l_name += std::string("^\\dagger");
+
             if(pars_.size())
             {
                 l_name.push_back(l_brackets[0]);
                 for(auto id_p = 0; id_p < pars_.size(); id_p++)
                 {
                     std::stringstream sstr;
-                    sstr << pars_[id_p];
+                    if(flag_inv_par && flag_conj_)
+                        sstr << -pars_[id_p];
+                    else
+                        sstr << pars_[id_p];
                     sstr >> l_par;
                     if(id_p > 0)
                         l_name += std::string(", ");
@@ -510,7 +514,7 @@ class Phase__ : public sR__
             auto id_top_q = get_most_signif_target_qubit();
 
             // write down the gate parameters:
-            l_name = tex_get_gate_name(tex_lines, id_layer, nq, "{}");
+            l_name = tex_get_gate_name(tex_lines, id_layer, nq, "{}", true);
 
             // combine the gate information:
             tex_lines[nq - id_top_q - 1][id_layer] = "&" + l_name;

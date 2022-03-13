@@ -130,7 +130,7 @@ void QCircuit::create_tex_file()
         cf << "\n\n";
         cf << "\\begin{figure}[t!]\n";
         cf << "\\centering\n";
-        cf << "\\begin{quantikz}[row sep={0.5cm,between origins},column sep={0.3cm}]\n";   
+        cf << TEX_BEGIN_CIRCUIT;   
     } 
 }
 
@@ -165,22 +165,34 @@ void QCircuit::finish_tex_file()
         }
 
         // --- write the matrix of strings to the file ---
-        int counter_row = -1;
-        for(auto const & one_row_vec: tex_lines_)
+        int n_circ_pieces = int(tex_lines_[0].size() / YGV::tex_circuit_length)+1;
+        if(tex_lines_[0].size() % YGV::tex_circuit_length == 0)
+            n_circ_pieces--;
+        for(auto id_piece = 0; id_piece < n_circ_pieces; id_piece++)
         {
-            counter_row++;
-            string line_row = "";
-            for(auto const& one_phrase: one_row_vec)
+            int counter_row = -1;
+            int column_begin = id_piece * YGV::tex_circuit_length;
+            int column_end = std::min(column_begin + YGV::tex_circuit_length, int(tex_lines_[0].size()));
+            for(auto const & one_row_vec: tex_lines_)
             {
-                line_row += one_phrase;
-            }   
-            if(counter_row < tex_lines_.size())
-                line_row += "\\\\"s;
-            cf << line_row << "\n";
+                counter_row++;
+                string line_row = "";
+                for(auto id_c = column_begin; id_c < column_end; id_c++)
+                    line_row += one_row_vec[id_c];
+                if(counter_row < (tex_lines_.size()-1))
+                    line_row += "\\\\"s;
+                cf << line_row << "\n";
+            }
+            cf << "\\end{quantikz}\n";
+
+            if(id_piece < (n_circ_pieces - 1))
+            {
+                cf << TEX_VERTICAL_GAP << "\n";
+                cf << TEX_BEGIN_CIRCUIT;
+            }
         }
 
         // --- finish the .tex file ---
-        cf << "\\end{quantikz}\n";
         cf << "\\caption{Figure of the circuit: " << name_ << "}\n";
         cf << "\\end{figure}\n";
         cf << "\n\n";
@@ -332,6 +344,9 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
         for(auto& gate: gates_c)
         {
             auto gate_copy = gate->copy_gate();
+
+            cout << "is conj: " << gate->get_flag_conj() << "\n";
+
             gate_copy->conjugate_transpose();
             gate_copy->correct_qubits(regs_new);
             oo_layers_->add_gate(gate_copy);

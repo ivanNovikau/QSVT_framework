@@ -42,6 +42,10 @@ int main(int argc, char *argv[])
     if(argc > 3) flag_compute_output = stoi(string (argv[3]));
     if(flag_compute_output) YMIX::print_log(env, "Flag compute output oracle = true");
     else                    YMIX::print_log(env, "Flag compute output oracle = false");
+
+    // length of the circuit in the .tex file:
+    if(argc > 4) 
+        YGlobalVariables::tex_circuit_length = stoi(string (argv[4]));
     
     try
     {
