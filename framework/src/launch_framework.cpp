@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
             env, 
             pname, 
             path_input, 
+            false,
+            false,
             false
         );
         YSQ oc_oracle = oo->get_oracle_copy();
@@ -119,6 +121,9 @@ int main(int argc, char *argv[])
 
         // --- perform the QSVD simulation ---
         qsvd->launch();
+
+        // --- print the framework ---
+        qsvd->print_gates();
     }
     catch(YCS e)
     {

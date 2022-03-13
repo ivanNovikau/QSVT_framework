@@ -28,19 +28,35 @@ To compile the framework:
 3. `make`
 
 ## Run the oracle-tool
+The oracle-tool, `oracletool`, reads the `.oracle` file to constrcut the circuit described there, calculates the output states of this circuit.
+If necessary, `oracletool` builds the `.circuit` and `.tex` representation of the circuit.
+
 To run the oracle-tool, use the following command:
 
-`[path_to_QSVT_framework]/framework/build_oracle/oracletool [name of oracle] [path to the input file] [flag_output] [tex-circuit-length]`
+`[path_to_QSVT_framework]/framework/build_oracle/oracletool [name of oracle] [path to the input file] [flag_output] [flag-circuit] [flag-tex] [tex-circuit-length]`
 
 The `oracletool` searches for the file `[name of oracle].oracle` in the folder `[path to the input file]`.
 
-`[flag_output] = 1`: calculate output states for the specified input states from the `.oracle` file;<br> 
-`[flag_output] = 0`: do not compute the output states (just produce `.circuit` and `.tex` files).
+`[flag_output]`, optional: if `1`, then calculate output states for the specified input states from the `.oracle` file;<br> 
+if `0`, then do not compute the output states (just produce `.circuit` and `.tex` files).<br>
+By default, `[flag_output] = 1`;
 
-`[tex-circuit-length]`: length of the row in the circuit, when it is printed to the .tex file.
+`[flag-circuit]`, optional: do print or not the `.circuit` files. 
+By default, `[flag-circuit] = 1`.
+
+`[flag-tex]`, optional: do print or not the `.tex` files. 
+By default, `[flag-tex] = 1`.
+
+`[tex-circuit-length]`, optional: length of each row in the circuit, when it is printed to the `.tex` file (by default, ).<br>
+By default, `[tex-circuit-length] = 10`.
 
 To understand the format of the `.oracle` file, see the wiki page:<br> 
 https://github.com/ivanNovikau/QSVT_framework/wiki
+
+## Run the circuit constructor:
+The circuit constructor, `qc_circuit`, can read one or several `.circuit` files to combine them and calculate the corresponding output state (`qc_circuit` always takes the zero input state).
+The `qc_circuit` connects the circuits by comparing the register names.
+The program can produce the `.circuit` and `.tex` representations of the resulting circuit.
 
 ## Run the framework
 To run the framework, use the following command
@@ -85,6 +101,14 @@ The condition number is found as the ratio between the max. and min. singular va
 For `qsp`, the angles can be calculated by the following code: https://github.com/microsoft/Quantum-NC/tree/main/src/simulation/qsp
 
 For `qsvt`, the angles can be calculated by the following code: https://github.com/qsppack/QSPPACK
+
+The framework does not create the `.tex` description of the corresponding circuits and subcircuits, but only some `.circuit` files if `flag_circuit true` in the `.qsp` file. By default, `flag_circuit false`.
+It is highly recommended to keep `flag_circuit false` since the size of the resulting `.circuit` files for a whole QSVT (QSP) circuit might be of dozens of GB.
+
+To produce the `.tex` files for the QSVT circuit, one needs to create the `.circuit` files and then use the `qc_circuit` program to create the `.tex` files.
+
+Remark: the framework does not produce the `.circuit` files of the block-encoded matrix (described in the `.oracle` files) even if `flag_circuit true`.
+To create the `.circuit` and `.tex` files of the `.oracle` circuits, one should use the `oracletool`.
 
 ## References
 1. QSP for simulating cold plasma waves: https://arxiv.org/abs/2112.06086<br>

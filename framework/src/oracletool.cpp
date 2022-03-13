@@ -5,9 +5,13 @@ OracleTool__::OracleTool__(
     const QuESTEnv& env, 
     YCS pname, 
     YCS path_to_inputs, 
-    const bool& flag_compute_output
+    YCB flag_compute_output,
+    YCB flag_circuit,
+    YCB flag_tex
 ){
     flag_compute_output_ = flag_compute_output;
+    flag_circuit_ = flag_circuit;
+    flag_tex_ = flag_tex;
 
     env_ = env;
 
@@ -103,7 +107,7 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
 
     // write circuits to corresponding files:
     for(auto const& it: ocs_)
-        it.second->print_gates(true);
+        it.second->print_gates();
 
     // set the output format for the circuit of interest:
     oc_to_launch_->set_standart_output_format();
@@ -220,7 +224,11 @@ void OracleTool__::read_circuit_declaration(YISS istr)
                 YMIX::print_log(env_, inf.str());          
             }
             else
-                ocs_[circ_name] = make_shared<QCircuit>(circ_name, env_, path_inputs_, nq_circ, constants_);
+                ocs_[circ_name] = make_shared<QCircuit>(
+                    circ_name, env_, path_inputs_, nq_circ, 
+                    constants_,
+                    flag_circuit_, flag_tex_
+                );
             YSQ oc = ocs_[circ_name];
 
             // add the registers to the chosen circuit
@@ -233,8 +241,6 @@ void OracleTool__::read_circuit_declaration(YISS istr)
     {
         throw "Error when one reads "s + current_field + " in the circuit "s + circ_name + ": "s + e;
     }
-
-    
 
     // information about the declared circuits
     for(const auto& it: ocs_) 
@@ -556,7 +562,7 @@ void OracleTool__::launch()
                 // generate the circuit:
                 timer_gen.Start();
                 YMIX::print_log(env_, str_work + " generation... ", 0, false, false);
-                u_work->generate(stop_point_name, id_current_gate, false);
+                u_work->generate(stop_point_name, id_current_gate);
                 timer_gen.Stop();
                 YMIX::print_log(env_, "duration: " + timer_gen.get_dur_str_s());
 

@@ -156,7 +156,11 @@ void QSP__::create_W()
 
     // --- create an iterate W ---
     YMIX::print_log(env_, "-> cW creation");
-    cw_ = make_shared<QCircuit>("W", env_, path_inputs_, nq_);
+    cw_ = make_shared<QCircuit>(
+        "W", env_, path_inputs_, nq_,
+        map<string, qreal>(),
+        flag_circuit_, false
+    );
 
     int  rb   = cw_->add_register("b", 1)[0];
     int  rq   = cw_->add_register("q", 1)[0];
@@ -196,7 +200,7 @@ void QSP__::create_W()
     // make the oracle W controlled 
     cw_->controlled({rb});
 
-    cw_->print_gates(flag_print_gates_to_file_);
+    cw_->print_gates();
 }
 
 
@@ -205,7 +209,7 @@ void QSP__::create_iW()
     YMIX::print_log(env_, "-> icW creation...\n");
     icw_ = make_shared<QCircuit>(cw_, "W*");
     icw_->conjugate_transpose();
-    icw_->print_gates(flag_print_gates_to_file_);
+    icw_->print_gates();
 }
 
 
@@ -264,7 +268,7 @@ void QSP__::simulation()
 
         // --- Generate the circuit ---
         timer.StartPrint(env_, "QSP circuit generation... ");
-        oc_->generate(flag_print_gates_to_file_);
+        oc_->generate();
         timer.StopPrint(env_);
 
         // --- Compute zero-ancilla states ---

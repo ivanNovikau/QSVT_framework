@@ -80,7 +80,7 @@ void QMI__::simulation()
 
     // --- generate the circuit ---
     timer.StartPrint(env_, "Generating the QSVT circuit... ");
-    oc_->generate(flag_print_gates_to_file_);
+    oc_->generate();
     timer.StopPrint(env_);
 
     // --- compute output states ---

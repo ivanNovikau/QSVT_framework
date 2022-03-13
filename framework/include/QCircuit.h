@@ -22,10 +22,15 @@ class QCircuit{
      * @param[in] nq number of qubits to create. 
      * If \p nq <= 0, the QuEST circuit will not be created. 
      * In this case, it will be necessary to launch separately the function "create";
+     * @param[in] constants dictionary of constans used to create the circuit;
+     * @param[in] flag_circuit print or not .circuit files (by default, false);
+     * @param[in] flag_tex print or not .tex files (by default, false);
      * */
     QCircuit(
         YCS name, const QuESTEnv& env, YCS path_to_output="./", YCU nq = 0,
-        const std::map<std::string, qreal>& constants = std::map<std::string, qreal>()
+        const std::map<std::string, qreal>& constants = std::map<std::string, qreal>(),
+        YCB flag_circuit = false,
+        YCB flag_tex = false
     );
 
     /**
@@ -48,7 +53,7 @@ class QCircuit{
     void create_tex_file();
     void finish_tex_file();
 
-    void print_gates(YCB flag_print = false);
+    void print_gates();
 
     inline std::string get_name(){ return name_; }
     inline unsigned get_n_qubits(){ return nq_; }
@@ -60,12 +65,12 @@ class QCircuit{
     /**
      * @brief Generate the circuit.
      */
-    void generate(const bool& flag_print = false);
+    void generate();
 
     /**
      * @brief Generate the circuit taking into account stop gates.
      */
-    void generate(std::string& stop_name, int& id_current, const bool& flag_print = false);
+    void generate(std::string& stop_name, int& id_current);
 
     /**
      * @brief Get a conjugate transpose matrix.
@@ -673,6 +678,12 @@ private:
 
     // tex_noc_[i] = id of the next non-occupied position on the i-th qubit:
     std::vector<uint64_t> tex_noc_;
+
+    // print or not .circuit files:
+    bool flag_circuit_;
+
+    //print or not .tex files:
+    bool flag_tex_;
 };
 
 

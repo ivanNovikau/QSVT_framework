@@ -43,9 +43,27 @@ int main(int argc, char *argv[])
     if(flag_compute_output) YMIX::print_log(env, "Flag compute output oracle = true");
     else                    YMIX::print_log(env, "Flag compute output oracle = false");
 
+    // flag print .circuit files:
+    bool flag_circuit = true;
+    if(argc > 4) flag_circuit = stoi(string (argv[4]));
+    if(flag_circuit) YMIX::print_log(env, "Print .circuit files.");
+    else             YMIX::print_log(env, "Do not print the .circuit files.");
+
+    // flag print .tex files:
+    bool flag_tex = true;
+    if(argc > 5) flag_tex = stoi(string (argv[5]));
+    if(flag_tex) YMIX::print_log(env, "Print .tex files.");
+    else         YMIX::print_log(env, "Do not print the .tex files.");
+
     // length of the circuit in the .tex file:
-    if(argc > 4) 
-        YGlobalVariables::tex_circuit_length = stoi(string (argv[4]));
+    if(argc > 6) 
+        YGlobalVariables::tex_circuit_length = stoi(string (argv[6]));
+    if(flag_tex) 
+        YMIX::print_log(
+            env, 
+            "Circuit length in the .tex files = %d", 
+            YGlobalVariables::tex_circuit_length
+    );
     
     try
     {
@@ -54,7 +72,9 @@ int main(int argc, char *argv[])
             env, 
             pname, 
             path_input, 
-            flag_compute_output
+            flag_compute_output,
+            flag_circuit,
+            flag_tex
         );
         
         // launch the circuit with different input states:

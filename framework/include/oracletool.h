@@ -15,14 +15,16 @@ public:
      * @param project_name  is a project name that defines names of input and output files.
      * @param path_to_inputs is path to input files.
      * @param flag_compute_output if True, compute output states, otherwise only input states
-     * @param flag_test is a flag, if True, output additional information from the program
-     * @param flag_compute_iterator_output compute an output from an iterator
+     * @param flag_circuit print or not .circuit files;
+     * @param flag_tex print or not .tex files;
      */
     OracleTool__(
         const QuESTEnv& env, 
         YCS project_name, 
         YCS path_to_inputs, 
-        const bool& flag_compute_output = true
+        YCB flag_compute_output,
+        YCB flag_circuit,
+        YCB flag_tex
     );
     ~OracleTool__();
 
@@ -64,7 +66,9 @@ private:
     std::map<std::string, qreal> constants_; // constants
     YSQ oc_to_launch_ = nullptr; // a circuit to launch
 
-    bool flag_compute_output_; // if True, compute output states from an oracle
+    bool flag_compute_output_; // if True, compute output states from an oracle;
+    bool flag_circuit_; // print or not .circuit files;
+    bool flag_tex_; // print or not .circuit files;
 
     /** 
      * several initial states:

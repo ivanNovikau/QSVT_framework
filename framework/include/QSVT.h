@@ -84,6 +84,9 @@ public:
      */
     virtual void read_angles() = 0;
 
+
+    void print_gates();
+
 protected:
     void read_angles_def_parity(YCS line_parity, YVQ phis, uint32_t& N_angles);
     
@@ -138,9 +141,9 @@ protected:
     uint32_t N_angles_odd_; // number of angles to build i*sin;
     YVQv angles_phis_odd_; // angles to construct i*sin;
 
-    bool flag_print_gates_to_file_ = true;
-    bool flag_print_zero_states_ = true;
-    bool flag_print_all_states_ = true;
+    bool flag_circuit_; // print or not the QSVT (QSP) .circuit file;
+    bool flag_print_zero_states_; // print or not zero states to the out log file;
+    bool flag_print_all_states_; // print or not all states to the out log file;
 
     YSCQ u_; // oracle circuit;
     YSCQ iu_; // inversed oracle circuit;

@@ -2,13 +2,22 @@
 
 using namespace std;
 
-QCircuit::QCircuit(YCS name, const QuESTEnv& env, YCS path_to_output, 
-    YCU nq, const std::map<std::string, qreal>& constants
-){
+QCircuit::QCircuit(
+    YCS name, 
+    const QuESTEnv& env, 
+    YCS path_to_output, 
+    YCU nq, 
+    const std::map<std::string, qreal>& constants,
+    YCB flag_circuit,
+    YCB flag_tex
+) :
+name_(name),
+env_(env),
+path_to_output_(path_to_output),
+flag_circuit_(flag_circuit),
+flag_tex_(flag_tex)
+{
     timer_.Start();
-    name_ = name;
-    path_to_output_ = path_to_output;
-    env_ = env;
     nq_ = 0;
     if(nq > 0)
         create(nq); 
@@ -69,6 +78,9 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
     id_start_       = oc->id_start_;
     standart_output_format_ = oc->standart_output_format_;
 
+    flag_circuit_ = oc->flag_circuit_;
+    flag_tex_     = oc->flag_tex_;
+
     tex_noc_ = vector<uint64_t>(oc->tex_noc_);
     tex_lines_ = vector<vector<string>>(oc->tex_lines_);
 
@@ -101,6 +113,9 @@ QCircuit::~QCircuit()
 
 void QCircuit::create_circ_file()
 {
+    if(!flag_circuit_)
+        return;
+
     cfname_ = path_to_output_ + "/" + name_ + FORMAT_CIRCUIT;
     if(env_.rank == 0)
     {
@@ -109,8 +124,12 @@ void QCircuit::create_circ_file()
     }
 }
 
+
 void QCircuit::create_tex_file()
 {
+    if(!flag_tex_)
+        return;
+
     texname_ = path_to_output_ + "/" + name_ + FORMAT_TEX;
     if(env_.rank == 0)
     {
@@ -137,6 +156,9 @@ void QCircuit::create_tex_file()
 
 void QCircuit::finish_tex_file()
 {
+    if(!flag_tex_)
+        return;
+
     if(env_.rank == 0)
     {
         YMIX::File cf(texname_, false);
@@ -202,7 +224,7 @@ void QCircuit::finish_tex_file()
 
 
 
-void QCircuit::generate(const bool& flag_print)
+void QCircuit::generate()
 {
     YMIX::YTimer timer;
 
@@ -212,11 +234,9 @@ void QCircuit::generate(const bool& flag_print)
         (*it)->generate(c_);
     }
     id_start_ += gates_.end() - start;
-
-    print_gates(flag_print); 
 }
 
-void QCircuit::generate(string& stop_name, int& id_current, const bool& flag_print)
+void QCircuit::generate(string& stop_name, int& id_current)
 {
     auto start  = gates_.begin() + id_start_;
     auto it_end = gates_.end();
@@ -234,35 +254,25 @@ void QCircuit::generate(string& stop_name, int& id_current, const bool& flag_pri
     }
     id_start_ += it_end - start;
     id_current = id_start_;
-
-    print_gates(flag_print);
 }
 
-void QCircuit::conjugate_transpose()
-{
-    reverse(gates_.begin(), gates_.end());
-    for(auto& gate: gates_)
-    {
-        //cout << "Inversing " << gate->get_name() << endl;
-        gate->conjugate_transpose();
-        gate->set_layer(
-            oo_layers_->get_n_layers() - gate->get_layer()
-        );
-    }  
-}
 
-void QCircuit::print_gates(const bool& flag_print)
+void QCircuit::print_gates()
 {
-    if(env_.rank == 0 && flag_print)
+    // -------------------------------------------------
+    // --- print gates to the .circuit file ---
+    if(env_.rank == 0 && flag_circuit_)
     {
-        // -------------------------------------------------
-        // --- print gates to the .circuit file ---
+        
         YMIX::File cf(cfname_);
         for(auto& gate: gates_)
             gate->write_to_file(cf);
+    }
 
-        // -------------------------------------------------
-        // --- print gates to the .tex file ---
+    // -------------------------------------------------
+    // --- print gates to the .tex file ---
+    if(env_.rank == 0 && flag_tex_)
+    {
         YVIv ids_qubits_of_gate, ids_range, ids_targets, ids_controls;
         uint64_t id_first_noc_layer;
         uint64_t id_new_noc_layer;
@@ -328,6 +338,21 @@ void QCircuit::print_gates(const bool& flag_print)
     }
 }
 
+
+void QCircuit::conjugate_transpose()
+{
+    reverse(gates_.begin(), gates_.end());
+    for(auto& gate: gates_)
+    {
+        //cout << "Inversing " << gate->get_name() << endl;
+        gate->conjugate_transpose();
+        gate->set_layer(
+            oo_layers_->get_n_layers() - gate->get_layer()
+        );
+    }  
+}
+
+
 void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
 {
     if(box)
@@ -344,8 +369,6 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
         for(auto& gate: gates_c)
         {
             auto gate_copy = gate->copy_gate();
-
-            cout << "is conj: " << gate->get_flag_conj() << "\n";
 
             gate_copy->conjugate_transpose();
             gate_copy->correct_qubits(regs_new);
@@ -458,7 +481,7 @@ void QCircuit::set_standart_output_format()
 
 void QCircuit::save_regs()
 {
-    if(env_.rank == 0) 
+    if(env_.rank == 0 && flag_circuit_) 
     {
         if(regnames_.size() > 0)
         {
@@ -468,7 +491,10 @@ void QCircuit::save_regs()
                 cf << reg_name << " " << regs_[reg_name].size() << " ";
             cf.of << endl;
         }
+    }
 
+    if(env_.rank == 0 && flag_tex_) 
+    {
         int counter_q = -1;
         for(auto const& [reg_name, reg_qs] : regs_)
         {

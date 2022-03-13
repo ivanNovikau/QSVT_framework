@@ -12,6 +12,10 @@ QSVT__::QSVT__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
 {
     timer_.Start();
 
+    flag_circuit_ = false;
+    flag_print_zero_states_ = true;
+    flag_print_all_states_ = false;
+
     // --- Set the name of the restart file ---
     rf_.set_name(path_inputs_ + "/" + project_name_ + ENDING_FORMAT_RESTART);
 }
@@ -73,13 +77,15 @@ void QSVT__::read_main_parameters()
             continue;
         }
 
-        // whether to write description of the circuit gates to a circuit file
-        if(YMIX::compare_strings(key_name, "flag_print_gates_to_file"))
+        // print or not the QSP (QSVT) .circuit file:
+        if(YMIX::compare_strings(key_name, "flag_circuit"))
         {
             string temp;
             iss >> temp;
-            if(YMIX::compare_strings(temp, "false"))
-                flag_print_gates_to_file_ = false;
+            if(YMIX::compare_strings(temp, "true"))
+                flag_circuit_ = true;
+            else
+                flag_circuit_ = false;
             continue;
         }
 
@@ -90,6 +96,8 @@ void QSVT__::read_main_parameters()
             iss >> temp;
             if(YMIX::compare_strings(temp, "false"))
                 flag_print_zero_states_ = false;
+            else
+                flag_print_zero_states_ = true;
             continue;
         }
 
@@ -98,7 +106,9 @@ void QSVT__::read_main_parameters()
         {
             string temp;
             iss >> temp;
-            if(YMIX::compare_strings(temp, "false"))
+            if(YMIX::compare_strings(temp, "true"))
+                flag_print_all_states_ = true;
+            else
                 flag_print_all_states_ = false;
             continue;
         }
@@ -434,7 +444,11 @@ void QSVT__::create_circuit(YCS name, YCCQ U)
 
     // --- create an empty circuit ---
     YMIX::print_log(env_, "Initialize the framework circuit...");
-    oc_ = make_unique<QCircuit>(name, env_, path_inputs_, nq_);
+    oc_ = make_unique<QCircuit>(
+        name, env_, path_inputs_, nq_,
+        map<string, qreal>(),
+        flag_circuit_, false
+    );
 
     // add registers:
     regs_["qb"] = oc_->add_register("qb", na_qsvt);
@@ -479,7 +493,11 @@ void QSVT__::create_circuit_component_def_parity(
     if(flag_imaginary) str1 += ", imaginary.";
     YMIX::print_log(env_, str1);
 
-    circ = make_shared<QCircuit>("C-" + line_parity, env_, path_inputs_, nq_);
+    circ = make_shared<QCircuit>(
+        "C-" + line_parity, env_, path_inputs_, nq_,
+        map<string, qreal>(),
+        flag_circuit_, false
+    );
     auto  q      = circ->add_register("a-qsvt", na_qsvt)[0]; // get the least singificant QSVT ancilla;
     auto  ureg   = circ->add_register("ureg", nq_ - na_qsvt); 
     circ->save_regs();
@@ -526,16 +544,18 @@ void QSVT__::create_circuit_component_def_parity(
     circ->h(q);
     timer.StopPrint(env_);
 
-    circ->print_gates(flag_print_gates_to_file_);
+    circ->print_gates();
 }
 
 
 void QSVT__::create_controlled_component(const YSQ circ, YSQ& circ_controlled)
 {
     auto b = nq_ - 1;
-    circ_controlled = make_shared<QCircuit>(circ, circ->get_name() + "-CONTROLLED");
+    circ_controlled = make_shared<QCircuit>(
+        circ, circ->get_name() + "-CONTROLLED"
+    );
     circ_controlled->controlled({b});
-    circ_controlled->print_gates(flag_print_gates_to_file_);
+    circ_controlled->print_gates();
 }
 
 
@@ -691,6 +711,12 @@ void QSVT__::save_restart_data()
     rf_.add_vector(state_imag, "imag", "state");
 
     rf_.close();
+}
+
+
+void QSVT__::print_gates()
+{
+    oc_->print_gates();
 }
 
 
