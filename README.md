@@ -54,11 +54,13 @@ To understand the format of the `.oracle` file, see the wiki page:<br>
 https://github.com/ivanNovikau/QSVT_framework/wiki
 
 ## Run the circuit constructor:
-The circuit constructor, `qc_circuit`, can read one or several `.circuit` files to combine them and calculate the corresponding output state (`qc_circuit` always takes the zero input state).
+The circuit constructor, `qc_circuit`, can read one or several `.circuit` files to combine them into a single quantum circuit and calculate the corresponding output state (`qc_circuit` always takes the zero input state).
 The `qc_circuit` connects the circuits by comparing the register names.
 The program can produce the `.circuit` and `.tex` representations of the resulting circuit.
 
 ## Run the framework
+The framework, `qsvt`, takes the `.oracle` files of the block-encoded matrix and of the initialization circuit and produces the QSVT (QSP) circuit for the parameters described in the `.qsp` file and using the rotation angles from the `.angles` file(s).
+
 To run the framework, use the following command
 
 `[path_to_QSVT_framework]/framework/qsvt [name of oracle] [work-folder with the .qsp file] [case-to-sim]`
@@ -103,7 +105,7 @@ For `qsp`, the angles can be calculated by the following code: https://github.co
 For `qsvt`, the angles can be calculated by the following code: https://github.com/qsppack/QSPPACK
 
 The framework does not create the `.tex` description of the corresponding circuits and subcircuits, but only some `.circuit` files if `flag_circuit true` in the `.qsp` file. By default, `flag_circuit false`.
-It is highly recommended to keep `flag_circuit false` since the size of the resulting `.circuit` files for a whole QSVT (QSP) circuit might be of dozens of GB.
+It is highly recommended to keep `flag_circuit false` since the size of the resulting `.circuit` files for a whole QSVT (QSP) circuit might be of dozens of GB, and the writing of the `.circuit` file can slow down the calculations.
 
 To produce the `.tex` files for the QSVT circuit, one needs to create the `.circuit` files and then use the `qc_circuit` program to create the `.tex` files.
 
