@@ -587,22 +587,7 @@ void QCircuit::set_init_vector(YCI qb, YCI nq, YVQ ampl_vec_real, YVQ ampl_vec_i
     init_state_.push_back(init_state);
 }
 
-/**
- * !!! ATTENTION !!!: by adding init_state one by one, one creates a superposition.
- * Moreover, since at the beginning one has a zero state, this zero state is saved.
- * There is no renormalization in this method.
- */
-void QCircuit::set_init_vector(INIT_STATE__& init_state)
-{
-    setAmps(
-        c_, 
-        init_state.b_ampl, 
-        &init_state.ampl_vec_real[0], 
-        &init_state.ampl_vec_imag[0], 
-        init_state.n_ampls
-    );
-    init_state_.push_back(init_state);
-}
+
 void QCircuit::reset_init_vector(INIT_STATE__& state)
 {
     setAmps(
@@ -611,6 +596,7 @@ void QCircuit::reset_init_vector(INIT_STATE__& state)
         state.n_ampls
     );
 }
+
 
 void QCircuit::set_qubit_state(YCU id_q)
 {
@@ -626,20 +612,6 @@ void QCircuit::set_qubit_state(YCU id_q)
         exit(-1);
     }
     ib_state_[nq_ - id_q - 1] = 1;
-
-    // vector<short> bInt(nq_);
-    // bInt[id_q] = 1;
-    // auto b_ampl = YMATH::binaryToInt(bInt);
-
-    // if(env_.rank == 0) cout << "resulting integer = " << b_ampl << endl;
-
-    // INIT_STATE__ init_state;
-    // init_state.flag_defined = true;
-    // init_state.b_ampl = b_ampl;
-    // init_state.n_ampls = 1;
-    // init_state.ampl_vec_real = YVQv {1};
-    // init_state.ampl_vec_imag = YVQv {0};
-    // set_init_vector(init_state);
 }
 
 void QCircuit::set_qubit_state(YCVI ids_qs)
@@ -679,8 +651,6 @@ void QCircuit::set_reg_state(YCS name, YCI id_reg_qubit)
     }
 
     int id_circuit_qubit = reg_qubits[id_reg_qubit];
-
-    // set_qubit_state(id_circuit_qubit);
     ib_state_[nq_ - id_circuit_qubit - 1] = 1;
 }
 

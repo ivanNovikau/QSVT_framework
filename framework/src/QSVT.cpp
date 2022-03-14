@@ -2,6 +2,7 @@
 
 using namespace std;
 
+
 QSVT__::QSVT__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
  :env_(env), 
  project_name_(project_name),
@@ -70,10 +71,24 @@ void QSVT__::read_main_parameters()
         istringstream iss(line);
         iss >> key_name;
 
-        // QSP circuit precision:
+        // QSVT circuit precision:
         if(YMIX::compare_strings(key_name, "eps"))
         {
             iss >> eps_;
+            continue;
+        }
+
+        // selector how to create the initial state:
+        if(YMIX::compare_strings(key_name, "sel_init"))
+        {
+            string temp;
+            iss >> temp;
+            if(YMIX::compare_strings(temp, "vector"))
+                sel_init_ = SEL_INIT_STATE_PREP::use_init_vector;
+            if(YMIX::compare_strings(temp, "oracle"))
+                sel_init_ = SEL_INIT_STATE_PREP::use_init_oracle;
+
+            iss >> coef_time_norm_;  
             continue;
         }
 
@@ -205,169 +220,6 @@ void QSVT__::save_basic_data()
 }
 
 
-void QSVT__::init_qubits()
-{
-    unsigned n_ampl_vectors = 0; // number of amplitude vectors;
-    YVUv bqs; // starting qubits
-    YVUv nqs; // number of qubits to set
-    vector<vector<qreal>> ampl_vecs_real;
-    vector<vector<qreal>> ampl_vecs_imag;
-    unsigned n_ampl, bq, nq;
-    YVQv ampl_vec_real;
-    YVQv ampl_vec_imag;
-    bool flag_set_bits = false;
-    if(env_.rank == 0)
-    {
-        ifstream ff(fname_input_);
-        if(!ff.is_open())
-            YMIX::print_log_err(env_, "Error: there is not a file: " + fname_input_);
-
-        string line;
-        string key_name;
-        int id_bit;
-        YVIv reg;
-        while (getline(ff, line))
-        {
-            key_name = "";
-            line = YMIX::remove_comment(line);
-            if(line.find_first_not_of(' ') == string::npos)
-                continue;
-
-            std::istringstream iss(line);
-            iss >> key_name;
-
-            if(YMIX::compare_strings(key_name, "register"))
-            {
-                flag_set_bits = true;
-
-                string reg_name;
-                iss >> reg_name;
-                auto it = regs_.find(reg_name);
-                if(it == regs_.end())
-                    YMIX::print_log(env_, "WARNING: there is not a register: " + reg_name);
-
-                reg.clear();
-                unsigned nq_reg = regs_[reg_name].size();
-                while(iss >> id_bit)
-                    if(id_bit < nq_reg && id_bit >= 0)
-                        reg.push_back(id_bit);
-                    else
-                    {
-                        ostringstream ofs;
-                        ofs << "WARNING: the register " << reg_name << " has only " << nq_reg << " qubits," 
-                            <<  " while you are asking to set a qubit " << id_bit << ".";
-                        YMIX::print_log(env_, ofs.str());
-                        continue;
-                    }
-                oc_->set_reg_state(reg_name, reg);
-            }
-
-            if(YMIX::compare_strings(key_name, "amplitude"))
-            {
-                iss >> bq >> nq;
-                n_ampl = 1 << nq;
-                if(bq >= nq_)
-                {
-                    ostringstream ofs;
-                    ofs << "WARNING: an initial amplitude vector: the circuit " << oc_->get_name() 
-                        << " has only " << nq_ << " qubits, while"
-                        << " a starting qubit " << bq << " has been requested.";
-                    YMIX::print_log(env_, ofs.str());
-                    continue;
-                }
-                if(n_ampl > (1<<(nq_ - bq)))
-                {
-                    ostringstream ofs;
-                    ofs << "WARNING: an initial amplitude vector: starting from the qubit " << bq << ",\n the circuit has only " 
-                            << (nq_ - bq) << " qubits, but a vector of size " << n_ampl << " has been requested." << endl;
-                    YMIX::print_log(env_, ofs.str());
-                    continue;
-                }
-
-                bqs.push_back(bq); nqs.push_back(nq);
-
-                ampl_vec_real = YVQv(n_ampl);
-                for(unsigned i = 0; i < n_ampl; ++i)
-                    iss >> ampl_vec_real[i];
-
-                ampl_vec_imag = YVQv(n_ampl);
-                for(unsigned i = 0; i < n_ampl; ++i)
-                    iss >> ampl_vec_imag[i];
-
-                ampl_vecs_real.push_back(ampl_vec_real);
-                ampl_vecs_imag.push_back(ampl_vec_imag);
-
-                ++n_ampl_vectors;
-            }
-
-        }
-        ff.close();
-    }
-
-    // set qubits to 0 or 1:
-    if(YMPI) MPI_Bcast(&flag_set_bits, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-    if(flag_set_bits)
-        oc_->set_init_binary_state(true);
-
-    // set amplitudes of some qubits:
-    if(YMPI) MPI_Bcast(&n_ampl_vectors, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-    if(n_ampl_vectors > 0)
-    {
-        if(env_.rank > 0)
-        {
-            bqs = YVUv(n_ampl_vectors);
-            nqs = YVUv(n_ampl_vectors);
-            ampl_vecs_real = vector<vector<qreal>>(n_ampl_vectors);
-            ampl_vecs_imag = vector<vector<qreal>>(n_ampl_vectors);
-        }
-
-        if(YMPI)
-        {
-            MPI_Bcast(&bqs[0], n_ampl_vectors, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-            MPI_Bcast(&nqs[0], n_ampl_vectors, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-        }
-        
-        for(unsigned i = 0; i < n_ampl_vectors; ++i)
-        {
-            n_ampl = 1 << nqs[i];
-            if(env_.rank > 0)
-            {
-                ampl_vec_real = YVQv(n_ampl);
-                ampl_vec_imag = YVQv(n_ampl);
-            }
-            else
-            {
-                ampl_vec_real = ampl_vecs_real[i];
-                ampl_vec_imag = ampl_vecs_imag[i];
-            }
-
-            if(YMPI)
-            {
-                MPI_Bcast(&ampl_vec_real[0], nqs[i], MPI_QuEST_REAL, 0, MPI_COMM_WORLD);
-                MPI_Bcast(&ampl_vec_imag[0], nqs[i], MPI_QuEST_REAL, 0, MPI_COMM_WORLD);
-            }
-            oc_->set_init_vector(bqs[i], nqs[i], ampl_vec_real, ampl_vec_imag);
-        }
-    }
-
-    // output init states:
-    std::string str_wv, str_wv_nz;
-    oc_->get_wavefunction(
-        oc_->get_standart_output_format(), 
-        str_wv, 
-        str_wv_nz, 
-        3
-    );
-    if(env_.rank == 0)
-    {
-        std::cout << "Initial state: \n" << str_wv_nz;
-
-        YMIX::LogFile cf;
-        cf << "\nInitial state: \n" << str_wv_nz;
-    } 
-}
-
-
 void QSVT__::append(QCircuit* c)
 {
     oc_->insert_gates_from(c);
@@ -428,16 +280,32 @@ void QSVT__::read_angles_def_parity(YCS line_parity, YVQ phis, uint32_t& N_angle
 }
 
 
-void QSVT__::create_circuit(YCS name, YCCQ U)
+void QSVT__::read_block_encoding_oracle()
+{
+    YMIX::print_log(env_, "Reading the block-encoding oracle...");
+    OracleTool__* oo = new OracleTool__(
+        env_, 
+        project_name_, 
+        path_inputs_, 
+        false,
+        false,
+        false
+    );
+    u_ = oo->get_oracle_copy();
+    delete oo;
+}
+
+
+void QSVT__::create_circuit()
 { 
     auto na_qsvt = nq_; // number of ancillae specific to the QSVT circuit;
 
     // qubits from the oracle:
     map<string, unsigned> regs_oracle;
     int reg_nq = 0;
-    for(auto const& reg_name: U->get_reg_names())
+    for(auto const& reg_name: u_->get_reg_names())
     {
-        reg_nq = U->get_nq_in_reg(reg_name);
+        reg_nq = u_->get_nq_in_reg(reg_name);
         regs_oracle[reg_name] = reg_nq;
         nq_ += reg_nq;
     }
@@ -445,20 +313,20 @@ void QSVT__::create_circuit(YCS name, YCCQ U)
     // --- create an empty circuit ---
     YMIX::print_log(env_, "Initialize the framework circuit...");
     oc_ = make_unique<QCircuit>(
-        name, env_, path_inputs_, nq_,
+        type_, env_, path_inputs_, nq_,
         map<string, qreal>(),
         flag_circuit_, false
     );
 
     // add registers:
     regs_["qb"] = oc_->add_register("qb", na_qsvt);
-    for(auto const& reg_name: U->get_reg_names())
+    for(auto const& reg_name: u_->get_reg_names())
         regs_[reg_name] = oc_->add_register(reg_name, regs_oracle[reg_name]);
     oc_->save_regs();
     oc_->set_standart_output_format();
 
     // indicate the position of ancillae:
-    auto ancs = U->get_ancillae();
+    auto ancs = u_->get_ancillae();
     ancs.insert(
         ancs.end(), 
         regs_["qb"].begin(), 
@@ -466,10 +334,8 @@ void QSVT__::create_circuit(YCS name, YCCQ U)
     );
     oc_->set_ancillae(ancs);
 
-    // --- Store the oracle ---
-    u_ = make_shared<const QCircuit>(U);
-
-    auto conjU = make_shared<QCircuit>(U);
+    // ---Create the complex_conjugated oracle ---
+    auto conjU = make_shared<QCircuit>(u_);
     conjU->conjugate_transpose();
     iu_ = make_shared<QCircuit>(conjU);
 
@@ -561,13 +427,48 @@ void QSVT__::create_controlled_component(const YSQ circ, YSQ& circ_controlled)
 
 void QSVT__::set_init_vector()
 {
-    int N;
-    int nq;
-    vector<qreal> ampl_vec_real;
-    vector<qreal> ampl_vec_imag;
-
-    if(!flag_restart_)
+    // -------------------------------------------------------------------------
+    // --- Initialization via the oracle ---
+    // -------------------------------------------------------------------------
+    if(!flag_restart_ && sel_init_ == SEL_INIT_STATE_PREP::use_init_oracle)
     {
+        YMIX::print_log(env_, "----------------------------------------------------");
+        YMIX::print_log(env_, "Reading oracle for the circuit initialization...");
+        YMIX::print_log(env_, "----------------------------------------------------");
+        OracleTool__* oo = new OracleTool__(
+            env_, 
+            project_name_ + "_init", 
+            path_inputs_, 
+            false,
+            false,
+            false
+        );
+        oc_init_ = oo->get_oracle_copy();
+        delete oo;
+
+        // the initialization oracle is inserted into the QSVT circuit qubit by qubit 
+        //  starting from the bottom (starting from the least significant qubit):
+        auto ts_box = YMATH::get_range(0, oc_init_->get_n_qubits());
+        oc_->insert_gates_from(
+            oc_init_.get(), 
+            make_shared<Box__>("INIT", ts_box, YVIv {})
+        );
+        oc_->generate();
+    }
+
+    // -------------------------------------------------------------------------
+    // --- Initialization via the initial vector ---
+    // -------------------------------------------------------------------------
+    if(!flag_restart_ && sel_init_ == SEL_INIT_STATE_PREP::use_init_vector)
+    {
+        YMIX::print_log(env_, "----------------------------------------------------");
+        YMIX::print_log(env_, "Circuit initialization via a pre-calculated vector...");
+        YMIX::print_log(env_, "----------------------------------------------------");
+
+        int N, nq;
+        vector<qreal> ampl_vec_real;
+        vector<qreal> ampl_vec_imag;
+
         // read text from the file
         string data;
         {
@@ -631,23 +532,39 @@ void QSVT__::set_init_vector()
                 continue;
             }
         }
-    }else
+
+        nq = log2(N);
+        oc_->set_init_vector(0, nq, ampl_vec_real, ampl_vec_imag);
+    }
+
+    // -------------------------------------------------------------------------
+    // --- Initialization via the restart fiel ---
+    // -------------------------------------------------------------------------
+    if(flag_restart_)
     {
+        YMIX::print_log(env_, "----------------------------------------------------");
+        YMIX::print_log(env_, "Initial state is read from the restart file...");
+        YMIX::print_log(env_, "----------------------------------------------------");
+
+        int N, nq;
+        vector<qreal> ampl_vec_real;
+        vector<qreal> ampl_vec_imag;
+
         // --- read the initial state from the restart file ---
         rf_.open_r();
         rf_.read_scalar(coef_time_norm_, "coef-time-norm", "parameters");
         rf_.read_vector(ampl_vec_real,   "real", "state");
         rf_.read_vector(ampl_vec_imag,   "imag", "state");
         rf_.close();
+
+        N = ampl_vec_real.size();
+        nq = log2(N);
+        oc_->set_init_vector(0, nq, ampl_vec_real, ampl_vec_imag);
     }
-    
-    // copy data to other processors
-    nq = log2(N);
 
-    // set an initial state
-    oc_->set_init_vector(0, nq, ampl_vec_real, ampl_vec_imag);
-
-    // output init states:
+    // -------------------------------------------------------------------------
+    // --- Save the initial state ---
+    // -------------------------------------------------------------------------
     std::string str_out;
     list<vector<short>> states;
     vector<Complex> ampls;
@@ -660,19 +577,10 @@ void QSVT__::set_init_vector()
         3
     );
     YMIX::print_log(env_, "Initial state: \n"s + str_out);
-
-    // --- Save the normalization coefficient and the initial state to .hdf5 file ---
     hfo_.open_w();
-
-    // normalization coefficient:
     hfo_.add_scalar(coef_time_norm_, "normalization-coef", "basic");
-
-    // amplitudes:
     hfo_.add_vector(ampls, "initial-amplitudes", "states");
-
-    // states:
     hfo_.add_matrix(states, "initial-states", "states");
-
     hfo_.close(); 
 }
 

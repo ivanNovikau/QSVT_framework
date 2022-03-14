@@ -1,7 +1,6 @@
 #include "../include/QDYN.h"
 #include "../include/QMI.h"
 #include "../include/QSP.h"
-#include "../include/oracletool.h"
 using namespace std;
 
 /**
@@ -65,19 +64,6 @@ int main(int argc, char *argv[])
     // --- QSVD computation ---
     try
     {
-        // --- Launch a tool to create an oracle from a given description ---
-        // -> oracle description is given in a [path_input]/[pname].oracle file;
-        OracleTool__* oo = new OracleTool__(
-            env, 
-            pname, 
-            path_input, 
-            false,
-            false,
-            false
-        );
-        YSQ oc_oracle = oo->get_oracle_copy();
-        delete oo;
-
         shared_ptr<QSVT__> qsvd;
 
         // --- QSP: Simulation of the time evolution using QSP ---
@@ -107,8 +93,11 @@ int main(int argc, char *argv[])
         // --- Read QSVD angles ---
         qsvd->read_angles();
 
+        // --- Read the oracle, where the system matrix is block-encoded ---
+        qsvd->read_block_encoding_oracle();
+
         // --- pass the oracle to the QSVD framework to create a QSP circuit ---
-        qsvd->create_circuit("QSVT", oc_oracle);
+        qsvd->create_circuit();
 
         // --- Print initial QSVT parameters ---
         qsvd->print_init_data();

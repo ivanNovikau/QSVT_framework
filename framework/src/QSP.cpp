@@ -7,7 +7,9 @@ QSP__::QSP__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
     : QSVT__(env, project_name, path_inputs)
 {
     nq_ = 2; // the circuit has two specific ancillar (+ qubits from the oracle)
+    type_ = "QSP";
 }
+
 
 QSP__::~QSP__()
 {
@@ -17,6 +19,7 @@ QSP__::~QSP__()
     cu_.reset();
     icu_.reset();
 }
+
 
 bool QSP__::read_special_parameters(std::istringstream& iss, std::string& key_name)
 {
@@ -58,6 +61,7 @@ bool QSP__::read_special_parameters(std::istringstream& iss, std::string& key_na
     }
     return false;
 }
+
 
 void QSP__::read_angles()
 {
@@ -124,12 +128,14 @@ void QSP__::read_angles()
     hfo_.close();
 }
 
+
 void QSP__::save_basic_specific_data()
 {
     hfo_.add_scalar(f_par_, "dt", "basic");
     hfo_.add_vector(t_grid_, "time-grid", "basic");
     hfo_.add_scalar(eps_, "qsp-initial-precision", "basic");
 }
+
 
 void QSP__::create_circuit_components()
 {
@@ -147,6 +153,7 @@ void QSP__::create_circuit_components()
     create_W();
     create_iW();
 }
+
 
 void QSP__::create_W()
 { 

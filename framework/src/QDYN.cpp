@@ -7,6 +7,7 @@ QDYN__::QDYN__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
     : QSVT__(env, project_name, path_inputs)
 {
     nq_ = 2; // the circuit has two specific ancillar (+ qubits from the oracle)
+    type_ = "QSVT";
 }
 
 

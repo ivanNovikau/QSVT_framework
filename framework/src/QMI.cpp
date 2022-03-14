@@ -7,6 +7,7 @@ QMI__::QMI__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
     : QSVT__(env, project_name, path_inputs)
 {
     nq_ = 1; // the circuit has a single specific ancilla (+ qubits from the oracle)
+    type_ = "QSVT";
 }
 
 

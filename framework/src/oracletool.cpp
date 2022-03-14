@@ -17,7 +17,7 @@ OracleTool__::OracleTool__(
 
     pname_ = pname;
     path_inputs_ = path_to_inputs;
-    ifname_ = path_inputs_ + "/" + pname_ + FORMAT_ORACLETOOL;
+    ifname_ = path_inputs_ + "/" + pname_ + FORMAT_ORACLE;
 
     string data;
     char cdata[YSIZE_CHAR_ARRAY];

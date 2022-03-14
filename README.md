@@ -71,7 +71,9 @@ The framework searches for the following files in the directory `[work-folder wi
 
 `[name of oracle].oracle`: contains the circuit, which encodes the Hamiltonian of the simulated system;
 
-`[name of oracle].init_state`: contains the initial state vector;
+The QSVT (QSP) circuit is initialized with a quantum state, which should be read from the file
+`[name of oracle].init_state` if `sel_init vector [matrix-norm]` is set in the `.qsp` file.
+If `sel_init oracle [matrix-norm]`, then the circuit from the `[name of oracle]_init.oracle` file is used to initialize the QSVT circuit.
 
 `.angles`: file(s), which contain(s) the rotation angles for the QSP (QSVT) approximation.
 
@@ -86,7 +88,7 @@ For `[case-to-sim] = qsp`, the `.angles` file has the following name:
 
 `angles_t[t*1000]_eps[-log10(eps)].angles`,
 
-where `t` is the normalized time interval to simulate (`t = t_orig*norm`, where `norm = H/H_norm`: `|H_norm| <= 1`).
+where `t` is the normalized time interval to simulate (`t = t_orig*[matrix-norm]`, where `[matrix-norm] = H/H_norm`: `|H_norm| <= 1`).
 
 For `[case-to-sim] = qsvt-dyn`, one needs two `.angles` files:
 

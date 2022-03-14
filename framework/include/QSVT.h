@@ -1,12 +1,10 @@
 #ifndef QSVT_H
 #define QSVT_H
 
-
-#include "../include/QCircuit.h"
+#include "../include/oracletool.h"
 
 /**
- * @brief Quantum Singular Value Transformation
- * 
+ * @brief Quantum Singular Value Transformation (QSVT) framework.
  */
 class QSVT__
 {
@@ -25,23 +23,9 @@ public:
     void prepare_hdf5_files();
     void print_init_data();
 
-    /**
-     * @brief Create a QSP circuit based on a provided oracle \p U;
-     * add two ancillae qubits: b and q.
-     * The ancilla b is a 1-qubit register, where single-qubit rotations sit.
-     * @param name name of the QSP circuit.
-     */
-    void create_circuit(YCS name, YCCQ U);
+    void read_block_encoding_oracle();
 
-    /**
-     * @brief Initialize registers from an input file;
-     * FORMATS:
-     * register name_register id_bit1 id_bit2 etc.
-     * amplitude start_qubit n_qubits amplitude_vector_of_size_2^(n_qubits);
-     * --> use a keyword skip to comment a line;
-     * --> the resulting state might be non-normalized.
-     */
-    void init_qubits();
+    void create_circuit();
 
     /**
      * @brief Read an initial state.
@@ -107,11 +91,13 @@ protected:
     QuESTEnv env_;
     YMIX::YTimer timer_;
 
+    std::string type_;
+
     std::string project_name_;
 
     std::string path_inputs_; // path to input files
     std::string fname_input_; // input file name;
-    std::string fname_init_;  // file with an initial state;
+    std::string fname_init_;  // file with an initial state (represented as a vector);
 
     bool flag_restart_; // flag to read initial state from a restart file
 
@@ -145,6 +131,7 @@ protected:
     bool flag_print_zero_states_; // print or not zero states to the out log file;
     bool flag_print_all_states_; // print or not all states to the out log file;
 
+    YSCQ oc_init_; // oracle to initialize the QSVT circuit;
     YSCQ u_; // oracle circuit;
     YSCQ iu_; // inversed oracle circuit;
 
@@ -155,6 +142,10 @@ protected:
     YSQ ceven_controlled_; // controlled even component of the QSVT circuit;
 
     qreal coef_time_norm_; // time normalization factor;
+
+    SEL_INIT_STATE_PREP sel_init_; // how to create the initial state;
+
+
 };
 
 

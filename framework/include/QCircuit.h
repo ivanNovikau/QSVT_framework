@@ -56,7 +56,7 @@ class QCircuit{
     void print_gates();
 
     inline std::string get_name(){ return name_; }
-    inline unsigned get_n_qubits(){ return nq_; }
+    inline unsigned get_n_qubits() const { return nq_; }
     inline int get_n_gates(){ return gates_.size(); }
     std::map<std::string, YVIv> get_regs(){ return regs_; }
     YVSv get_reg_names() const { return regnames_; }
@@ -160,7 +160,6 @@ class QCircuit{
      * @param[in] ampl_vec_imag vector with imaginary parts of amplitudes of size 2^nq;
      */
     void set_init_vector(YCI qb, YCI nq, YVQ ampl_vec_real, YVQ ampl_vec_imag);
-    void set_init_vector(INIT_STATE__& init_state);
     void reset_init_vector(INIT_STATE__& state);
 
     /**

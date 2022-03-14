@@ -94,9 +94,7 @@
 #define YVVI std::vector<std::vector<int>>&
 #define YVVIv std::vector<std::vector<int>>
 
-
 #define YGV YGlobalVariables
-
 
 #define LOG_INDENT "    "
 #define WHITESPACE " \n\r\t\f\v"
@@ -108,7 +106,7 @@
 #define TEX_CIRCUIT_LENGTH 10
 
 #define COMMENT_ORACLE    "//"
-#define FORMAT_ORACLETOOL ".oracle"s 
+#define FORMAT_ORACLE     ".oracle"s 
 #define FORMAT_PROFILE    ".condR_profile"s
 #define FORMAT_CIRCUIT    ".circuit"s
 #define FORMAT_TEX        ".tex"s
@@ -118,6 +116,11 @@
 #define FORMAT_INIT       ".init_state"s
 #define ENDING_FORMAT_OUTPUT "_OUTPUT.hdf5"s
 #define ENDING_FORMAT_RESTART "_RESTART.hdf5"s
+
+
+enum SEL_INIT_STATE_PREP {use_init_vector, use_init_oracle};
+
+
 
 // ------------------------------------------
 // --- Structure with an initial state --- 
