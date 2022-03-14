@@ -12,11 +12,12 @@ class OracleTool__
 public:
     /**
      * @brief Construct a new OracleTool__ object
-     * @param project_name  is a project name that defines names of input and output files.
-     * @param path_to_inputs is path to input files.
-     * @param flag_compute_output if True, compute output states, otherwise only input states
-     * @param flag_circuit print or not .circuit files;
-     * @param flag_tex print or not .tex files;
+     * @param[in] project_name  is a project name that defines names of input and output files.
+     * @param[in] path_to_inputs is path to input files.
+     * @param[in] flag_compute_output if True, compute output states, otherwise only input states
+     * @param[in] flag_circuit print or not .circuit files;
+     * @param[in] flag_tex print or not .tex files;
+     * @param[in] flag_layers to calculate or not the layer for each gate;
      */
     OracleTool__(
         const QuESTEnv& env, 
@@ -24,7 +25,8 @@ public:
         YCS path_to_inputs, 
         YCB flag_compute_output,
         YCB flag_circuit,
-        YCB flag_tex
+        YCB flag_tex,
+        YCB flag_layer
     );
     ~OracleTool__();
 
@@ -68,6 +70,7 @@ private:
     bool flag_compute_output_; // if True, compute output states from an oracle;
     bool flag_circuit_; // print or not .circuit files;
     bool flag_tex_; // print or not .circuit files;
+    bool flag_layers_; // to calculate or not the layers;
 
     /** 
      * several initial states:

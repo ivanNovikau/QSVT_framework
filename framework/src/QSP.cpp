@@ -166,7 +166,7 @@ void QSP__::create_W()
     cw_ = make_shared<QCircuit>(
         "W", env_, path_inputs_, nq_,
         map<string, qreal>(),
-        flag_circuit_, false
+        flag_circuit_, false, flag_layers_
     );
 
     int  rb   = cw_->add_register("b", 1)[0];

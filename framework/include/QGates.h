@@ -91,9 +91,9 @@ class Gate__
                 ids_qubit_act_on.insert(ids_qubit_act_on.end(), conds_.begin(), conds_.end());
         }
 
-        void set_layer(const uint64_t& id_layer){ id_layer_ = id_layer; }
+        void set_layer(const int64_t& id_layer){ id_layer_ = id_layer; }
 
-        uint64_t get_layer() const { return id_layer_; }
+        int64_t get_layer() const { return id_layer_; }
 
         inline void set_flag_start(YCB flag_start){ flag_start_ = flag_start; }
         inline bool get_flag_start(){ return flag_start_; }
@@ -104,7 +104,7 @@ class Gate__
 
         virtual void write_tex(
             std::vector<std::vector<std::string>>& tex_lines, 
-            const uint64_t& id_layer,
+            const int64_t& id_layer,
             YCU nq
         );
 
@@ -172,7 +172,7 @@ class Gate__
         inline
         std::string tex_gate_width(
             std::vector<std::vector<std::string>>& tex_lines, 
-            const uint64_t& id_layer,
+            const int64_t& id_layer,
             YCU nq,
             YCI id_top_q
         ){
@@ -187,7 +187,7 @@ class Gate__
         inline
         std::string tex_get_gate_name(
             std::vector<std::vector<std::string>>& tex_lines, 
-            const uint64_t& id_layer,
+            const int64_t& id_layer,
             YCU nq,
             YCS l_brackets = "()",
             YCB flag_inv_par = false
@@ -220,7 +220,7 @@ class Gate__
         inline
         void tex_add_control(
             std::vector<std::vector<std::string>>& tex_lines, 
-            const uint64_t& id_layer,
+            const int64_t& id_layer,
             YCU nq,
             YCI id_top_q
         ){
@@ -255,7 +255,7 @@ class Gate__
         YSM un_a_ = nullptr;
         YSM un_b_ = nullptr;
 
-        uint64_t id_layer_; // id of the circuit layer, where the gate sits on;
+        int64_t id_layer_; // id of the circuit layer, where the gate sits on;
 
         bool flag_conj_; // whether the gate is conjugated or not;
         bool flag_start_ = true; // is it the left side of the box? 
@@ -269,7 +269,7 @@ public:
     void write_to_file(YMIX::File& cf){}
     void write_tex(
             std::vector<std::vector<std::string>>& tex_lines, 
-            const uint64_t& id_layer,
+            const int64_t& id_layer,
             YCU nq
     ){}
 };
@@ -340,7 +340,7 @@ class X__ : public SQGate__
 
         void write_tex(
             std::vector<std::vector<std::string>>& tex_lines, 
-            const uint64_t& id_layer,
+            const int64_t& id_layer,
             YCU nq
         ){
             std::string l_nq_gate;
@@ -504,7 +504,7 @@ class Phase__ : public sR__
 
         void write_tex(
             std::vector<std::vector<std::string>>& tex_lines, 
-            const uint64_t& id_layer,
+            const int64_t& id_layer,
             YCU nq
         ){
             std::string l_nq_gate, l_name;

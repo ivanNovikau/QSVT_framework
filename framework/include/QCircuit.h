@@ -25,12 +25,14 @@ class QCircuit{
      * @param[in] constants dictionary of constans used to create the circuit;
      * @param[in] flag_circuit print or not .circuit files (by default, false);
      * @param[in] flag_tex print or not .tex files (by default, false);
+     * @param[in] flag_layers to calculate or not the layer for each gate;
      * */
     QCircuit(
         YCS name, const QuESTEnv& env, YCS path_to_output="./", YCU nq = 0,
         const std::map<std::string, qreal>& constants = std::map<std::string, qreal>(),
         YCB flag_circuit = false,
-        YCB flag_tex = false
+        YCB flag_tex = false,
+        YCB flag_layers = false
     );
 
     /**
@@ -383,7 +385,7 @@ class QCircuit{
             oo->add_control_qubits(cs);
         gates_.push_back(oo);
 
-        oo_layers_->add_gate(oo);
+        if(flag_layers_) oo_layers_->add_gate(oo);
 
         return get_the_circuit();
     }
@@ -399,7 +401,7 @@ class QCircuit{
             oo->add_control_qubits(cs);
         gates_.push_back(oo);
 
-        oo_layers_->add_gate(oo);
+        if(flag_layers_) oo_layers_->add_gate(oo);
 
         return get_the_circuit();
     }
@@ -415,7 +417,7 @@ class QCircuit{
             oo->add_control_qubits(cs);
         gates_.push_back(oo);
 
-        oo_layers_->add_gate(oo);
+        if(flag_layers_) oo_layers_->add_gate(oo);
 
         return get_the_circuit();
     }
@@ -682,6 +684,9 @@ private:
 
     //print or not .tex files:
     bool flag_tex_;
+
+    // to calculate or not the layers;
+    bool flag_layers_; 
 };
 
 

@@ -34,7 +34,7 @@ void Gate__::correct_qubits(YCVI regs)
 
 void Gate__::write_tex(
             std::vector<std::vector<std::string>>& tex_lines, 
-            const uint64_t& id_layer,
+            const int64_t& id_layer,
             YCU nq
 ){
     std::string l_nq_gate, l_name;

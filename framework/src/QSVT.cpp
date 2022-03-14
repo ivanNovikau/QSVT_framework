@@ -16,6 +16,7 @@ QSVT__::QSVT__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
     flag_circuit_ = false;
     flag_print_zero_states_ = true;
     flag_print_all_states_ = false;
+    flag_layers_ = false;
 
     // --- Set the name of the restart file ---
     rf_.set_name(path_inputs_ + "/" + project_name_ + ENDING_FORMAT_RESTART);
@@ -109,10 +110,10 @@ void QSVT__::read_main_parameters()
         {
             string temp;
             iss >> temp;
-            if(YMIX::compare_strings(temp, "false"))
-                flag_print_zero_states_ = false;
-            else
+            if(YMIX::compare_strings(temp, "true"))
                 flag_print_zero_states_ = true;
+            else
+                flag_print_zero_states_ = false;
             continue;
         }
 
@@ -132,6 +133,18 @@ void QSVT__::read_main_parameters()
         if(YMIX::compare_strings(key_name, "flag_restart"))
         {
             iss >> flag_restart_;
+            continue;
+        }
+
+        // flag to calculate layers:
+        if(YMIX::compare_strings(key_name, "flag_layers"))
+        {
+            string temp;
+            iss >> temp;
+            if(YMIX::compare_strings(temp, "true"))
+                flag_layers_ = true;
+            else
+                flag_layers_ = false;
             continue;
         }
 
@@ -289,6 +302,7 @@ void QSVT__::read_block_encoding_oracle()
         path_inputs_, 
         false,
         false,
+        false,
         false
     );
     u_ = oo->get_oracle_copy();
@@ -315,7 +329,7 @@ void QSVT__::create_circuit()
     oc_ = make_unique<QCircuit>(
         type_, env_, path_inputs_, nq_,
         map<string, qreal>(),
-        flag_circuit_, false
+        flag_circuit_, false, flag_layers_
     );
 
     // add registers:
@@ -362,7 +376,7 @@ void QSVT__::create_circuit_component_def_parity(
     circ = make_shared<QCircuit>(
         "C-" + line_parity, env_, path_inputs_, nq_,
         map<string, qreal>(),
-        flag_circuit_, false
+        flag_circuit_, false, flag_layers_
     );
     auto  q      = circ->add_register("a-qsvt", na_qsvt)[0]; // get the least singificant QSVT ancilla;
     auto  ureg   = circ->add_register("ureg", nq_ - na_qsvt); 
@@ -439,6 +453,7 @@ void QSVT__::set_init_vector()
             env_, 
             project_name_ + "_init", 
             path_inputs_, 
+            false,
             false,
             false,
             false

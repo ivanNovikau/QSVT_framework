@@ -9,13 +9,15 @@ QCircuit::QCircuit(
     YCU nq, 
     const std::map<std::string, qreal>& constants,
     YCB flag_circuit,
-    YCB flag_tex
+    YCB flag_tex,
+    YCB flag_layers
 ) :
 name_(name),
 env_(env),
 path_to_output_(path_to_output),
 flag_circuit_(flag_circuit),
-flag_tex_(flag_tex)
+flag_tex_(flag_tex),
+flag_layers_(flag_layers)
 {
     timer_.Start();
     nq_ = 0;
@@ -52,7 +54,7 @@ void QCircuit::create(YCU nq)
     create_tex_file();
     initZeroState(c_);
 
-    oo_layers_ = make_shared<CircuitLayers__>(nq_);
+    if(flag_layers_) oo_layers_ = make_shared<CircuitLayers__>(nq_);
 }
 
 
@@ -80,6 +82,7 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
 
     flag_circuit_ = oc->flag_circuit_;
     flag_tex_     = oc->flag_tex_;
+    flag_layers_  = oc->flag_layers_;
 
     tex_noc_ = vector<uint64_t>(oc->tex_noc_);
     tex_lines_ = vector<vector<string>>(oc->tex_lines_);
@@ -94,7 +97,7 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
         gates_.push_back(gate_copy);
     }
     constants_ = map<string, qreal>(oc->constants_);
-    oo_layers_ = make_shared<CircuitLayers__>(oc->oo_layers_);
+    if(flag_layers_) oo_layers_ = make_shared<CircuitLayers__>(oc->oo_layers_);
 }
 
 
@@ -344,11 +347,8 @@ void QCircuit::conjugate_transpose()
     reverse(gates_.begin(), gates_.end());
     for(auto& gate: gates_)
     {
-        //cout << "Inversing " << gate->get_name() << endl;
         gate->conjugate_transpose();
-        gate->set_layer(
-            oo_layers_->get_n_layers() - gate->get_layer()
-        );
+        if(flag_layers_) gate->set_layer(oo_layers_->get_n_layers() - gate->get_layer());
     }  
 }
 
@@ -358,7 +358,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
     if(box)
     {
         YSG oo = box->copy_gate();
-        oo_layers_->add_gate(oo);
+        if(flag_layers_) oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
 
@@ -372,7 +372,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
 
             gate_copy->conjugate_transpose();
             gate_copy->correct_qubits(regs_new);
-            oo_layers_->add_gate(gate_copy);
+            if(flag_layers_) oo_layers_->add_gate(gate_copy);
             gates_.push_back(gate_copy);
         }
     }
@@ -382,7 +382,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
         {
             auto gate_copy = gate->copy_gate();
             gate_copy->correct_qubits(regs_new);
-            oo_layers_->add_gate(gate_copy);
+            if(flag_layers_) oo_layers_->add_gate(gate_copy);
             gates_.push_back(gate_copy);
         }
     }
@@ -391,7 +391,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
     {
         YSG oo = box->copy_box();
         oo->set_flag_start(false);
-        oo_layers_->add_gate(oo);
+        if(flag_layers_) oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
 }
@@ -401,13 +401,13 @@ void QCircuit::insert_gates_from(const QCircuit* of, YCCB box)
     if(box)
     {
         YSG oo = box->copy_gate();
-        oo_layers_->add_gate(oo);
+        if(flag_layers_) oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
 
     for(const auto& gate: of->gates_)
     {
-        // !!! do not correct here the gate layers !!!
+        // !!! here, do not add the inserted gates to the layers !!!
         gates_.push_back(gate);
     }
         
@@ -415,7 +415,7 @@ void QCircuit::insert_gates_from(const QCircuit* of, YCCB box)
     {
         YSG oo = box->copy_box();
         oo->set_flag_start(false);
-        oo_layers_->add_gate(oo);
+        if(flag_layers_) oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
 }

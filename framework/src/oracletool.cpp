@@ -7,11 +7,13 @@ OracleTool__::OracleTool__(
     YCS path_to_inputs, 
     YCB flag_compute_output,
     YCB flag_circuit,
-    YCB flag_tex
+    YCB flag_tex,
+    YCB flag_layers
 ){
     flag_compute_output_ = flag_compute_output;
     flag_circuit_ = flag_circuit;
     flag_tex_ = flag_tex;
+    flag_layers_ = flag_layers;
 
     env_ = env;
 
@@ -227,7 +229,7 @@ void OracleTool__::read_circuit_declaration(YISS istr)
                 ocs_[circ_name] = make_shared<QCircuit>(
                     circ_name, env_, path_inputs_, nq_circ, 
                     constants_,
-                    flag_circuit_, flag_tex_
+                    flag_circuit_, flag_tex_, flag_layers_
                 );
             YSQ oc = ocs_[circ_name];
 

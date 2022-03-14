@@ -3,7 +3,7 @@
 
 
 // dt, nt_points
-t_grid  1.782 25
+t_grid  1.782 1
 
 // precision of the QSP circuit (precision of the resulting signal is ~10*eps)
 eps      1e-6
@@ -19,8 +19,9 @@ sel_init  oracle   1.410e-01
 //	for a complete QSP (QSVT) circuits:
 flag_circuit true
 
-// whether to print zero-ancilla states to console:
+// should all zero-states be printed to console:
 flag_print_zero_states false
 
-// whether to print all states to console
+// should all states be printed to console
 flag_print_all_states false
+

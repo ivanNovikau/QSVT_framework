@@ -3,7 +3,8 @@ using namespace std;
 
 /**
  * @brief To launch the oracletool.
- * @param argv oracletool, [project_name], [path_to_input_files], [flag_compute_output]
+ * @param argv oracletool, [project_name], [path_to_input_files], [flag_compute_output], 
+ *  [flag-circuit] [flag-tex] [tex-circuit-length] [flag-layers]
  */
 int main(int argc, char *argv[])
 {
@@ -64,6 +65,12 @@ int main(int argc, char *argv[])
             "Circuit length in the .tex files = %d", 
             YGV::tex_circuit_length
         );  
+
+    // flag to calculate layers:
+    bool flag_layers = false;
+    if(argc > 7) flag_layers = stoi(string (argv[7]));
+    if(flag_layers) YMIX::print_log(env, "Calculate layers for each gate.");
+    else            YMIX::print_log(env, "Do not calculate layers.");
     
     try
     {
@@ -74,7 +81,8 @@ int main(int argc, char *argv[])
             path_input, 
             flag_compute_output,
             flag_circuit,
-            flag_tex
+            flag_tex,
+            flag_layers
         );
         
         // launch the circuit with different input states:

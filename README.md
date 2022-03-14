@@ -117,7 +117,7 @@ To create the `.circuit` and `.tex` files of the `.oracle` circuits, one should 
 
 # Simulations
 
-## Cold linear plasma XW waves in 1-D space:
+## Cold linear plasma XW waves in 1-D space
 The corresponding simulations using the QSP with a hermitian Hamiltonian are given in the following directories:
 
 `./simulations/XW_waves/small-case`
@@ -126,7 +126,7 @@ The corresponding simulations using the QSP with a hermitian Hamiltonian are giv
 The `small-case` is the simulation with `Nx = 64` spatial points (`nj 6` in `small-case\*.oracle` files).
 This simulation can be used to test the QSP computation.
 
-The `ref-case`, which is presented in Ref. 1, has `Nx = 1024` spatial points (`nj 10` in `small-case\*.oracle` files).
+The `ref-case`, which is presented in Ref. 1, has `Nx = 1024` spatial points (`nj 10` in `ref-case\*.oracle` files).
 
 
 

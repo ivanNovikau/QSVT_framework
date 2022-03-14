@@ -99,7 +99,9 @@ protected:
     std::string fname_input_; // input file name;
     std::string fname_init_;  // file with an initial state (represented as a vector);
 
-    bool flag_restart_; // flag to read initial state from a restart file
+    bool flag_restart_; // flag to read initial state from a restart file;
+
+    bool flag_layers_; // to calculate or not the layers;
 
     // an .hdf5 file where output data are to write down:
     YMIX::H5File hfo_;
