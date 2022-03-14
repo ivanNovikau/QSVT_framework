@@ -23,6 +23,7 @@ framework/build_*/qsvt
 *.ris
 *.log
 *.cmake
+*.tex
 
 python3
 magick

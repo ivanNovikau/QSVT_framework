@@ -114,13 +114,33 @@ To produce the `.tex` files for the QSVT circuit, one needs to create the `.circ
 Remark: the framework does not produce the `.circuit` files of the block-encoded matrix (described in the `.oracle` files) even if `flag_circuit true`.
 To create the `.circuit` and `.tex` files of the `.oracle` circuits, one should use the `oracletool`.
 
-## References
+
+# Simulations
+
+## Cold linear plasma XW waves in 1-D space:
+The corresponding simulations using the QSP with a hermitian Hamiltonian are given in the following directories:
+
+`./simulations/XW_waves/small-case`
+`./simulations/XW_waves/ref-case`
+
+The `small-case` is the simulation with `Nx = 64` spatial points (`nj 6` in `small-case\*.oracle` files).
+This simulation can be used to test the QSP computation.
+
+The `ref-case`, which is presented in Ref. 1, has `Nx = 1024` spatial points (`nj 10` in `small-case\*.oracle` files).
+
+
+
+
+# References
 1. QSP for simulating cold plasma waves: https://arxiv.org/abs/2112.06086<br>
 2. QuEST quantum simulator: https://www.nature.com/articles/s41598-019-47174-9<br>
 3. Hamiltonian Simulation by Qubitization: https://quantum-journal.org/papers/q-2019-07-12-163/<br>
 4. Quantum Singular Value Transformation (QSVT): https://dl.acm.org/doi/10.1145/3313276.3316366<br>
 5. Calculation of the QSP angles: https://quantum-journal.org/papers/q-2019-10-07-190/<br>
 6. Calculation of the QSVT angles: https://journals.aps.org/pra/abstract/10.1103/PhysRevA.103.042419<br>
+
+
+
 
 
 

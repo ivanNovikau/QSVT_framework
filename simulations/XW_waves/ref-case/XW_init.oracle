@@ -1,0 +1,21 @@
+// ../../../framework/build_oracle/oracletool XW_init ./    1  0  1  10
+
+CONSTANTS
+nj  10
+jq1 460   
+END_CONSTANTS
+
+CIRCUITS_DECLARATION
+INIT 2  d 3 0 j <nj> 0
+END_CIRCUITS_DECLARATION
+
+
+INPUT_STATES   INIT 
+END_INPUT_STATES
+
+
+CIRCUIT_STRUCTURE INIT
+gate X d 5 		end_gate
+gate H j 1 		end_gate
+gate X j <jq1> 	end_gate
+END_CIRCUIT_STRUCTURE
