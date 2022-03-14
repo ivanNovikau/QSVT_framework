@@ -3,7 +3,7 @@ using namespace std;
 
 /**
  * @brief To launch the oracletool.
- * @param argv oracletool, [project_name], [path_to_input_files], [flag_compute_output], 
+ * @param argv oracletool [project_name] [path_to_input_files] [flag_compute_output] 
  *  [flag-circuit] [flag-tex] [tex-circuit-length] [flag-layers]
  */
 int main(int argc, char *argv[])

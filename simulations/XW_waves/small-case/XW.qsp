@@ -1,9 +1,8 @@
 // Launch from the current folder.
 // ../../../framework/build_framework/qsvt XW ./ qsp
 
-
 // dt, nt_points
-t_grid  1.782 1
+t_grid  1.782 25
 
 // precision of the QSP circuit (precision of the resulting signal is ~10*eps)
 eps      1e-6
@@ -17,7 +16,7 @@ sel_init  oracle   1.410e-01
 // whether to write description of the circuit gates to the .circuit files:
 // Attention: if true, a huge .txt file (~10 GB) can be created 
 //	for a complete QSP (QSVT) circuits:
-flag_circuit true
+flag_circuit false
 
 // should all zero-states be printed to console:
 flag_print_zero_states false

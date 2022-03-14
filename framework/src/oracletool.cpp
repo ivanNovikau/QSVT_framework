@@ -9,76 +9,20 @@ OracleTool__::OracleTool__(
     YCB flag_circuit,
     YCB flag_tex,
     YCB flag_layers
+) : BaseTool__(
+    env, pname, path_to_inputs, 
+    flag_compute_output, flag_circuit, flag_tex, flag_layers
 ){
-    flag_compute_output_ = flag_compute_output;
-    flag_circuit_ = flag_circuit;
-    flag_tex_ = flag_tex;
-    flag_layers_ = flag_layers;
-
-    env_ = env;
-
-    pname_ = pname;
-    path_inputs_ = path_to_inputs;
-    ifname_ = path_inputs_ + "/" + pname_ + FORMAT_ORACLE;
-
-    string data;
-    char cdata[YSIZE_CHAR_ARRAY];
-    if(env_.rank == 0)
-    {
-        string current_path = filesystem::current_path();
-        YMIX::print_log(env_, "Current path: " + current_path);
-        YMIX::print_log(env_, "\n*** Reading INPUT FILE ***");
-        read_input_file(data);
-    }
-
-    int size_data;
-    if(env_.rank == 0) 
-    {
-        if(YSIZE_CHAR_ARRAY < data.size()) 
-            throw "Error: Size of the char array is too small to save the input file."s;
-
-        strcpy(cdata, data.c_str());
-        size_data = data.size();
-    }
-
-    if(YMPI)
-    {
-        MPI_Bcast(&size_data, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
-        MPI_Bcast(cdata, size_data+1, MPI_CHAR, 0, MPI_COMM_WORLD);
-    }
-    
-    if(env_.rank > 0) data = string(cdata);
-
-    read_circuit_structure_from_file(data);
+    format_file_ = FORMAT_ORACLE;
+    read_data();
 }
+
 
 OracleTool__::~OracleTool__()
 {
-    YMIX::print_log(env_, "oracletool destruction");
+    YMIX::print_log(env_, "*** Destruction of the oracle tool is done. ***");
 }
 
-void OracleTool__::read_input_file(YS data)
-{
-    ifstream ff(ifname_);
-    if(!ff.is_open()) throw "Error: Here there is not a file: " + ifname_;
-    data = string((istreambuf_iterator<char>(ff)), istreambuf_iterator<char>());
-    ff.close();
-
-    // clean the buffer from empty lines and comments:
-    istringstream istr(data);
-    string data_clr = "";
-    string line;
-    while(getline(istr, line))
-    {
-        line = YMIX::remove_comment(line);
-        line = YMIX::trim(line);
-        if(line.find_first_not_of(' ') == string::npos)
-            continue;
-        data_clr += line + "\n";
-    }
-    std::transform(data_clr.begin(), data_clr.end(), data_clr.begin(), ::tolower);
-    data = data_clr;
-}
 
 void OracleTool__::read_circuit_structure_from_file(YCS data)
 {
@@ -117,6 +61,7 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
     YMIX::print_log(env_, "Oracle prepared.\n");
 }
 
+
 void OracleTool__::read_constants(YISS istr)
 {
     string word, constant_name;
@@ -148,6 +93,7 @@ void OracleTool__::read_constants(YISS istr)
     
 }
 
+
 qreal OracleTool__::get_value_from_word(YCS word)
 {
     if(word.find("<") == string::npos)
@@ -168,6 +114,7 @@ qreal OracleTool__::get_value_from_word(YCS word)
 
     return constants_[const_name];
 }
+
 
 void OracleTool__::read_circuit_declaration(YISS istr)
 {
@@ -261,6 +208,7 @@ void OracleTool__::read_circuit_declaration(YISS istr)
     }
 }
 
+
 void OracleTool__::read_circuit_structure(YISS istr)
 {
     string word;
@@ -299,6 +247,7 @@ void OracleTool__::read_circuit_structure(YISS istr)
             read_subcircuit(istr, oc, true);
     }
 }
+
 
 void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
 {
@@ -352,6 +301,7 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
         throw ostr.str();
     }
 }
+
 
 void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
 {
@@ -465,6 +415,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
                 break;
 }
 
+
 void OracleTool__::read_input_states(YISS istr)
 {
     YMIX::print_log(env_, "Reading input states...");
@@ -496,6 +447,7 @@ void OracleTool__::read_input_states(YISS istr)
         throw ostr.str();
     }
 }
+
 
 void OracleTool__::read_state(YISS istr)
 {

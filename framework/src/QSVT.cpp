@@ -305,7 +305,7 @@ void QSVT__::read_block_encoding_oracle()
         false,
         false
     );
-    u_ = oo->get_oracle_copy();
+    u_ = oo->get_circuit();
     delete oo;
 }
 
@@ -458,7 +458,7 @@ void QSVT__::set_init_vector()
             false,
             false
         );
-        oc_init_ = oo->get_oracle_copy();
+        oc_init_ = oo->get_circuit();
         delete oo;
 
         // the initialization oracle is inserted into the QSVT circuit qubit by qubit 

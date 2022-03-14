@@ -56,7 +56,7 @@ https://github.com/ivanNovikau/QSVT_framework/wiki
 ## Run the circuit constructor:
 The circuit constructor, `qc_circuit`, can read one or several `.circuit` files to combine them into a single quantum circuit and calculate the corresponding output state (`qc_circuit` always takes the zero input state).
 The `qc_circuit` connects the circuits by comparing the register names.
-The program can produce the `.circuit` and `.tex` representations of the resulting circuit.
+The program can produce the `.tex` representation of the resulting circuit.
 
 ## Run the framework
 The framework, `qsvt`, takes the `.oracle` files of the block-encoded matrix and of the initialization circuit and produces the QSVT (QSP) circuit for the parameters described in the `.qsp` file and using the rotation angles from the `.angles` file(s).
