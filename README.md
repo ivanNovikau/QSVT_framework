@@ -77,7 +77,7 @@ If `sel_init oracle [matrix-norm]`, then the circuit from the `[name of oracle]_
 
 `.angles`: file(s), which contain(s) the rotation angles for the QSP (QSVT) approximation.
 
-The `[name of oracle].oracle` file might also need one or several file(s) `.condR_profile`, which contains a profile of angles for the condition rotation gates.
+The `.oracle` file might also need one or several file(s) `.condR_profile`, which contain profiles of angles for the condition rotation gates.
 
 The framework can simulate QSP Hamiltonian simulations (only for hermitian Hamiltonians), QSVT Hamiltonian simulation, QSVT matrix inversion:<br>
 `[case-to-sim] = qsp`: QSP Hamiltonian simulation;<br>

@@ -636,7 +636,6 @@ private:
     QuESTEnv env_; // QuEST execution environment;
     Qureg c_; // quantum register (circuit);
     YMIX::YTimer timer_; // timer for the circuit object;
-    YGlobalVariables gv; // global variables;
     std::string path_to_output_; // path where output files to be written
     unsigned nq_; // number of qubits in the circuit;
 

@@ -57,13 +57,13 @@ int main(int argc, char *argv[])
 
     // length of the circuit in the .tex file:
     if(argc > 6) 
-        YGlobalVariables::tex_circuit_length = stoi(string (argv[6]));
+        YGV::tex_circuit_length = stoi(string (argv[6]));
     if(flag_tex) 
         YMIX::print_log(
             env, 
             "Circuit length in the .tex files = %d", 
-            YGlobalVariables::tex_circuit_length
-    );
+            YGV::tex_circuit_length
+        );  
     
     try
     {

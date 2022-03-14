@@ -55,7 +55,6 @@ private:
     qreal get_value_from_word(YCS word);
 
 private:
-    YGlobalVariables gv; // global variables;
     QuESTEnv env_; 
     std::string pname_;       // project name
     std::string path_inputs_; // path to input files

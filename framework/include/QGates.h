@@ -250,7 +250,6 @@ class Gate__
         ComplexMatrix2 u2_; // matrix for a single-target gate;
         YVQv pars_; // parameters of the gate (e.g. angles);
 
-        YGlobalVariables gv_; // global variables;
         std::string add_inf_; // string line with additional information;
 
         YSM un_a_ = nullptr;
@@ -325,7 +324,7 @@ class SQGate__ : public Gate__
 class X__ : public SQGate__
 {
     public:
-        X__(YCI t) : SQGate__(name_shared_, t){ u2_ = gv_.mX; }
+        X__(YCI t) : SQGate__(name_shared_, t){ u2_ = YGV::mX; }
 
         YSG copy_gate() const { return std::make_shared<X__>(*this); };
 
@@ -367,7 +366,7 @@ class X__ : public SQGate__
 class Y__ : public SQGate__
 {
     public:
-        Y__(YCI t) : SQGate__(name_shared_, t){ u2_ = gv_.mY; }
+        Y__(YCI t) : SQGate__(name_shared_, t){ u2_ = YGV::mY; }
 
         YSG copy_gate() const { return std::make_shared<Y__>(*this); };
 
@@ -388,7 +387,7 @@ class Y__ : public SQGate__
 class Z__ : public SQGate__
 {
     public:
-        Z__(YCI t) : SQGate__(name_shared_, t){ u2_ = gv_.mZ; }
+        Z__(YCI t) : SQGate__(name_shared_, t){ u2_ = YGV::mZ; }
 
         YSG copy_gate() const { return std::make_shared<Z__>(*this); };
 
@@ -409,7 +408,7 @@ class Z__ : public SQGate__
 class H__ : public SQGate__
 {
     public:
-        H__(YCI t) : SQGate__(name_shared_, t){ u2_ = gv_.mH; }
+        H__(YCI t) : SQGate__(name_shared_, t){ u2_ = YGV::mH; }
 
         YSG copy_gate() const { return std::make_shared<H__>(*this); };
 
@@ -444,7 +443,7 @@ class sR__ : public SQGate__
 class Rx__ : public sR__
 {
     public:
-        Rx__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRx(a); tex_name_ = "R_x"; }
+        Rx__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = YGV::mRx(a); tex_name_ = "R_x"; }
         YSG copy_gate() const { return std::make_shared<Rx__>(*this); };
 
     public:
@@ -454,7 +453,7 @@ class Rx__ : public sR__
 class Ry__ : public sR__
 {
     public:
-        Ry__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRy(a); tex_name_ = "R_y"; }
+        Ry__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = YGV::mRy(a); tex_name_ = "R_y"; }
         YSG copy_gate() const { return std::make_shared<Ry__>(*this); };
 
     public:
@@ -464,7 +463,7 @@ class Ry__ : public sR__
 class Rz__ : public sR__
 {
     public:
-        Rz__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mRz(a); tex_name_ = "R_z";}
+        Rz__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = YGV::mRz(a); tex_name_ = "R_z";}
         YSG copy_gate() const { return std::make_shared<Rz__>(*this); };
 
     public:
@@ -488,7 +487,7 @@ class Rc__ : public sR2__
     public:
         Rc__(YCI t, YCQR angle_rz, YCQR angle_ry) : sR2__(name_shared_, t, angle_rz, angle_ry)
         { 
-            u2_ = gv_.mRc(angle_rz, angle_ry); 
+            u2_ = YGV::mRc(angle_rz, angle_ry); 
             tex_name_ = "R_c";
         }
         YSG copy_gate() const { return std::make_shared<Rc__>(*this); };
@@ -500,7 +499,7 @@ class Rc__ : public sR2__
 class Phase__ : public sR__
 {
     public:
-        Phase__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = gv_.mPhase(a); tex_name_ = "\\phase"; }
+        Phase__(YCI t, YCQR a) : sR__(name_shared_, t, a){ u2_ = YGV::mPhase(a); tex_name_ = "\\phase"; }
         YSG copy_gate() const { return std::make_shared<Phase__>(*this); };
 
         void write_tex(

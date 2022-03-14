@@ -628,7 +628,7 @@ void QCircuit::set_reg_state(YCS name, YCI id_reg_qubit)
     if(ib_state_.empty())
         ib_state_ = vector<short>(nq_);
 
-    if(YMIX::compare_strings(name, gv.reg_whole_circuit))
+    if(YMIX::compare_strings(name, YGV::reg_whole_circuit))
     {
         set_qubit_state(id_reg_qubit);
         return;
@@ -656,7 +656,7 @@ void QCircuit::set_reg_state(YCS name, YCI id_reg_qubit)
 
 void QCircuit::set_reg_state(YCS name, YCVI ids_reg_qubits)
 {
-    if(YMIX::compare_strings(name, gv.reg_whole_circuit))
+    if(YMIX::compare_strings(name, YGV::reg_whole_circuit))
     {
         set_qubit_state(ids_reg_qubits);
         return;

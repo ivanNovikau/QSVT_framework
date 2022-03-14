@@ -139,131 +139,19 @@ struct INIT_STATE__
 // ------------------------------------------
 struct YGlobalVariables{
 
-    std::string reg_whole_circuit = "the_whole_circuit";
+    static int tex_circuit_length;
+    static const std::string reg_whole_circuit;
+    static const qreal inv_sqrt2;
+    static const ComplexMatrix2 mX;
+    static const ComplexMatrix2 mY;
+    static const ComplexMatrix2 mZ;
+    static const ComplexMatrix2 mH;
 
-    static int tex_circuit_length; // length of the circuit in the .tex file;
-
-    qreal inv_sqrt2 = 1./sqrt(2);
-
-    const ComplexMatrix2 mX = 
-    {
-        .real = {
-            {0., 1.}, 
-            {1., 0.}
-        },
-        .imag = {{0., 0.}, {0., 0.}}
-    };
-
-    const ComplexMatrix2 mY = 
-    {
-        .real = {
-            {0., 0.}, 
-            {0., 0.}
-        },
-        .imag = {
-            {0., -1.}, 
-            {1.,  0.}
-        }
-    };
-
-    const ComplexMatrix2 mZ = 
-    {
-        .real = {
-            {1.,  0.}, 
-            {0., -1.}
-        },
-        .imag = {{0., 0.}, {0., 0.}}
-    };
-
-    const ComplexMatrix2 mH = 
-    {
-        .real = {
-            {inv_sqrt2,  inv_sqrt2}, 
-            {inv_sqrt2, -inv_sqrt2}
-        },
-        .imag = {{0., 0.}, {0., 0.}}
-    };
-
-    ComplexMatrix2 mRx(YCQR a)
-    {
-        qreal a2 = a/2.;
-        ComplexMatrix2 res = {
-            .real = {
-                {cos(a2),      0.},
-                {     0., cos(a2)}
-            },
-            .imag = {
-                {      0., -sin(a2)}, 
-                {-sin(a2),       0.}
-            }
-        };
-        return res;
-    }
-
-    ComplexMatrix2 mRy(YCQR a)
-    {
-        qreal a2 = a/2.;
-        ComplexMatrix2 res = {
-            .real = {
-                {cos(a2), -sin(a2)},
-                {sin(a2),  cos(a2)}
-            },
-            .imag = {{0., 0.}, {0., 0.}}
-        };
-        return res;
-    }
-
-    ComplexMatrix2 mRz(YCQR a)
-    {
-        qreal a2 = a/2.;
-        ComplexMatrix2 res = {
-            .real = {
-                {cos(a2),      0.},
-                {0.,      cos(a2)}
-            },
-            .imag = {
-                {-sin(a2),      0.}, 
-                {0.,       sin(a2)}
-            }
-        };
-        return res;
-    }
-
-    ComplexMatrix2 mRc(YCQR az, YCQR ay)
-    {
-        qreal az2 = az/2.;
-        qreal ay2 = ay/2.;
-
-        // Ry(ay) * Rz(az)
-        ComplexMatrix2 res = {
-            .real = {
-                {cos(az2)*cos(ay2), -cos(az2)*sin(ay2)},
-                {cos(az2)*sin(ay2),  cos(az2)*cos(ay2)}
-            },
-            .imag = {
-                {-sin(az2)*cos(ay2),  -sin(az2)*sin(ay2)}, 
-                {-sin(az2)*sin(ay2),  sin(az2)*cos(ay2)}
-            }
-        };
-        return res;
-    }
-
-    ComplexMatrix2 mPhase(YCQR a)
-    {
-        ComplexMatrix2 res = {
-            .real = {
-                {1., 0.},
-                {0., cos(a)}
-            },
-            .imag = {
-                {0., 0.}, 
-                {0., sin(a)}
-            }
-        };
-        return res;
-    }
-
-
+    static ComplexMatrix2 mRx(YCQR a);
+    static ComplexMatrix2 mRy(YCQR a);
+    static ComplexMatrix2 mRz(YCQR a);
+    static ComplexMatrix2 mRc(YCQR az, YCQR ay);
+    static ComplexMatrix2 mPhase(YCQR a);
 };
 
 // ------------------------------------------

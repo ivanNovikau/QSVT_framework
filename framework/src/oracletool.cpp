@@ -502,7 +502,7 @@ void OracleTool__::read_state(YISS istr)
     vector<int> ids_qs;
 
     oc_to_launch_->read_reg_int(istr, ids_qs);
-    one_state[gv.reg_whole_circuit] = ids_qs;
+    one_state[YGV::reg_whole_circuit] = ids_qs;
     init_states_.push_back(one_state); 
 }
 
