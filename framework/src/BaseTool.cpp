@@ -32,9 +32,16 @@ void BaseTool__::read_data()
     YMIX::print_log(env_, "Current path: " + current_path);
     YMIX::print_log(env_, "Start reading the input file: " + ifname_);
 
-    string data;
-    read_input_file(data);
-    read_circuit_structure_from_file(data);
+    try
+    {
+        string data;
+        read_input_file(data);
+        read_circuit_structure_from_file(data);
+    }
+    catch(YCS e)
+    {
+        throw "Error while reading the file["s + ifname_ + "]:\n"s + e;
+    }
 }
 
 

@@ -62,8 +62,7 @@ int main(int argc, char *argv[])
     if(flag_tex) 
         YMIX::print_log(
             env, 
-            "Circuit length in the .tex files = %d", 
-            YGV::tex_circuit_length
+            "Circuit length in the .tex files = " + to_string(YGV::tex_circuit_length)
         );  
 
     // flag to calculate layers:

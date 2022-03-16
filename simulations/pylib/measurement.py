@@ -1,3 +1,4 @@
+from pickletools import read_unicodestringnl
 import sys
 import datetime
 import re
@@ -35,21 +36,9 @@ def get_str_complex(v):
     return ll
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 def read_restart(dd):
     fname = dd["path"] + "/" + dd["fname"]
-    print(f"Reading a file {fname}...")
+    print(f"Reading the file {fname}...")
 
     res_dd = {}
     with h5py.File(fname, "r") as f:
@@ -66,7 +55,7 @@ def open(dd):
     # -> a name of a .hdf5 file to read dd["fname"];
     fname = dd["path"] + "/" + dd["fname"]
 
-    print(f"Reading a file {fname}...")
+    print(f"Reading the file {fname}...")
     with h5py.File(fname, "r") as f:
 
         # --- basic data ---
@@ -144,7 +133,7 @@ def open_all(dd):
         if not os.path.isfile(fname):
             break
 
-        print(f"\n--- Reading a file {fname}...")
+        print(f"\n--- Reading the file {fname}...")
         with h5py.File(fname, "r") as f:
 
             # --- basic data ---
@@ -232,7 +221,7 @@ def read_all_output_states(dd):
             if not os.path.isfile(fname):
                 break
 
-            print(f"\n--- Reading a file {fname}...")
+            print(f"\n--- Reading the file {fname}...")
             with h5py.File(fname, "r") as f:
                 nt = np.size(f["basic/time-grid"][...])
                 for i in range(nt):
@@ -474,7 +463,7 @@ class Meas__:
         fname = self.path_ + "/" + self.pname_ + "_OUTPUT.hdf5"
         self.dd_["fname"] = fname
 
-        print(f"Reading a file {fname}...")
+        print(f"Reading the file {fname}...")
         with h5py.File(fname, "r") as f:
 
             # --- basic data ---
@@ -536,17 +525,20 @@ class Meas__:
         return
 
 
-    def print_rel_state(self, id_step, flag_abs=False):
+    def calc_rel_state(self, id_step):
         # id_step = 0 - initial state
         # id_step = -1 - last state
         state = self.states_[id_step]["state"]
         ampls = self.states_[id_step]["ampls"]
 
         ampls_complex = self.get_complex(ampls)
-
         norm_ampl = np.sqrt(np.sum(np.abs(ampls_complex)**2))
         ampls_norm = ampls_complex / norm_ampl
+        return ampls_norm, state
 
+
+    def print_rel_state(self, id_step, flag_abs=False):
+        ampls_norm, state = self.calc_rel_state(id_step)
         nr, _ = state.shape
 
         print("Registers: ")
@@ -570,8 +562,48 @@ class Meas__:
         return ampls_complex
 
 
+    ## 
+    # -> choice = {"reg_name_1": int_1, "reg_name_2": int_2, ...}.
+    # One takes all states, which satisfy:
+    # reg_1 = |int_1>, reg_2 = |int_2>, ...
+    # If the register is not defined in the dictionary, then 
+    # the function returns all available states from this register.
+    # -> Return the chosen states and their normalized amplitudes at the chosen time moment id_t.
+    # Normalized (relative) means each amplitude is normalized to the total amplitude of all
+    # available states. 
+    # Usually, the available states are the states with zero ancillae registers.
+    def get_rel_ampl(self, choice, id_t):
+        ch_state = choose_a_state(self.dd_, choice, -1)
+
+        one_step_states = self.states_[id_t]["state"]
+        one_step_ampls = self.states_[id_t]["ampls"]
+
+        # normalize the state amplitudes:
+        ampls_complex = self.get_complex(one_step_ampls)
+        norm_ampl = np.sqrt(np.sum(np.abs(ampls_complex)**2))
+        one_step_ampls = ampls_complex / norm_ampl
+
+        # choose the necessary states:
+        nstates, _ = one_step_states.shape
+        res_ampls = []
+        res_states = []
+        for i_state in range(nstates):
+            flag_choose = True
+            one_state = one_step_states[i_state]
+            for i_qubit in range(self.dd_["nq"]):
+                if ch_state[i_qubit] == -1:
+                    continue
+                if ch_state[i_qubit] != one_state[i_qubit]:
+                    flag_choose = False
+                    break
+            if flag_choose:
+                res_ampls.append(one_step_ampls[i_state])
+                res_states.append(one_state)
+        return res_ampls, res_states
+
+
     ## Return a 1-D np.array (0.0, step, ... 1.0) defined by 
-    # the size (number of qubits) of the register with a name "reg_x".
+    # the number of qubits in the register with the name "reg_x".
     def get_x_grid(self, reg_x):
         reg_nq = self.dd_["regs"][reg_x]
         N = 2**reg_nq
@@ -582,9 +614,9 @@ class Meas__:
     ## Return the variable defined by "vars_enc" as a function of x.
     # The space dependence on x is encoded in the register "reg_x".
     # "vars_enc" is {"reg_name_1": int_to_choose, ...};
-    # "reg_x" is a name of the register where different combinations of qubits
+    # "reg_x" is the register name  where different combinations of qubits
     #           correspond to different points on x.
-    # All other registers are set zero.
+    # All other registers are set to zero.
     def get_var_x(self, vars_enc, reg_x):
         # prepare a preliminary state defined by "vars_enc":
         ch_state = self.choose_a_state(vars_enc)
@@ -649,10 +681,10 @@ class Meas__:
 
     ## Return states and their amplitudes defined by the dictionary "choice":
     # choice = {"reg_name_1": int_to_choose, "reg_name_2": int_to_choose, ...}.
-    # The dictionary indicates in which state must be a register of a circuit.
-    # If a register is not defined in the dictionary, then 
+    # The dictionary indicates which state the register must have.
+    # If the register is not defined in the dictionary, then 
     # the function returns all available states from this register.
-    # Return the chosen states and their amplitudes at a chosen time moment "id_t".
+    # Return the chosen states and their amplitudes at the chosen time moment "id_t".
     def get_several_chosen_states_at_t1(self, choice, id_t):
         ch_state = choose_a_state(self.dd_, choice, -1)
 
@@ -747,7 +779,7 @@ class MeasDyn__(Meas__):
     
     ## Read all available quantum states and their amplitudes at every time step:
     # results: 
-    # self.dd_["states"][id_time_step]["state"] - 2-D np.array of states at a time step id_time_step;
+    # self.dd_["states"][id_time_step]["state"] - 2-D np.array of states at the time step id_time_step;
     # self.dd_["states"][id_time_step]["ampls"] - 1-D np.array of amplitudes of the above states.
     def read_output_states(self):
         if not self.dd_["flag-restart"]:
@@ -775,7 +807,7 @@ class MeasDyn__(Meas__):
                 if not os.path.isfile(fname):
                     break
 
-                print(f"\n--- Reading a file {fname}...")
+                print(f"\n--- Reading the file {fname}...")
                 with h5py.File(fname, "r") as f:
                     nt = np.size(f["basic/time-grid"][...])
                     for i in range(nt):

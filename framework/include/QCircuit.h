@@ -520,6 +520,8 @@ class QCircuit{
         return get_the_circuit();
     }
 
+    inline void add_gate(std::shared_ptr<Gate__> oo){ gates_.push_back(oo); }
+
     /** Circuit wavefunction analysis.
      * @param[in] organize_state input array that indicates how to output every state
      *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
@@ -650,6 +652,9 @@ private:
     // regs_[rname][i] is the i-th qubit in the register "rname";
     // the 0-th qubit is the least signficant in the register.
     std::map<std::string, YVIv> regs_; 
+
+    // which registers are ancilla:
+    std::map<std::string, bool> flags_anc_regs_;
 
     /** register names: the first name corresponds to the register at the top. */
     std::vector<std::string> regnames_; 

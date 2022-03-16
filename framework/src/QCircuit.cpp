@@ -74,6 +74,7 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
     path_to_output_ = oc->path_to_output_;
     init_state_     = vector<INIT_STATE__>(oc->init_state_);
     regs_           = map<string, YVIv>(oc->regs_);
+    flags_anc_regs_ = map<string, bool>(oc->flags_anc_regs_);
     regnames_       = vector<string>(oc->regnames_);
     ancs_           = YVIv(oc->ancs_);
     ib_state_       = vector<short>(oc->ib_state_);
@@ -281,6 +282,7 @@ void QCircuit::print_gates()
         uint64_t id_new_noc_layer;
         int id_b, id_t;
         bool flag_box = false;
+        string box_name;
         for(auto& gate: gates_)
         {
             id_first_noc_layer = 0;
@@ -288,11 +290,21 @@ void QCircuit::print_gates()
                 continue;
 
             if(YMIX::compare_strings(gate->get_type(), "box"))
+            {
+                string box_name_curr = gate->get_name();
                 if(gate->get_flag_start())
+                {
+                    if(!flag_box)
+                        box_name = box_name_curr;
                     flag_box = true;
+                }
                 else
-                    flag_box = false;
-
+                {
+                    if(YMIX::compare_strings(box_name, box_name_curr))
+                        flag_box = false;
+                }  
+            }
+                
             if(flag_box)
                 continue;
 
@@ -439,12 +451,19 @@ YVIv QCircuit::add_register(YCS name, YCU n_qubits, YCB flag_ancilla)
     regs_[name] = qubits_positions;
 
     if(flag_ancilla)
+    {
         ancs_.insert(
             ancs_.begin(), 
             qubits_positions.begin(), 
             qubits_positions.end()
         );
-
+        flags_anc_regs_[name] = true;
+    }
+    else
+    {
+        flags_anc_regs_[name] = false;
+    }
+        
     return qubits_positions;
 }
 
@@ -488,7 +507,13 @@ void QCircuit::save_regs()
             YMIX::File cf(cfname_);
             cf << "QubitRegisterNames ";
             for(auto const& reg_name: regnames_)
+            {
                 cf << reg_name << " " << regs_[reg_name].size() << " ";
+                if(flags_anc_regs_[reg_name])
+                    cf << "1" << " ";
+                else
+                    cf << "0" << " ";
+            }
             cf.of << endl;
         }
     }
@@ -636,7 +661,7 @@ void QCircuit::set_reg_state(YCS name, YCI id_reg_qubit)
 
     if(regs_.find(name) == regs_.end())
     {
-        cerr << "\nError: No register with a name " << name << " in a circuit " << name_ << "." << endl;
+        cerr << "\nError: No register with the name " << name << " in a circuit " << name_ << "." << endl;
         exit(-1);
     }
 

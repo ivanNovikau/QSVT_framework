@@ -23,6 +23,7 @@ class DC:
 
     qregs = None  # {name_reg: n_qubits}
     qregs_names = None
+    flags_reg_anc = None
 
     filename_fig = None
 
@@ -37,6 +38,7 @@ class DC:
         self.nq = None   
         self.qregs = {}  
         self.qregs_names = []
+        self.flags_reg_anc = []
         self.circuit_fold = mix.CIRCUIT_LENGTH
 
     def draw(self):
@@ -302,9 +304,10 @@ class DC:
             # circuit registers:
             dg = data[1]
             if mix.compare_two_strings("QubitRegisterNames", dg[0]):
-                for i in range(1,len(dg)-1,2):
+                for i in range(1,len(dg)-2,3):
                     self.qregs_names.append(dg[i])
                     self.qregs[dg[i]] = int(dg[i+1])
+                    self.flags_reg_anc.append(dg[i+2])
             else:
                 raise Exception("Registers are not indicated in the .circuit file.")
                 

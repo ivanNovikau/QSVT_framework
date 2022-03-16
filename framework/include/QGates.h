@@ -261,6 +261,7 @@ class Gate__
         bool flag_start_ = true; // is it the left side of the box? 
 };
 
+
 class GStop__ : public Gate__
 {
 public:
@@ -273,6 +274,7 @@ public:
             YCU nq
     ){}
 };
+
 
 class Box__ : public Gate__
 {
@@ -301,6 +303,7 @@ class Box__ : public Gate__
         }
 };
 
+
 class SQGate__ : public Gate__
 {
     public:
@@ -320,6 +323,7 @@ class SQGate__ : public Gate__
 
         void generate(Qureg& oc){}
 };
+
 
 class X__ : public SQGate__
 {
@@ -363,6 +367,7 @@ class X__ : public SQGate__
         const static std::string name_shared_;
 };
 
+
 class Y__ : public SQGate__
 {
     public:
@@ -383,6 +388,7 @@ class Y__ : public SQGate__
     public:
         const static std::string name_shared_;
 };
+
 
 class Z__ : public SQGate__
 {
@@ -405,6 +411,7 @@ class Z__ : public SQGate__
         const static std::string name_shared_;
 };
 
+
 class H__ : public SQGate__
 {
     public:
@@ -426,6 +433,7 @@ class H__ : public SQGate__
         const static std::string name_shared_;
 };
 
+
 class sR__ : public SQGate__
 {
     public:
@@ -440,6 +448,7 @@ class sR__ : public SQGate__
         }
 };
 
+
 class Rx__ : public sR__
 {
     public:
@@ -449,6 +458,7 @@ class Rx__ : public sR__
     public:
         const static std::string name_shared_;
 };
+
 
 class Ry__ : public sR__
 {
@@ -460,6 +470,7 @@ class Ry__ : public sR__
         const static std::string name_shared_;
 };
 
+
 class Rz__ : public sR__
 {
     public:
@@ -470,31 +481,6 @@ class Rz__ : public sR__
         const static std::string name_shared_;
 };
 
-class sR2__ : public sR__
-{
-    public:
-        sR2__(YCS name, YCI t, YCQR a1, YCQR a2) : sR__(name, t, a1)
-        {   
-            pars_.push_back(a2);
-        }
-
-        YSG copy_gate() const { return std::make_shared<sR2__>(*this); };
-};
-
-/** Ry(angle_ry) * Rz(angle_rz) */
-class Rc__ : public sR2__
-{
-    public:
-        Rc__(YCI t, YCQR angle_rz, YCQR angle_ry) : sR2__(name_shared_, t, angle_rz, angle_ry)
-        { 
-            u2_ = YGV::mRc(angle_rz, angle_ry); 
-            tex_name_ = "R_c";
-        }
-        YSG copy_gate() const { return std::make_shared<Rc__>(*this); };
-
-    public:
-        const static std::string name_shared_;
-};
 
 class Phase__ : public sR__
 {
@@ -525,6 +511,36 @@ class Phase__ : public sR__
     public:
         const static std::string name_shared_;
 };
+
+
+class sR2__ : public sR__
+{
+    public:
+        sR2__(YCS name, YCI t, YCQR a1, YCQR a2) : sR__(name, t, a1)
+        {   
+            pars_.push_back(a2);
+        }
+
+        YSG copy_gate() const { return std::make_shared<sR2__>(*this); };
+};
+
+
+/** Ry(angle_ry) * Rz(angle_rz) */
+class Rc__ : public sR2__
+{
+    public:
+        Rc__(YCI t, YCQR angle_rz, YCQR angle_ry) : sR2__(name_shared_, t, angle_rz, angle_ry)
+        { 
+            u2_ = YGV::mRc(angle_rz, angle_ry); 
+            tex_name_ = "R_c";
+        }
+        YSG copy_gate() const { return std::make_shared<Rc__>(*this); };
+
+    public:
+        const static std::string name_shared_;
+};
+
+
 
 
 

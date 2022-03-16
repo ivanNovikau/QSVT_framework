@@ -53,10 +53,13 @@ By default, `[tex-circuit-length] = 10`.
 To understand the format of the `.oracle` file, see the wiki page:<br> 
 https://github.com/ivanNovikau/QSVT_framework/wiki
 
-## Run the circuit constructor:
-The circuit constructor, `qc_circuit`, can read one or several `.circuit` files to combine them into a single quantum circuit and calculate the corresponding output state (`qc_circuit` always takes the zero input state).
-The `qc_circuit` connects the circuits by comparing the register names.
-The program can produce the `.tex` representation of the resulting circuit.
+## Run the circuit reader:
+The circuit reader, `qc_circuit`, reads a `.circuit` file to create a quantum circuit and compute its output state (`qc_circuit` always takes the zero input state).
+The program can produce the `.tex` representation of the circuit.
+
+To run the circuit reader, use the following command:
+
+`[path_to_QSVT_framework]/framework/build_circuit/qc_circuit [name of oracle] [path to the input file] [flag_output] [flag-tex] [tex-circuit-length]`
 
 ## Run the framework
 The framework, `qsvt`, takes the `.oracle` files of the block-encoded matrix and of the initialization circuit and produces the QSVT (QSP) circuit for the parameters described in the `.qsp` file and using the rotation angles from the `.angles` file(s).
