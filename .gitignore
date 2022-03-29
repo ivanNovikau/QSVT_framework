@@ -10,6 +10,7 @@ framework/build_*/Makefile
 framework/build_*/QuEST
 framework/build_*/oracletool
 framework/build_*/qsvt
+framework/build_*/qc_circuit
 
 *.png
 *.jpg

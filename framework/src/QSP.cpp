@@ -155,7 +155,7 @@ void QSP__::create_circuit_components()
 }
 
 
-void QSP__::create_W()
+void QSP__::create_W()  // original W
 { 
     auto a_ancs = u_->get_ancillae();
     YVIv aq_ancs = YVIv(a_ancs);

@@ -377,6 +377,18 @@ def get_amplitudes_xt(dd, vars_enc, reg_x):
     return ampls
 
 
+def get_total_prob(dd, id_t):
+    ampls = dd["states"][id_t]["ampls"]
+
+    tot_prob = 0.
+    na = len(ampls)
+    for i_state in range(na):
+        one_ampl = ampls[i_state]
+        one_ampl_compl = np.complex(one_ampl["real"], one_ampl["imag"])
+        tot_prob += np.abs(one_ampl_compl)**2
+    return tot_prob
+
+
 ## Set a part of the "state" to a bit-array represented by an integer "int_repr".
 # "state" is a list of size nq, where nq is a total number of qubits in a QSP circuit.
 # "reg_name" defines a part of the array "state" that must be set to "int_repr".
@@ -770,8 +782,8 @@ class MeasDyn__(Meas__):
             self.dd_["t"] = np.array([0] + t_grid) 
 
             self.dd_["qsp"]["dt"] = bg["dt"][()]
-            self.dd_["qsp"]["odd-angles"] = bg["odd-angles"][()]
-            self.dd_["qsp"]["even-angles"] = bg["even-angles"][()]
+            # self.dd_["qsp"]["odd-angles"] = bg["odd-angles"][()]
+            # self.dd_["qsp"]["even-angles"] = bg["even-angles"][()]
 
             self.states_ = self.states_ + [{}] * len(t_grid)
         return
