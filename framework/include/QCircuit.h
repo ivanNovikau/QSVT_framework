@@ -220,6 +220,7 @@ class QCircuit{
     void read_structure_gate_adder1(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_subtractor1(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_swap(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_reg_int(YISS istr, YVI ids_target, YCS word_start=std::string());
     void read_end_gate(YISS istr, YVI ids_control, YVI ids_x, YVVI ids_control_it, YVVI ids_x_it);
 
@@ -507,6 +508,11 @@ class QCircuit{
 
     /** @brief Add a swap operator between qubits \p t1 and \p t2. */
     YQCP swap(YCI t1, YCI t2, YVIv cs = {});
+
+    /** @brief Quantum Fourier circuit placed to the qubits \p ts and
+     *         controlled by the qubits \p cs;
+     */
+    YQCP quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv);
 
     /**
      * @brief Add a Stop gate to a quantum state at this point.

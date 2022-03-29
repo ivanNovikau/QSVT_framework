@@ -290,6 +290,10 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
             oc->read_structure_gate_swap(istr, path_inputs_, flag_inv);
             return;
         }
+        if(YMIX::compare_strings(gate_name, "Fourier"))
+        {
+            oc->read_structure_gate_fourier(istr, path_inputs_, flag_inv);
+        }
 
     }
     catch(YCS e)

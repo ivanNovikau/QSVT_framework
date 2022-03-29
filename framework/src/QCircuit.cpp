@@ -209,12 +209,17 @@ void QCircuit::finish_tex_file()
                     line_row += "\\\\"s;
                 cf << line_row << "\n";
             }
-            cf << "\\end{quantikz}\n";
+            cf << "\\end{quantikz}";
 
             if(id_piece < (n_circ_pieces - 1))
             {
+                cf << "\\\\\n";
                 cf << TEX_VERTICAL_GAP << "\n";
                 cf << TEX_BEGIN_CIRCUIT;
+            }
+            else
+            {
+                cf << "\n";
             }
         }
 
@@ -1191,12 +1196,30 @@ void QCircuit::read_structure_gate_swap(YISS istr, YCS path_in, YCB flag_inv)
 
     // --- add CNOT gates ---
     nt = ids_target_1.size();
-
-    x(ids_x);
+    x(ids_x); 
     for(unsigned i = 0; i < nt; ++i)
         swap(ids_target_1[i], ids_target_2[i], ids_control);
     x(ids_x);
 }
+
+
+void QCircuit::read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target, ids_control, ids_x;
+
+    // --- read target qubits ---
+    read_reg_int(istr, ids_target);
+
+    // --- read end of gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // add the quantum Fourier circuit:
+    x(ids_x);
+    quantum_fourier(ids_target, ids_control, flag_inv);
+    x(ids_x);
+}
+
 
 YQCP QCircuit::swap(YCI t1, YCI t2, YVIv cs)
 { 
@@ -1206,6 +1229,58 @@ YQCP QCircuit::swap(YCI t1, YCI t2, YVIv cs)
     ids_cs_2.insert(ids_cs_2.end(), cs.begin(), cs.end());
     return x(t2, ids_cs_1)->x(t1, ids_cs_2)->x(t2, ids_cs_1); 
 }
+
+
+YQCP QCircuit::quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv)
+{
+    uint32_t nt = ts.size();
+    uint32_t id_tq;
+    uint32_t tq;
+    int cq;
+    qreal aa;
+
+    if(!flag_inv)
+    {
+        for(uint32_t ii = 0; ii < nt; ii++)
+        {
+            id_tq = nt - 1 - ii;
+            tq = ts[id_tq];
+            h(tq, cs);
+            for(uint32_t jj = 1; jj < (nt - ii); jj++)
+            {
+                aa = M_PI / (1 << jj);
+                YVIv cs_loc = YVIv(cs);
+                cs_loc.push_back(tq - jj);
+                phase(tq, aa, cs_loc, flag_inv);
+            }
+        }
+
+        for(uint32_t ii = 0; ii < uint32_t(nt/2); ii++)
+            swap(ts[ii], ts[nt - 1 - ii], cs);
+    }
+    else
+    {
+        for(uint32_t ii = 0; ii < uint32_t(nt/2); ii++)
+            swap(ts[ii], ts[nt - 1 - ii], cs);
+
+        for(uint32_t ii = nt - 1; ii > 0; ii--)
+        {
+            id_tq = nt - 1 - ii;
+            tq = ts[id_tq];
+            h(tq, cs);
+            for(uint32_t jj = 1; jj < (nt - ii + 1); jj++)
+            {
+                aa = M_PI / (1 << (nt - ii + 1 - jj));
+                YVIv cs_loc = YVIv(cs);
+                cs_loc.push_back(jj - 1);
+                phase(tq+1, aa, cs_loc, flag_inv);
+            }
+        }
+        h(ts[nt - 1], cs);
+    }   
+    return get_the_circuit();
+}
+
 
 qreal QCircuit::get_value_from_word(YCS word)
 {
