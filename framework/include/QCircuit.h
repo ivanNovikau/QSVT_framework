@@ -506,13 +506,19 @@ class QCircuit{
      */
     inline YQCP cnot(YCI c, YCI t){ return x(t, YVIv {c}); }
 
+    /** @brief integer encoded to \p ts is incremented */
+    YQCP adder_by_one(YCVI ts, YCVI cs, YCB flag_inv);
+
+    /** @brief integer encoded to \p ts is decremented */
+    YQCP subtractor_by_one(YCVI ts, YCVI cs, YCB flag_inv);
+
     /** @brief Add a swap operator between qubits \p t1 and \p t2. */
     YQCP swap(YCI t1, YCI t2, YVIv cs = {});
 
     /** @brief Quantum Fourier circuit placed to the qubits \p ts and
      *         controlled by the qubits \p cs;
      */
-    YQCP quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv);
+    YQCP quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv = false);
 
     /**
      * @brief Add a Stop gate to a quantum state at this point.

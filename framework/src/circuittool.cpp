@@ -7,10 +7,11 @@ CircuitTool__::CircuitTool__(
     YCS pname, 
     YCS path_to_inputs, 
     YCB flag_compute_output,
-    YCB flag_tex
+    YCB flag_tex,
+    YCB flag_hdf5
 ) : BaseTool__(
     env, pname, path_to_inputs, 
-    flag_compute_output, false, flag_tex, false
+    flag_compute_output, false, flag_tex, false, flag_hdf5
 ){
     format_file_ = FORMAT_CIRCUIT;
     read_data();

@@ -14,13 +14,15 @@ class CircuitTool__ : public BaseTool__
          * @param[in] flag_compute_output if True, compute output states, otherwise only input states
          * @param[in] flag_circuit print or not .circuit files;
          * @param[in] flag_tex print or not .tex files;
+         * @param[in] flag_hdf5  to create the hdf5 file;
          */
         CircuitTool__(
             const QuESTEnv& env, 
             YCS pname, 
             YCS path_to_inputs, 
             YCB flag_compute_output,
-            YCB flag_tex
+            YCB flag_tex,
+            YCB flag_hdf5 = false
         );
         ~CircuitTool__();
 
