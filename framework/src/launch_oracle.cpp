@@ -81,7 +81,8 @@ int main(int argc, char *argv[])
             flag_compute_output,
             flag_circuit,
             flag_tex,
-            flag_layers
+            flag_layers,
+            true
         );
         
         // launch the circuit with different input states:

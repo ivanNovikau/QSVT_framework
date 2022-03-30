@@ -9,7 +9,8 @@ BaseTool__::BaseTool__(
     YCB flag_compute_output,
     YCB flag_circuit,
     YCB flag_tex,
-    YCB flag_layers
+    YCB flag_layers,
+    YCB flag_hdf5
 ) :
     env_(env),
     pname_(pname),
@@ -17,8 +18,30 @@ BaseTool__::BaseTool__(
     flag_compute_output_(flag_compute_output),
     flag_circuit_(flag_circuit),
     flag_tex_(flag_tex),
-    flag_layers_(flag_layers)
-{}
+    flag_layers_(flag_layers),
+    flag_hdf5_(flag_hdf5)
+{
+    if(flag_hdf5_)
+    {
+        YMIX::print_log(env_, "Creating the output .hdf5 file...");
+        hfo_.create(path_inputs_ + "/" + pname_ + "_circuit"s + ENDING_FORMAT_OUTPUT);
+        hfo_.add_group("basic"); 
+        hfo_.add_group("states"); 
+
+        // date of simulation:
+        string str_date_time;
+        YMIX::get_current_date_time(str_date_time);
+        hfo_.add_scalar(str_date_time, "date-of-simulation", "basic");
+
+        // save the project name and the path to input files:
+        hfo_.add_scalar(pname_, "project-name", "basic");
+        hfo_.add_scalar(path_inputs_, "path-inputs", "basic");
+        hfo_.add_scalar(filesystem::current_path(), "launch-path", "basic");
+
+        // close the file:
+        hfo_.close();
+    }
+}
 
 
 BaseTool__::~BaseTool__(){}

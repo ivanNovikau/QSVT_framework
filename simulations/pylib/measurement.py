@@ -833,3 +833,142 @@ class MeasDyn__(Meas__):
                         self.states_[id_step_global]["state"] = one_step_states
                         self.states_[id_step_global]["ampls"] = one_step_ampls
         return
+
+
+# -------------------------------------------------------------------------------
+# --- Read output data from oracle ---
+# -------------------------------------------------------------------------------
+class MeasOracle__:
+    # project name:
+    pname_ = ""
+
+    # path to the project:
+    path_ = ""
+
+    # information about the project:
+    dd_ = None
+
+    # states:  
+    n_init_states_ = None
+    init_states_ = None
+    output_all_states_ = None
+    output_zero_anc_states_ = None
+
+
+    def __init__(self):
+        self.dd_ = {}
+        return 
+
+
+    def open(self):
+        fname = self.path_ + "/" + self.pname_ + "_circuit_OUTPUT.hdf5"
+        self.dd_["fname"] = fname
+
+        print(f"Reading the file {fname}...")
+        with h5py.File(fname, "r") as f:
+
+            # --- basic data ---
+            bg = f["basic"]
+
+            self.dd_["date-of-sim"]  = bg["date-of-simulation"][()].decode("utf-8")
+            self.dd_["project-name"] = bg["project-name"][()].decode("utf-8")
+            self.dd_["launch-path"] = bg["launch-path"][()].decode("utf-8")
+            self.dd_["path-inputs"] = bg["path-inputs"][()].decode("utf-8")
+
+            self.dd_["nq"] = bg["nq"][()]
+            self.dd_["na"] = bg["na"][()]
+
+            reg_names = bg["register-names"][()].decode("utf-8").split(", ")
+            reg_nq = bg["register-nq"][...]
+
+            self.dd_["reg-names"] = reg_names
+            self.dd_["reg-nq"] = reg_nq
+
+            self.dd_["regs"] = {}
+            self.dd_["reg-shifts"] = {}
+            reg_shift = 0
+            for i in range(len(reg_nq)):
+                self.dd_["regs"][reg_names[i]] = reg_nq[i]
+                self.dd_["reg-shifts"][reg_names[i]] = reg_shift
+                reg_shift += reg_nq[i]
+
+
+            # --- initial states ---
+            st = f["states"]
+            self.n_init_states_ = st["n-init-states"][()]
+            self.init_states_            = [{}] * self.n_init_states_
+            self.output_all_states_      = [{}] * self.n_init_states_
+            self.output_zero_anc_states_ = [{}] * self.n_init_states_
+            for ii in range(self.n_init_states_):
+                self.init_states_[ii]["state"] = np.transpose(np.array(st["initial-states-{:d}".format(ii)])) 
+                self.init_states_[ii]["ampls"] = np.array(st["initial-amplitudes-{:d}".format(ii)])
+                self.output_all_states_[ii]["state"] = np.transpose(np.array(st["output-all-states-{:d}".format(ii)])) 
+                self.output_all_states_[ii]["ampls"] = np.array(st["output-all-amplitudes-{:d}".format(ii)])
+
+                line_state = "output-zero-anc-states-{:d}".format(ii)
+                if line_state in st:
+                    self.output_zero_anc_states_[ii]["state"] = np.transpose(np.array(st[line_state])) 
+                    self.output_zero_anc_states_[ii]["ampls"] = np.array(st["output-zero-anc-amplitudes-{:d}".format(ii)])
+
+        print("Name of the simulation is", self.dd_["project-name"])
+        print("Simulation has been performed ", self.dd_["date-of-sim"])
+        return
+
+
+    def print_full_states(self):
+        print("Number of initial states: {:d}".format(self.n_init_states_))
+
+        print("\nRegisters: ")
+        print(self.dd_["regs"])
+        print()
+
+        for ii in range(self.n_init_states_):
+            print("\n-------------------------------------")
+            print("--- Initial state: {:d}".format(ii))
+            state = self.init_states_[ii]["state"]
+            ampls = self.init_states_[ii]["ampls"]
+            nr, _ = state.shape
+            for ir in range(nr):
+                str_ampl = get_str_complex(ampls[ir])
+                str_state = get_str_state(state[ir], self.dd_["reg-nq"])
+                print("{:>22s}   {:s}".format(str_ampl, str_state))
+
+            print("\n -- full output state --")
+            state = self.output_all_states_[ii]["state"]
+            ampls = self.output_all_states_[ii]["ampls"]
+            nr, _ = state.shape
+            for ir in range(nr):
+                str_ampl = get_str_complex(ampls[ir])
+                str_state = get_str_state(state[ir], self.dd_["reg-nq"])
+                print("{:>22s}   {:s}".format(str_ampl, str_state))
+        return
+
+
+    def print_zero_anc_states(self):
+        print("Number of initial states: {:d}".format(self.n_init_states_))
+
+        print("\nRegisters: ")
+        print(self.dd_["regs"])
+        print()
+
+        for ii in range(self.n_init_states_):
+            print("\n-------------------------------------")
+            print("--- Initial state: {:d}".format(ii))
+            state = self.init_states_[ii]["state"]
+            ampls = self.init_states_[ii]["ampls"]
+            nr, _ = state.shape
+            for ir in range(nr):
+                str_ampl = get_str_complex(ampls[ir])
+                str_state = get_str_state(state[ir], self.dd_["reg-nq"])
+                print("{:>22s}   {:s}".format(str_ampl, str_state))
+
+            print("\n -- zero-ancilla output state --")
+            if(self.output_zero_anc_states_[ii]):
+                state = self.output_zero_anc_states_[ii]["state"]
+                ampls = self.output_zero_anc_states_[ii]["ampls"]
+                nr, _ = state.shape
+                for ir in range(nr):
+                    str_ampl = get_str_complex(ampls[ir])
+                    str_state = get_str_state(state[ir], self.dd_["reg-nq"])
+                    print("{:>22s}   {:s}".format(str_ampl, str_state))
+        return

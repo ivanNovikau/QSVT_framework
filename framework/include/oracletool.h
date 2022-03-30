@@ -14,6 +14,7 @@ public:
      * @param[in] flag_circuit print or not .circuit files;
      * @param[in] flag_tex print or not .tex files;
      * @param[in] flag_layers to calculate or not the layer for each gate;
+     * @param[in] flag_hdf5  to create the hdf5 file;
      */
     OracleTool__(
         const QuESTEnv& env, 
@@ -22,7 +23,8 @@ public:
         YCB flag_compute_output,
         YCB flag_circuit,
         YCB flag_tex,
-        YCB flag_layer
+        YCB flag_layer = false,
+        YCB flag_hdf5 = false
     );
     ~OracleTool__();
     void launch();
@@ -49,6 +51,8 @@ private:
     // every init. state is represented by several registers, 
     //  where several qubits might be set to 1.
     std::vector<std::map<std::string, std::vector<int>>> init_states_;
+
+
 };
 #endif
 
