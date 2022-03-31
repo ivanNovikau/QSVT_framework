@@ -370,11 +370,12 @@ void QCircuit::conjugate_transpose()
 }
 
 
-void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
+void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv, YCVI cs)
 {
     if(box)
     {
         YSG oo = box->copy_gate();
+        if(!cs.empty()) oo->add_control_qubits(cs);
         if(flag_layers_) oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
@@ -389,6 +390,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
 
             gate_copy->conjugate_transpose();
             gate_copy->correct_qubits(regs_new);
+            if(!cs.empty()) gate_copy->add_control_qubits(cs);
             if(flag_layers_) oo_layers_->add_gate(gate_copy);
             gates_.push_back(gate_copy);
         }
@@ -399,6 +401,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
         {
             auto gate_copy = gate->copy_gate();
             gate_copy->correct_qubits(regs_new);
+            if(!cs.empty()) gate_copy->add_control_qubits(cs);
             if(flag_layers_) oo_layers_->add_gate(gate_copy);
             gates_.push_back(gate_copy);
         }
@@ -408,6 +411,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv)
     {
         YSG oo = box->copy_box();
         oo->set_flag_start(false);
+        if(!cs.empty()) oo->add_control_qubits(cs);
         if(flag_layers_) oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
@@ -526,8 +530,10 @@ void QCircuit::save_regs()
     if(env_.rank == 0 && flag_tex_) 
     {
         int counter_q = -1;
-        for(auto const& [reg_name, reg_qs] : regs_)
+        for(auto const& reg_name: regnames_)
+        // for(auto const& [reg_name, reg_qs] : regs_)
         {
+            auto reg_qs = regs_[reg_name];
             auto reg_nq = reg_qs.size();
             for(auto i = 0; i < reg_nq; i++)
             {
@@ -1204,6 +1210,49 @@ void QCircuit::read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv)
 }
 
 
+void QCircuit::read_structure_gate_phase_estimation(YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv)
+{
+    YVIv ids_ta; // target qubits of the operator A, whose eigenphase we seek for;
+    YVIv ids_ty;
+    YVIv ids_cs, ids_x; 
+    string name_A, name_INIT;
+
+    // --- read target qubits of A ---
+    read_reg_int(istr, ids_ta);
+
+    // --- Read names of the operator A and INIT to find them among available circuits "ocs" ---
+    try
+    {
+        istr >> name_A >> name_INIT;
+    }
+    catch(YCS e)
+    {
+        throw "PE definition: wrong format of the circuit names of the operators A and INIT: " + e;
+    }
+
+    // --- Read target qubit where the phase is to be written to ---
+    read_reg_int(istr, ids_ty);
+    
+    // --- read the end of the gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_cs, ids_x, ids_control_it, ids_x_it);
+
+    // --- Find the appropriate circuits ---
+    if(ocs.find(name_A) == ocs.end())
+        throw string("PE definition: a circuit with the name ["s + name_A + "] is not found."s);
+    if(ocs.find(name_INIT) == ocs.end())
+        throw string("PE definition: a circuit with the name ["s + name_INIT + "] is not found."s);
+    YSQ oc_A = ocs[name_A];
+    YSQ oc_INIT = ocs[name_INIT];
+
+
+    // --- add the phase estimation circuit ---
+    x(ids_x);
+    phase_estimation(ids_ta, oc_A, oc_INIT, ids_ty, ids_cs, flag_inv);
+    x(ids_x);
+}
+
+
 YQCP QCircuit::adder_by_one(YCVI ts, YCVI cs, YCB flag_inv)
 {
     YVIv ids_target = YVIv(ts);
@@ -1270,53 +1319,141 @@ YQCP QCircuit::swap(YCI t1, YCI t2, YVIv cs)
 }
 
 
-YQCP QCircuit::quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv)
+YQCP QCircuit::quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv, YCB flag_box)
 {
     uint32_t nt = ts.size();
-    uint32_t id_tq;
-    uint32_t tq;
+    uint32_t q1;
     int cq;
     qreal aa;
+    string fourier_name_tex = "F";
 
-    if(!flag_inv)
+    // --- create an envelop circuit for the Fourier operator ---
+    auto oc_fourier = make_shared<QCircuit>(
+        "F", env_, path_to_output_, nt
+    );
+    auto q = oc_fourier->add_register("q", nt);
+    for(uint32_t ii = 0; ii < nt; ii++)
     {
-        for(uint32_t ii = 0; ii < nt; ii++)
+        q1 = nt - 1 - ii;
+        oc_fourier->h(q1);
+        for(uint32_t jj = 1; jj < (nt - ii); jj++)
         {
-            id_tq = nt - 1 - ii;
-            tq = ts[id_tq];
-            h(tq, cs);
-            for(uint32_t jj = 1; jj < (nt - ii); jj++)
-            {
-                aa = M_PI / (1 << jj);
-                YVIv cs_loc = YVIv(cs);
-                cs_loc.push_back(tq - jj);
-                phase(tq, aa, cs_loc, flag_inv);
-            }
+            aa = M_PI / (1 << jj);
+            oc_fourier->phase(q1, aa, YVIv{int(q1 - jj)});
         }
-
-        for(uint32_t ii = 0; ii < uint32_t(nt/2); ii++)
-            swap(ts[ii], ts[nt - 1 - ii], cs);
     }
-    else
-    {
-        for(uint32_t ii = 0; ii < uint32_t(nt/2); ii++)
-            swap(ts[ii], ts[nt - 1 - ii], cs);
+    for(uint32_t ii = 0; ii < uint32_t(nt/2); ii++)
+        oc_fourier->swap(ts[ii], ts[nt - 1 - ii]);
 
-        for(uint32_t ii = nt - 1; ii > 0; ii--)
-        {
-            id_tq = nt - 1 - ii;
-            tq = ts[id_tq];
-            h(tq, cs);
-            for(uint32_t jj = 1; jj < (nt - ii + 1); jj++)
-            {
-                aa = M_PI / (1 << (nt - ii + 1 - jj));
-                YVIv cs_loc = YVIv(cs);
-                cs_loc.push_back(jj - 1);
-                phase(tq+1, aa, cs_loc, flag_inv);
-            }
-        }
-        h(ts[nt - 1], cs);
-    }   
+    // --- invert the circuit if necessary ---
+    if(flag_inv)
+    {
+        oc_fourier->conjugate_transpose();
+        fourier_name_tex += "^\\dagger";
+    }
+
+    // --- copy Fourier env. circuit to the current circuit ---
+    auto box = YSB(nullptr);
+    if(flag_box)
+        box = YMBo("F", ts, YVIv{}, fourier_name_tex);
+    copy_gates_from(
+        oc_fourier,
+        ts,
+        box, 
+        false,    
+        cs        // add the control on the cs qubits;
+    );
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::phase_estimation(
+    YCVI ta, 
+    const std::shared_ptr<const QCircuit>& A, 
+    const std::shared_ptr<const QCircuit>& INIT,
+    YCVI ty, 
+    YCVI cs, 
+    YCB flag_inv,
+    YCB flag_box
+){
+    string pe_name_tex = "PE";
+    auto ny      = ty.size();
+    auto nq_A    = A->get_n_qubits();
+    if(ta.size() != nq_A)
+    {
+        string err_line;
+        err_line  = "--- Error: setting the structure of the PE gate ---\n";
+        err_line += "The subcircuit " + A->get_name() + " has " + to_string(nq_A) + " qubits, while" + 
+            " one has indicated " + to_string(ta.size()) + " qubits to connect to.";
+        throw err_line;
+    }
+    if(ta.size() != INIT->get_n_qubits())
+    {
+        string err_line;
+        err_line  = "--- Error: setting the structure of the PE gate ---\n";
+        err_line += "The subcircuit " + INIT->get_name() + " has " + to_string(INIT->get_n_qubits()) + " qubits, while" + 
+            " one has indicated " + to_string(ta.size()) + " qubits to connect to.";
+        throw err_line;
+    }
+
+    // --- create sequences from several A operators ---
+    list<shared_ptr<QCircuit>> sequs_A;
+    for(int iy = 0; iy < ny; iy++)
+    {
+        uint32_t N_rot = 1 << iy;
+        auto c_temp = make_shared<QCircuit>(
+            "A2^"s+to_string(iy), env_, path_to_output_, nq_A
+        );
+        auto qa = c_temp->add_register("a", nq_A);
+        for(int i_rot = 0; i_rot < N_rot; i_rot++)
+            c_temp->copy_gates_from(A, qa);
+        sequs_A.push_back(c_temp);
+    }
+
+    // --- create an envelop circuit for the phase estimation operator ---
+    int count_c = -1;
+    auto oc_pe = make_shared<QCircuit>(
+        "PE", env_, path_to_output_, nq_A + ny
+    );
+    auto qy = oc_pe->add_register("y", ny);
+    auto qa = oc_pe->add_register("a", nq_A);
+    oc_pe->copy_gates_from(INIT, qa, YMBo("INIT", qa, YVIv{}));
+    oc_pe->h(qy);
+    for(auto& one_sequ: sequs_A)
+    {
+        count_c++;
+        auto ids_t_sequ = YVIv(qa);
+        ids_t_sequ.push_back(qy[count_c]);
+        oc_pe->copy_gates_from(
+            one_sequ, 
+            ids_t_sequ,  
+            YMBo(one_sequ->get_name(), qa, YVIv{ty[count_c]}, one_sequ->get_name())
+        );
+    }
+    oc_pe->quantum_fourier(qy, YVIv{}, true, true);
+
+    // --- invert the circuit if necessary ---
+    if(flag_inv)
+    {
+        oc_pe->conjugate_transpose();
+        pe_name_tex += "^\\dagger";
+    }
+
+    // --- copy PE env. circuit to the current circuit ---
+    auto circ_qubits = YVIv({ta});
+    circ_qubits.insert(circ_qubits.end(), ty.begin(), ty.end());
+
+    auto box = YSB(nullptr);
+    if(flag_box)
+        box = YMBo("PE", circ_qubits, YVIv{}, pe_name_tex);
+
+    copy_gates_from(
+        oc_pe,
+        circ_qubits,
+        box, 
+        false,    
+        cs        // add the control on the cs qubits;
+    );
     return get_the_circuit();
 }
 

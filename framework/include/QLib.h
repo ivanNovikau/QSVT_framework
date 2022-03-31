@@ -94,6 +94,8 @@
 #define YVVI std::vector<std::vector<int>>&
 #define YVVIv std::vector<std::vector<int>>
 
+#define YMBo std::make_shared<Box__>
+
 #define YGV YGlobalVariables
 
 #define LOG_INDENT "    "

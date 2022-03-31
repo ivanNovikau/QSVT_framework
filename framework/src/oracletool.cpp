@@ -296,6 +296,10 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
         {
             oc->read_structure_gate_fourier(istr, path_inputs_, flag_inv);
         }
+        if(YMIX::compare_strings(gate_name, "PE"))
+        {
+            oc->read_structure_gate_phase_estimation(istr, path_inputs_, ocs_, flag_inv);
+        }
 
     }
     catch(YCS e)
@@ -382,7 +386,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
             if(ids_q.size() != nq_sub)
             {
                 string err_line;
-                err_line  = "--- Error: setting the structure of a circuit " + curr_circuit_name + " ---\n";
+                err_line  = "--- Error: setting the structure of the circuit " + curr_circuit_name + " ---\n";
                 err_line += "The subcircuit " + subcircuit_name + " has " + to_string(nq_sub) + " qubits, while" + 
                     " one has indicated " + to_string(ids_q.size()) + " qubits to connect to.";
                 throw err_line;

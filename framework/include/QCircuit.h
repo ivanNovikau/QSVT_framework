@@ -22,7 +22,7 @@ class QCircuit{
      * @param[in] nq number of qubits to create. 
      * If \p nq <= 0, the QuEST circuit will not be created. 
      * In this case, it will be necessary to launch separately the function "create";
-     * @param[in] constants dictionary of constans used to create the circuit;
+     * @param[in] constants dictionary of constans used to create the circuit (by default, empty);
      * @param[in] flag_circuit print or not .circuit files (by default, false);
      * @param[in] flag_tex print or not .tex files (by default, false);
      * @param[in] flag_layers to calculate or not the layer for each gate;
@@ -94,10 +94,13 @@ class QCircuit{
      * @param box a ghost gate to indicate boundaries where 
      *  gates from the circuit \p circ are placed into the current circuit.
      * @param flag_inv if true, first get conjugate transpose gates from \p circ. 
+     * @param cs control qubits that should control each gate from \p circ.
      */
     void copy_gates_from(YCCQ circ, YCVI regs_new, 
         YCCB box = std::shared_ptr<const Box__>(nullptr),
-        YCB flag_inv = false);
+        YCB flag_inv = false,
+        YCVI cs = YVIv {}
+    );
 
     /**
      * @brief Insert gates (!!! without copying them and without the correction of their qubits !!!) 
@@ -221,6 +224,9 @@ class QCircuit{
     void read_structure_gate_subtractor1(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_swap(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_phase_estimation(
+        YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv
+    );
     void read_reg_int(YISS istr, YVI ids_target, YCS word_start=std::string());
     void read_end_gate(YISS istr, YVI ids_control, YVI ids_x, YVVI ids_control_it, YVVI ids_x_it);
 
@@ -517,8 +523,28 @@ class QCircuit{
 
     /** @brief Quantum Fourier circuit placed to the qubits \p ts and
      *         controlled by the qubits \p cs;
+     * @param flag_box if true, draw teh operator as a box, not as a circuit;
      */
-    YQCP quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv = false);
+    YQCP quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv = false, YCB flag_box = false);
+
+
+    /** @brief Phase estimation (PE) operator to find an eigenphase of the operator \p A, 
+     *         which sits on the qubits \p ta.
+     *         The eigenstate of the circuit is prepared by the operator \p INIT.
+     *         The final estimation is written to the qubits \p ty.
+     *         The whole PE operator can be controlled by qubits \p cs. 
+     * @param flag_box if true, draw teh operator as a box, not as a circuit;
+     */ 
+    YQCP phase_estimation(
+        YCVI ta, 
+        const std::shared_ptr<const QCircuit>& A, 
+        const std::shared_ptr<const QCircuit>& INIT,
+        YCVI ty, 
+        YCVI cs, 
+        YCB flag_inv = false,
+        YCB flag_box = false
+    );
+
 
     /**
      * @brief Add a Stop gate to a quantum state at this point.
