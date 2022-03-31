@@ -173,6 +173,13 @@ void QCircuit::finish_tex_file()
         vector<uint32_t> q_widths(nq_);
         for(auto id_layer = 1; id_layer < n_layers; id_layer++)
         {
+            if(id_layer%YGV::tex_circuit_length == 0)
+            {
+                for(auto id_q = 0; id_q < nq_; id_q++)
+                    q_widths[id_q] = 0;
+                continue;
+            }
+
             for(auto id_q = 0; id_q < nq_; id_q++)
                 q_widths[id_q] += tex_lines_[id_q][id_layer-1].length();
 
@@ -541,7 +548,7 @@ void QCircuit::save_regs()
 
                 // register name and qubit id within the register:
                 tex_lines_[counter_q].push_back(
-                    "\\lstick{$" + reg_name + "_" + to_string(reg_nq - i - 1) + "$}"
+                    "\\lstick{$" + reg_name + "_{" + to_string(reg_nq - i - 1) + "}$}"
                 );
 
                 // first layer:
@@ -1402,7 +1409,7 @@ YQCP QCircuit::phase_estimation(
     {
         uint32_t N_rot = 1 << iy;
         auto c_temp = make_shared<QCircuit>(
-            "A2^"s+to_string(iy), env_, path_to_output_, nq_A
+            "A2^{"s+to_string(iy)+"}"s, env_, path_to_output_, nq_A
         );
         auto qa = c_temp->add_register("a", nq_A);
         for(int i_rot = 0; i_rot < N_rot; i_rot++)
