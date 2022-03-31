@@ -27,6 +27,7 @@ BaseTool__::BaseTool__(
         hfo_.create(path_inputs_ + "/" + pname_ + "_circuit"s + ENDING_FORMAT_OUTPUT);
         hfo_.add_group("basic"); 
         hfo_.add_group("states"); 
+        hfo_.add_group("constants"); 
 
         // date of simulation:
         string str_date_time;

@@ -508,6 +508,12 @@ void OracleTool__::launch()
         uint32_t n_init_states = init_states_.size();
         hfo_.add_scalar(n_init_states, "n-init-states", "states");
 
+        // constants:
+        for(auto const& [key, val] : constants_)
+        {
+            hfo_.add_scalar(val, key, "constants");
+        }
+
         hfo_.close();
     }
 

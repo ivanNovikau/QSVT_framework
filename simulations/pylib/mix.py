@@ -186,13 +186,6 @@ def diag_matrix_function(A, func):
         A_res = A_res + func(ev) * vv
     return A_res, II, evalues, evectors
 
-# def find_bit_array_of_int(ii,n):
-#     line_command = '{0:0' + str(n) + 'b}'
-#     line_bits = line_command.format(ii)
-#     res = [None] * n
-#     for ibit, str1 in enumerate(line_bits):
-#         res[ibit] = int(str1)
-#     return np.array(res)
 
 def find(x, x1):
     # works only for monotonic increasing arrays!!!
@@ -827,6 +820,16 @@ def save_dat_plot_2d_file(full_fname, dd):
     os.system("pwd")
     print(command_line)
     os.system(command_line)
+
+
+def find_int_from_bit_array(bit_array):
+    n_bits = len(bit_array)
+    int_res = 0
+    for i_bit in range(n_bits):
+        if(bit_array[i_bit] == 1):
+            int_res += 2**(n_bits-1-i_bit)
+    return int_res
+
 
 
 

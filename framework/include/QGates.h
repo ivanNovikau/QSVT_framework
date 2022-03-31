@@ -62,6 +62,16 @@ class Gate__
          */
         inline void add_control_qubits(YCVI reg_control)
         {
+            for(auto const& new_c: reg_control)
+            {
+                auto it = find(cs_.begin(), cs_.end(), new_c);
+                if (it != cs_.end())
+                {
+                    std::ostringstream sstr;
+                    sstr << "The gate " << name_ << " is already controlled by the qubit [" << new_c << "]";
+                    throw sstr.str();
+                }
+            } 
             copy(reg_control.begin(), reg_control.end(), back_inserter(cs_));
         }
         inline void add_control_qubits(YCI c)

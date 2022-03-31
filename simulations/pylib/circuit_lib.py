@@ -35,12 +35,6 @@ def analysis_prob(pp, qq):
 
 
 def Wavefunction_adv(obj , *args, **kwargs):
-    # Return:
-    # str_wv - string with wavefunction;
-    # phases - phases in front of qubits;
-    # qq - qubits of the according systems;
-    # str_width - width of a ~half line in str_wv;
-
     # Converts a number to binary, right to left LSB 152 153 o
     def Binary(number,total): 
         qubits = int(math.log(total,2))
@@ -111,7 +105,7 @@ def Wavefunction_adv(obj , *args, **kwargs):
             
         if( (value.real != 0) or (value.imag != 0)):
             state = list(Binary(int(i),int(2**qubits)))
-            # state.reverse()
+            state.reverse()
             state_str = ''
             qq.append(list(state))
             
@@ -132,21 +126,6 @@ def Wavefunction_adv(obj , *args, **kwargs):
                     state_str = state_str + str(int(state[j])) 
                 else:
                     state_str = state_str + state[j]
-
-            # if( (value.real != 0) and (value.imag != 0) ):
-            #     if( value.imag > 0):
-            #         line1 = str(value.real) + '+' + str(value.imag) + 'j'
-            #         str_wv = str_wv + str_format.format(line1) + ' |' + state_str + '>   '
-            #     else:
-            #         line1 = str(value.real) + '' + str(value.imag) + 'j'
-            #         str_wv = str_wv + str_format.format(line1) + ' |' + state_str +  '>   '
-            # if( (value.real !=0 ) and (value.imag ==0) ):
-            #     str_wv = str_wv + str_format.format(str(value.real)) + ' |' + state_str + '>   '
-            # if( (value.real == 0) and (value.imag != 0) ):
-            #     str_wv = str_wv + str_format.format(str(value.imag) + 'j')  + ' |' + state_str + '>   '
-            # if(NL):
-            #     str_wv = str_wv + '\n'
-
             str_wv += ff.format(value) + ' |' + state_str + '>   '
             if(NL):
                 str_wv = str_wv + '\n'
@@ -177,11 +156,7 @@ def get_Fourier(nq, flag_also_inv=False, qc_fourier = None):
     return qc_fourier, gate_fourier, inv_gate_fourier
 
 
-def get_phase_estimation(nm, reg_target, gate_init, gate_u):
-    res_phase = None
-    res_phase_next = None
-    qc_phase_estimation = None
-
+def get_phase_estimation_circuit(nm, reg_target, gate_init, gate_u):
     m  = qiskit.QuantumRegister(nm, "m")
     cl = qiskit.ClassicalRegister(nm, "cl")
     qc_phase_estimation = qiskit.QuantumCircuit(m, reg_target, cl, name="PE")
@@ -200,12 +175,46 @@ def get_phase_estimation(nm, reg_target, gate_init, gate_u):
         for _ in range(nu):
             qc_u.append(gate_u, reg_target)
         gate_uc = qc_u.to_gate().control(1)
-        # qc_phase_estimation.append(gate_uc, [m[nm - ii -1]] + [reg_target])
         qc_phase_estimation.append(gate_uc, [m[ii]] + [reg_target])
             
     # --- Inverse Fourier transform ---
     _, _, inv_gate_fourier = get_Fourier(nm, flag_also_inv=True)
     qc_phase_estimation.append(inv_gate_fourier, m)
+
+    return qc_phase_estimation, m, cl
+
+
+def get_phase_estimation(nm, reg_target, gate_init, gate_u):
+    res_phase = None
+    res_phase_next = None
+    qc_phase_estimation = None
+
+    qc_phase_estimation, m, cl = get_phase_estimation_circuit(nm, reg_target, gate_init, gate_u)
+
+    # m  = qiskit.QuantumRegister(nm, "m")
+    # cl = qiskit.ClassicalRegister(nm, "cl")
+    # qc_phase_estimation = qiskit.QuantumCircuit(m, reg_target, cl, name="PE")
+
+    # # prepare the initial state:
+    # qc_phase_estimation.append(gate_init, reg_target)
+
+    # # --- Set the initial superposition ---
+    # for ii in range(nm):
+    #     qc_phase_estimation.h(m[ii])
+
+    # # --- add controlled U ---
+    # for ii in range(nm):
+    #     nu = 2**(ii)
+    #     qc_u = qiskit.QuantumCircuit(reg_target, name="U{:d}".format(nu))
+    #     for _ in range(nu):
+    #         qc_u.append(gate_u, reg_target)
+    #     gate_uc = qc_u.to_gate().control(1)
+    #     # qc_phase_estimation.append(gate_uc, [m[nm - ii -1]] + [reg_target])
+    #     qc_phase_estimation.append(gate_uc, [m[ii]] + [reg_target])
+            
+    # # # --- Inverse Fourier transform ---
+    # # _, _, inv_gate_fourier = get_Fourier(nm, flag_also_inv=True)
+    # # qc_phase_estimation.append(inv_gate_fourier, m)
 
     # --- set the measurements --- 
     qc_phase_estimation.measure(m, cl)
@@ -237,25 +246,6 @@ def get_phase_estimation(nm, reg_target, gate_init, gate_u):
     next_prob = (1. * next_prob) / full_prob
     res_int = string_bit_array_to_int(next_prob_state)
     res_phase_next = 2*np.pi * res_int / 2**nm
-
-    # # --- data to build histrogram ---
-    # n_probs = len(data)
-    # hist_probs = np.zeros(n_probs)
-    # hist_phases = np.zeros(n_probs)
-    # temp_probs = np.zeros(2**nm)
-    # temp_phases = np.zeros(2**nm)
-    # for cl_state in data:
-    #     int_1 = string_bit_array_to_int(cl_state)
-    #     temp_probs[int_1] = (1.*data[cl_state]) / full_prob
-    #     temp_phases[int_1] = 2*np.pi * int_1 / 2**nm
-
-    # # sort the data:
-    # count_hist = -1
-    # for ii in range(2**nm):
-    #     if(temp_probs[ii] > 0.0):
-    #         count_hist += 1
-    #         hist_probs[count_hist]  = temp_probs[ii]
-    #         hist_phases[count_hist] = temp_phases[ii]
 
     # --- data to build histrogram ---
     n_probs = len(data)

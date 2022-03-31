@@ -1,3 +1,4 @@
+from asyncio import constants
 from pickletools import read_unicodestringnl
 import sys
 import datetime
@@ -446,6 +447,58 @@ def get_int_from_reg_state(dd, reg_name, input_state):
     return int_repr
 
 
+
+
+def get_complex(ampls):
+    N = len(ampls)
+    ampls_complex = np.zeros(N, dtype=np.complex)
+    for i_state in range(N):
+        one_ampl = ampls[i_state]
+        ampls_complex[i_state] = np.complex(one_ampl["real"], one_ampl["imag"])
+    return ampls_complex
+
+
+# calculate the total probability of the state defined only the list_qubits;
+def calc_tot_prob_wrt(state_dict, list_qubits):
+    ampls = get_complex(state_dict["ampls"])
+    n_states, _ = state_dict["state"].shape
+    new_state_dict = {"states": [], "probs": []}
+    states_checked = []
+    for i_state in range(n_states):
+        prob_state = 0
+        one_state = state_dict["state"][i_state][list_qubits]
+        if list(one_state) in states_checked:
+            continue
+        for j_state in range(n_states):
+            if(one_state == state_dict["state"][j_state][list_qubits]).all():
+                prob_state += np.abs(ampls[j_state])**2
+        new_state_dict["states"].append(one_state)
+        new_state_dict["probs"].append(prob_state)
+        states_checked.append(list(one_state))
+    new_state_dict["states"] = np.array(new_state_dict["states"])
+    new_state_dict["probs"]  = np.array(new_state_dict["probs"])
+    return new_state_dict
+
+
+# probs_int - data structure obtained from calc_tot_prob_wrt:
+def pe_form_hist(probs_int):
+    n_states, n_qubits = probs_int["states"].shape
+    hist_probs = np.zeros(n_states)
+    hist_phases = np.zeros(n_states)
+    count_hist = -1
+    for i_state in range(n_states):
+        count_hist += 1
+        cl_state = probs_int["states"][i_state]
+        int_1 = mix.find_int_from_bit_array(cl_state)
+        hist_phases[count_hist] = 2*np.pi * int_1 / 2**n_qubits
+        hist_probs[count_hist]  = probs_int["probs"][i_state]
+    hist_res = {
+        "probs": np.array(hist_probs),
+        "phases": np.array(hist_phases)
+    }
+    return hist_res
+
+
 # -------------------------------------------------------------------------------
 # --- Basic class for measurements ---
 # -------------------------------------------------------------------------------
@@ -848,6 +901,9 @@ class MeasOracle__:
     # information about the project:
     dd_ = None
 
+    # constants:
+    constants_ = None
+
     # states:  
     n_init_states_ = None
     init_states_ = None
@@ -892,6 +948,10 @@ class MeasOracle__:
                 self.dd_["reg-shifts"][reg_names[i]] = reg_shift
                 reg_shift += reg_nq[i]
 
+            # --- constants ---
+            self.constants_ = {}
+            for field in f["constants"]:
+                self.constants_[field] = f["constants"][field][()]
 
             # --- initial states ---
             st = f["states"]
@@ -972,3 +1032,6 @@ class MeasOracle__:
                     str_state = get_str_state(state[ir], self.dd_["reg-nq"])
                     print("{:>22s}   {:s}".format(str_ampl, str_state))
         return
+
+
+    

@@ -1350,7 +1350,7 @@ YQCP QCircuit::quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv, YCB flag_box)
         }
     }
     for(uint32_t ii = 0; ii < uint32_t(nt/2); ii++)
-        oc_fourier->swap(ts[ii], ts[nt - 1 - ii]);
+        oc_fourier->swap(q[ii], q[nt - 1 - ii]);
 
     // --- invert the circuit if necessary ---
     if(flag_inv)
@@ -1434,7 +1434,10 @@ YQCP QCircuit::phase_estimation(
         oc_pe->copy_gates_from(
             one_sequ, 
             ids_t_sequ,  
-            YMBo(one_sequ->get_name(), qa, YVIv{ty[count_c]}, one_sequ->get_name())
+            YMBo(one_sequ->get_name(), qa, YVIv{}, one_sequ->get_name()),
+            // YSB(nullptr),
+            false,
+            {qy[count_c]}
         );
     }
     oc_pe->quantum_fourier(qy, YVIv{}, true, true);
@@ -1458,7 +1461,7 @@ YQCP QCircuit::phase_estimation(
         oc_pe,
         circ_qubits,
         box, 
-        false,    
+        false,
         cs        // add the control on the cs qubits;
     );
     return get_the_circuit();
