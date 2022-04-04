@@ -175,7 +175,7 @@ def get_phase_estimation_circuit(nm, reg_target, gate_init, gate_u):
         for _ in range(nu):
             qc_u.append(gate_u, reg_target)
         gate_uc = qc_u.to_gate().control(1)
-        qc_phase_estimation.append(gate_uc, [m[ii]] + [reg_target])
+        qc_phase_estimation.append(gate_uc, [m[ii]] + list(reg_target))
             
     # --- Inverse Fourier transform ---
     _, _, inv_gate_fourier = get_Fourier(nm, flag_also_inv=True)
@@ -185,36 +185,11 @@ def get_phase_estimation_circuit(nm, reg_target, gate_init, gate_u):
 
 
 def get_phase_estimation(nm, reg_target, gate_init, gate_u):
-    res_phase = None
-    res_phase_next = None
+    # res_phase = None
+    # res_phase_next = None
     qc_phase_estimation = None
 
     qc_phase_estimation, m, cl = get_phase_estimation_circuit(nm, reg_target, gate_init, gate_u)
-
-    # m  = qiskit.QuantumRegister(nm, "m")
-    # cl = qiskit.ClassicalRegister(nm, "cl")
-    # qc_phase_estimation = qiskit.QuantumCircuit(m, reg_target, cl, name="PE")
-
-    # # prepare the initial state:
-    # qc_phase_estimation.append(gate_init, reg_target)
-
-    # # --- Set the initial superposition ---
-    # for ii in range(nm):
-    #     qc_phase_estimation.h(m[ii])
-
-    # # --- add controlled U ---
-    # for ii in range(nm):
-    #     nu = 2**(ii)
-    #     qc_u = qiskit.QuantumCircuit(reg_target, name="U{:d}".format(nu))
-    #     for _ in range(nu):
-    #         qc_u.append(gate_u, reg_target)
-    #     gate_uc = qc_u.to_gate().control(1)
-    #     # qc_phase_estimation.append(gate_uc, [m[nm - ii -1]] + [reg_target])
-    #     qc_phase_estimation.append(gate_uc, [m[ii]] + [reg_target])
-            
-    # # # --- Inverse Fourier transform ---
-    # # _, _, inv_gate_fourier = get_Fourier(nm, flag_also_inv=True)
-    # # qc_phase_estimation.append(inv_gate_fourier, m)
 
     # --- set the measurements --- 
     qc_phase_estimation.measure(m, cl)
@@ -223,6 +198,11 @@ def get_phase_estimation(nm, reg_target, gate_init, gate_u):
     backend = qiskit.BasicAer.get_backend('qasm_simulator')
     job = backend.run(qiskit.transpile(qc_phase_estimation, backend))
     data = job.result().get_counts(qc_phase_estimation)
+
+    # --- find the full probability ---
+    full_prob = 0
+    for cl_state in data:   
+        full_prob += data[cl_state]
 
     # --- find the estimated phase ---
     max_prob, max_prob_state, full_prob = 0, "", 0
@@ -247,7 +227,7 @@ def get_phase_estimation(nm, reg_target, gate_init, gate_u):
     res_int = string_bit_array_to_int(next_prob_state)
     res_phase_next = 2*np.pi * res_int / 2**nm
 
-    # --- data to build histrogram ---
+    # --- data to build histogram ---
     n_probs = len(data)
     hist_probs = np.zeros(n_probs)
     hist_phases = np.zeros(n_probs)
