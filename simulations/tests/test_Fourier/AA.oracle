@@ -1,0 +1,74 @@
+
+// Launch from the current folder
+// ../../../framework/build_oracle/oracletool AA ./    1  1  1     10   
+// [exe-file] [oracle-name] [work-project] 
+//    [flag-comp-output] [flag-circuit] [flag-tex] 
+//    [tex-circuit-length] 
+
+CONSTANTS
+nq 4
+END_CONSTANTS
+
+
+CIRCUITS_DECLARATION
+A  2 c 2 1  r <nq> 0 
+END_CIRCUITS_DECLARATION
+
+INPUT_STATES   A        
+STATE 2 c 0 r 3     end_register  
+END_INPUT_STATES
+
+CIRCUIT_STRUCTURE A
+// igate Fourier r -1 ocontrol c 3 end_gate
+gate Fourier r -1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+// CIRCUITS_DECLARATION
+// A  1  r <nq> 0 
+// END_CIRCUITS_DECLARATION
+
+// INPUT_STATES   A        
+// STATE 1 r -1     end_register  
+// END_INPUT_STATES
+
+
+// CIRCUIT_STRUCTURE A
+// gate  adder1 r -1 end_gate
+// igate adder1 r -1 end_gate
+// END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

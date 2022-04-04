@@ -1,0 +1,98 @@
+
+// Launch from the current folder
+// ../../../framework/build_oracle/oracletool AA ./    1  1  1     10   
+// [exe-file] [oracle-name] [work-project] 
+//    [flag-comp-output] [flag-circuit] [flag-tex] 
+//    [tex-circuit-length] 
+
+CONSTANTS
+nq 4
+na 4
+END_CONSTANTS
+
+
+
+CIRCUITS_DECLARATION
+A  2 a <na> 1  r <nq> 0 
+// B 1  r <nq> 0
+U 2 a <na> 1  r <nq> 0
+END_CIRCUITS_DECLARATION
+
+
+INPUT_STATES   A         // calculate output states from the operator A;
+// INPUT_STATES   U      // calculate output states from the operator U;
+STATE 1    r 0     end_register  
+END_INPUT_STATES
+
+
+
+
+
+
+CIRCUIT_STRUCTURE A
+gate H r 3 end_gate
+gate Ry r 2 3.14 control r 1 end_gate
+// igate Rz r 4 1.57 control r 8 end_gate
+// gate X r 3 control a 6 end_gate
+// gate Y r 3 control_it a 6 end_gate
+// gate H r 3 control_it a 6 ocontrol a 1 control a 8 end_gate
+// gate H r 2 control a 4 end_gate
+// igate Rx r 4 0.2 control a 2 end_gate
+// igate Rc r 2 0.4 0.6 control a 4 end_gate
+// gate Phase r 8 0.2 control a 2 control a 4 end_gate
+// gate X r 1 control a 1 end_gate
+// gate H r 8 control a 2 end_gate
+// gate adder1  r -1 control a 2 end_gate
+// gate subtractor1  r -1 control a 2 end_gate
+gate condR sqrt_Bvx  a 1 r 7 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+CIRCUIT_STRUCTURE B
+gate X r 5 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+CIRCUIT_STRUCTURE U
+// circuit B 2 r 3 a 3 end_circuit
+// icircuit A 2 a -1 r -1 0 end_circuit  // exchange registers
+circuit A -1 0 end_circuit      
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
