@@ -33,56 +33,62 @@ If necessary, `oracletool` builds the `.circuit` and `.tex` representation of th
 
 To run the oracle-tool, use the following command:
 
-`[path_to_QSVT_framework]/framework/build_oracle/oracletool [name of oracle] [path to the input file] [flag_output] [flag-circuit] [flag-tex] [tex-circuit-length]`
+`[path_to_QSVT_framework]/framework/build_oracle/oracletool [oracle-name] [work-directory] [optional-parameters]`
 
-The `oracletool` searches for the file `[name of oracle].oracle` in the folder `[path to the input file]`.
+The `oracletool` searches for the file `[oracle-name].oracle` in the folder `[work-directory]`.
 
-`[flag_output]`, optional: if `1`, then calculate output states for the specified input states from the `.oracle` file;<br> 
-if `0`, then do not compute the output states (just produce `.circuit` and `.tex` files).<br>
-By default, `[flag_output] = 1`;
+The optional parameters, `[optional-parameters]`, include : 
 
-`[flag-circuit]`, optional: do print or not the `.circuit` files. 
-By default, `[flag-circuit] = 1`.
+`-flag_compute_output`: if `-flag_compute_output 1`, then `oracletool` calculates output states for the specified input states from the `.oracle` file.
+By default, `-flag_compute_output 1`.
 
-`[flag-tex]`, optional: do print or not the `.tex` files. 
-By default, `[flag-tex] = 1`.
+`-flag_print_output`: to print output states on screen.
+By default, `-flag_print_output = 1`.
 
-`[tex-circuit-length]`, optional: length of each row in the circuit, when it is printed to the `.tex` file (by default, ).<br>
-By default, `[tex-circuit-length] = 10`.
+`-flag_circuit`: to write the `.circuit` files. 
+By default, `-flag_circuit 1`.
+
+`-flag_tex`: to write the `.tex` files. 
+By default, `-flag_tex 1`.
+
+`-tex_CL`: length of each row in the circuit, when it is printed to the `.tex` file.
+By default, `-tex_CL 10`.
 
 To understand the format of the `.oracle` file, see the wiki page:<br> 
 https://github.com/ivanNovikau/QSVT_framework/wiki
 
 ## Run the circuit reader:
 The circuit reader, `qc_circuit`,\\ 
---> either reads a `.circuit` file to create a quantum circuit and compute its output state (`qc_circuit` always takes the zero input state);\\ 
---> or creates a random circuit, computes its output state and creates the `.circuit` output file of this random circuit;\\
+--> either reads a `.circuit` file to create a quantum circuit and to compute its output states (`qc_circuit` always takes the zero input state);\\ 
+--> or creates a random circuit, computes its output states and creates the `.circuit` output file of this random circuit;\\
 The program can produce the `.tex` representation of the circuit.
 
 To run the circuit reader, use the following command:
 
-`[path_to_QSVT_framework]/framework/build_circuit/qc_circuit [name of oracle] [path to the input file] [flag-random] [flag_output] [flag-tex] [tex-circuit-length]`
+`[path_to_QSVT_framework]/framework/build_circuit/qc_circuit [file-name] [work-directory] [optional-parameters]`
 
-Here, if `[flag-random] = 0`, then `qc_circuit` reads a `.circuit` file;\\
-      if `[flag-random] = 1`, then `qc_circuit` creates a random circuit and creates its `.circuit` file.
-To create the random circuit, `qc_circuit` reads a `.random` file to to find out the width and the number of gates in the gate.
+`[optional-parameters]` includes the same parameters as the `oracletool` (except `-flag_circuit`).
+`[optional-parameters]` also includes `-flag_random`: <br>
+      if `-flag_random 0`, then `qc_circuit` reads the `[file-name].circuit` file;\\
+      if `-flag_random 1`, then `qc_circuit` reads the `[file-name].random` file. The `[file-name].random` file contains the number of qubits and the number of gates in the random circuit to create. Then, `qc_circuit` creates the random circuit and writes it down to the `[file-name].circuit` file.
+
 
 ## Run the framework
 The framework, `qsvt`, takes the `.oracle` files of the block-encoded matrix and of the initialization circuit and produces the QSVT (QSP) circuit for the parameters described in the `.qsp` file and using the rotation angles from the `.angles` file(s).
 
 To run the framework, use the following command
 
-`[path_to_QSVT_framework]/framework/qsvt [name of oracle] [work-folder with the .qsp file] [case-to-sim]`
+`[path_to_QSVT_framework]/framework/qsvt [oracle-name] [work-folder with the .qsp file] [case-to-sim]`
 
 The framework searches for the following files in the directory `[work-folder with the .qsp file]`:
 
-`[name of oracle].qsp`: contains information about the QSVT(QSP) parameters such as the time interval for the Hamiltonian simulation;
+`[oracle-name].qsp`: contains information about the QSVT(QSP) parameters such as the time interval for the Hamiltonian simulation;
 
-`[name of oracle].oracle`: contains the circuit, which encodes the Hamiltonian of the simulated system;
+`[oracle-name].oracle`: contains the circuit, which encodes the Hamiltonian of the simulated system;
 
 The QSVT (QSP) circuit is initialized with a quantum state, which should be read from the file
-`[name of oracle].init_state` if `sel_init vector [matrix-norm]` is set in the `.qsp` file.
-If `sel_init oracle [matrix-norm]`, then the circuit from the `[name of oracle]_init.oracle` file is used to initialize the QSVT circuit.
+`[oracle-name].init_state` if `sel_init vector [matrix-norm]` is set in the `.qsp` file.
+If `sel_init oracle [matrix-norm]`, then the circuit from the `[oracle-name]_init.oracle` file is used to initialize the QSVT circuit.
 
 `.angles`: file(s), which contain(s) the rotation angles for the QSP (QSVT) approximation.
 
