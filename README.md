@@ -58,18 +58,17 @@ To understand the format of the `.oracle` file, see the wiki page:<br>
 https://github.com/ivanNovikau/QSVT_framework/wiki
 
 ## Run the circuit reader:
-The circuit reader, `qc_circuit`,\\ 
---> either reads a `.circuit` file to create a quantum circuit and to compute its output states (`qc_circuit` always takes the zero input state);\\ 
---> or creates a random circuit, computes its output states and creates the `.circuit` output file of this random circuit;\\
-The program can produce the `.tex` representation of the circuit.
+The circuit reader, `qc_circuit`,<br> 
+--> either reads a `.circuit` file to create a quantum circuit and to compute its output states (`qc_circuit` always takes the zero input state);<br> 
+--> or creates a random circuit, computes its output states and creates the `.circuit` output file of this random circuit.
 
 To run the circuit reader, use the following command:
 
 `[path_to_QSVT_framework]/framework/build_circuit/qc_circuit [file-name] [work-directory] [optional-parameters]`
 
-`[optional-parameters]` includes the same parameters as the `oracletool` (except `-flag_circuit`).
-`[optional-parameters]` also includes `-flag_random`: <br>
-      if `-flag_random 0`, then `qc_circuit` reads the `[file-name].circuit` file;\\
+`[optional-parameters]` include the same parameters as the `oracletool` (except the `-flag_circuit`).<br>
+`[optional-parameters]` also include `-flag_random`: <br>
+      if `-flag_random 0`, then `qc_circuit` reads the `[file-name].circuit` file;<br>
       if `-flag_random 1`, then `qc_circuit` reads the `[file-name].random` file. The `[file-name].random` file contains the number of qubits and the number of gates in the random circuit to create. Then, `qc_circuit` creates the random circuit and writes it down to the `[file-name].circuit` file.
 
 
