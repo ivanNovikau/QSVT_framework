@@ -3,7 +3,7 @@
 // ../../../framework/build_circuit/qc_circuit AA ./  -flag_random 1 -flag_compute_output 1 -flag_print_output  0 -flag_tex 1   -tex_CL  10   
 
 
-10  20
+12  200
 
 
 

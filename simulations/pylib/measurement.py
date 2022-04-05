@@ -461,7 +461,7 @@ def compare_states(output_state_dict, qiskit_ampls, qiskit_states, err_comp = 1e
     ampls = get_complex(output_state_dict["ampls"])
 
     n_states_, _ = states.shape
-    if n_states_ is not len(qiskit_states):
+    if not (n_states_ == len(qiskit_states)):
         print("different number of states")
         return
 
