@@ -54,12 +54,18 @@ To understand the format of the `.oracle` file, see the wiki page:<br>
 https://github.com/ivanNovikau/QSVT_framework/wiki
 
 ## Run the circuit reader:
-The circuit reader, `qc_circuit`, reads a `.circuit` file to create a quantum circuit and compute its output state (`qc_circuit` always takes the zero input state).
+The circuit reader, `qc_circuit`,\\ 
+--> either reads a `.circuit` file to create a quantum circuit and compute its output state (`qc_circuit` always takes the zero input state);\\ 
+--> or creates a random circuit, computes its output state and creates the `.circuit` output file of this random circuit;\\
 The program can produce the `.tex` representation of the circuit.
 
 To run the circuit reader, use the following command:
 
-`[path_to_QSVT_framework]/framework/build_circuit/qc_circuit [name of oracle] [path to the input file] [flag_output] [flag-tex] [tex-circuit-length]`
+`[path_to_QSVT_framework]/framework/build_circuit/qc_circuit [name of oracle] [path to the input file] [flag-random] [flag_output] [flag-tex] [tex-circuit-length]`
+
+Here, if `[flag-random] = 0`, then `qc_circuit` reads a `.circuit` file;\\
+      if `[flag-random] = 1`, then `qc_circuit` creates a random circuit and creates its `.circuit` file.
+To create the random circuit, `qc_circuit` reads a `.random` file to to find out the width and the number of gates in the gate.
 
 ## Run the framework
 The framework, `qsvt`, takes the `.oracle` files of the block-encoded matrix and of the initialization circuit and produces the QSVT (QSP) circuit for the parameters described in the `.qsp` file and using the rotation angles from the `.angles` file(s).

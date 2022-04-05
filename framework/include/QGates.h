@@ -173,7 +173,7 @@ class Gate__
 
             cf << "pars " << pars_.size() << " ";
             for(auto& x: pars_)
-                cf << x << " ";
+                cf << std::scientific << std::setprecision(PARAMETER_ACCURACY) << x << " ";
             
             if(flag_new_line)
                 cf << "\n";
@@ -247,6 +247,7 @@ class Gate__
 
     public:
         const static std::string name_shared_;
+        static const std::vector<std::string> avail_gate_names_;
         
     protected:
         std::string name_;// current name of the gate;

@@ -13,6 +13,21 @@ const string Rz__::name_shared_ = "Rz";
 const string Rc__::name_shared_ = "Rc";
 const string Phase__::name_shared_ = "Phase";
 
+const std::vector<std::string> Gate__::avail_gate_names_ = {
+    X__::name_shared_,
+    Y__::name_shared_,
+    Z__::name_shared_,
+    H__::name_shared_,
+    Rx__::name_shared_,
+    Ry__::name_shared_,
+    Rz__::name_shared_,
+    Phase__::name_shared_,
+    string("SWAP"),
+    string("CNOT"),
+    string("CH"),
+    string("CRy")
+};
+
 void Gate__::correct_qubits(YCVI regs)
 {
     int old_q = 0;

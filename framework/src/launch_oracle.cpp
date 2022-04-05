@@ -3,13 +3,11 @@ using namespace std;
 
 /**
  * @brief To launch the oracletool.
- * @param argv oracletool [project_name] [path_to_input_files] [flag_compute_output] 
- *  [flag-circuit] [flag-tex] [tex-circuit-length] [flag-layers]
+ * @param argv oracletool [project_name] [path_to_input_files]
  */
 int main(int argc, char *argv[])
 {
     QuESTEnv env = createQuESTEnv();
-
     if(env.rank == 0)
     {
         if(argc < 2)
@@ -26,11 +24,16 @@ int main(int argc, char *argv[])
         cout << "Path to input files: " << argv[2] << "/" << endl;
     }
 
-    // project name
-    string pname(argv[1]);
+    // --------------------------------------------------------
+    uint32_t id_arg;
+
+    // --- project name ---
+    id_arg = 1;
+    string pname(argv[id_arg]);
     
-    // path to input files:
-    string path_input(argv[2]);
+    // --- path to input files ---
+    id_arg += 1;
+    string path_input(argv[id_arg]);
     if(env.rank == 0)
     {
         YMIX::LogFile::name_global_ = path_input + "/" + pname + ".clog";
@@ -38,39 +41,64 @@ int main(int argc, char *argv[])
     }
     YMIX::print_log(env, "Number of ranks: " + to_string(env.numRanks));
 
-    // flag to compute output from the oracle
+    // --------------------------------------------------------
+    // --- Read flags ---
     bool flag_compute_output = true;
-    if(argc > 3) flag_compute_output = stoi(string (argv[3]));
-    if(flag_compute_output) YMIX::print_log(env, "Flag compute output oracle = true");
-    else                    YMIX::print_log(env, "Flag compute output oracle = false");
-
-    // flag print .circuit files:
     bool flag_circuit = true;
-    if(argc > 4) flag_circuit = stoi(string (argv[4]));
-    if(flag_circuit) YMIX::print_log(env, "Print .circuit files.");
-    else             YMIX::print_log(env, "Do not print the .circuit files.");
-
-    // flag print .tex files:
+    bool flag_print_output = true;
     bool flag_tex = true;
-    if(argc > 5) flag_tex = stoi(string (argv[5]));
-    if(flag_tex) YMIX::print_log(env, "Print .tex files.");
-    else         YMIX::print_log(env, "Do not print the .tex files.");
+    bool flag_layers = false;
 
-    // length of the circuit in the .tex file:
-    if(argc > 6) 
-        YGV::tex_circuit_length = stoi(string (argv[6]));
+    id_arg += 1;
+    while(id_arg < (argc - 1))
+    {
+        if(YMIX::compare_strings(argv[id_arg], "-flag_compute_output"))
+        {
+            id_arg += 1;
+            flag_compute_output = stoi(string (argv[id_arg]));
+        }
+        if(YMIX::compare_strings(argv[id_arg], "-flag_circuit"))
+        {
+            id_arg += 1;
+            flag_circuit = stoi(string (argv[id_arg]));
+        }
+        if(YMIX::compare_strings(argv[id_arg], "-flag_print_output"))
+        {
+            id_arg += 1;
+            flag_print_output = stoi(string (argv[id_arg]));
+        }
+        if(YMIX::compare_strings(argv[id_arg], "-flag_tex"))
+        {
+            id_arg += 1;
+            flag_tex = stoi(string (argv[id_arg]));
+        }
+        if(YMIX::compare_strings(argv[id_arg], "-tex_CL"))
+        {
+            id_arg += 1;
+            YGV::tex_circuit_length = stoi(string (argv[id_arg]));
+        }
+        if(YMIX::compare_strings(argv[id_arg], "-flag_layers"))
+        {
+            id_arg += 1;
+            flag_layers = stoi(string (argv[id_arg]));
+        }
+
+        id_arg += 1;
+    }
+    YMIX::print_log(env, "\n--- Initial flags ---");
+    if(!flag_compute_output) YMIX::print_log(env, "-> do not compute output states.");
+    if(!flag_circuit)        YMIX::print_log(env, "-> do not write the .circuit files.");
+    if(!flag_print_output)   YMIX::print_log(env, "-> do not print output states on screen.");
+    if(flag_layers)          YMIX::print_log(env, "-> calculate a layer id for each gate.");
+    if(!flag_tex)            YMIX::print_log(env, "-> do not write the .tex file.");
     if(flag_tex) 
         YMIX::print_log(
             env, 
-            "Circuit length in the .tex files = " + to_string(YGV::tex_circuit_length)
-        );  
-
-    // flag to calculate layers:
-    bool flag_layers = false;
-    if(argc > 7) flag_layers = stoi(string (argv[7]));
-    if(flag_layers) YMIX::print_log(env, "Calculate layers for each gate.");
-    else            YMIX::print_log(env, "Do not calculate layers.");
+            "-> length of a single row in the .tex file = " + to_string(YGV::tex_circuit_length)
+        );
+    YMIX::print_log(env, "---\n");
     
+    // --------------------------------------------------------
     try
     {
         // create the tool for the oracle analysis: 
@@ -79,6 +107,7 @@ int main(int argc, char *argv[])
             pname, 
             path_input, 
             flag_compute_output,
+            flag_print_output,
             flag_circuit,
             flag_tex,
             flag_layers,

@@ -447,8 +447,6 @@ def get_int_from_reg_state(dd, reg_name, input_state):
     return int_repr
 
 
-
-
 def get_complex(ampls):
     N = len(ampls)
     ampls_complex = np.zeros(N, dtype=np.complex)
@@ -456,6 +454,41 @@ def get_complex(ampls):
         one_ampl = ampls[i_state]
         ampls_complex[i_state] = np.complex(one_ampl["real"], one_ampl["imag"])
     return ampls_complex
+
+
+def compare_states(output_state_dict, qiskit_ampls, qiskit_states, err_comp = 1e-6, flag_print = False):
+    states = output_state_dict["state"]
+    ampls = get_complex(output_state_dict["ampls"])
+
+    n_states_, _ = states.shape
+    if n_states_ is not len(qiskit_states):
+        print("different number of states")
+        return
+
+    # compare state by state:
+    for i_state in range(n_states_):
+        ampl_one = ampls[i_state]
+        diff_real = ampl_one.real - qiskit_ampls[i_state].real
+        diff_imag = ampl_one.imag - qiskit_ampls[i_state].imag
+
+        if flag_print:
+            print("\n-----------------------------")
+            print(list(states[i_state]))
+            print(qiskit_states[i_state])
+        if not (states[i_state] == qiskit_states[i_state]).all():
+            print("the states are different")
+            return
+
+        if flag_print:
+            print(diff_real)
+            print(diff_imag)
+        if np.abs(diff_real) < err_comp and np.abs(diff_imag) < err_comp:
+            continue
+        else:
+            print("the amplitudes are different")
+            return
+    print("the states are close to each other with the imposed error.")
+    return
 
 
 # calculate the total probability of the state defined only the list_qubits;
@@ -596,7 +629,7 @@ class Meas__:
         state = self.states_[id_step]["state"]
         ampls = self.states_[id_step]["ampls"]
 
-        ampls_complex = self.get_complex(ampls)
+        ampls_complex = get_complex(ampls)
         norm_ampl = np.sqrt(np.sum(np.abs(ampls_complex)**2))
         ampls_norm = ampls_complex / norm_ampl
         return ampls_norm, state
@@ -618,15 +651,6 @@ class Meas__:
         return
 
 
-    def get_complex(self, ampls):
-        N = len(ampls)
-        ampls_complex = np.zeros(N, dtype=np.complex)
-        for i_state in range(N):
-            one_ampl = ampls[i_state]
-            ampls_complex[i_state] = np.complex(one_ampl["real"], one_ampl["imag"])
-        return ampls_complex
-
-
     ## 
     # -> choice = {"reg_name_1": int_1, "reg_name_2": int_2, ...}.
     # One takes all states, which satisfy:
@@ -644,7 +668,7 @@ class Meas__:
         one_step_ampls = self.states_[id_t]["ampls"]
 
         # normalize the state amplitudes:
-        ampls_complex = self.get_complex(one_step_ampls)
+        ampls_complex = get_complex(one_step_ampls)
         norm_ampl = np.sqrt(np.sum(np.abs(ampls_complex)**2))
         one_step_ampls = ampls_complex / norm_ampl
 
@@ -1032,6 +1056,9 @@ class MeasOracle__:
                     str_state = get_str_state(state[ir], self.dd_["reg-nq"])
                     print("{:>22s}   {:s}".format(str_ampl, str_state))
         return
+
+
+    
 
 
     

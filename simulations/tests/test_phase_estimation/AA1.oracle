@@ -1,9 +1,6 @@
 
 // Launch from the current folder
-// ../../../framework/build_oracle/oracletool AA1 ./    1  1  1     10   
-// [exe-file] [oracle-name] [work-project] 
-//    [flag-comp-output] [flag-circuit] [flag-tex] 
-//    [tex-circuit-length] 
+// ../../../framework/build_oracle/oracletool AA1 ./ -flag_circuit 1 -flag_tex 1 -flag_compute_output 1 -flag_print_output  0  -tex_CL  10  
 
 // estimation of the eigenphase of the single-qubit operator Ry;
 

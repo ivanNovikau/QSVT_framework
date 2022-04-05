@@ -6,13 +6,15 @@ OracleTool__::OracleTool__(
     YCS pname, 
     YCS path_to_inputs, 
     YCB flag_compute_output,
+    YCB flag_print_output,
     YCB flag_circuit,
     YCB flag_tex,
     YCB flag_layers,
     YCB flag_hdf5
 ) : BaseTool__(
     env, pname, path_to_inputs, 
-    flag_compute_output, flag_circuit, flag_tex, 
+    flag_compute_output, flag_print_output, 
+    flag_circuit, flag_tex, 
     flag_layers, flag_hdf5
 ){
     format_file_ = FORMAT_ORACLE;
@@ -479,7 +481,7 @@ void OracleTool__::launch()
 
     YMIX::print_log(
         env_, 
-        "--- Analysis of a circuit " + oc_to_launch_->get_name() + " ---"
+        "--- Analysis of the circuit [" + oc_to_launch_->get_name() + "] ---"
     );
 
     // working circuit object:
@@ -534,9 +536,6 @@ void OracleTool__::launch()
 
         // --- Print the initial state ---
         {
-            // u_work->get_wavefunction(
-            //     u_work->get_standart_output_format(), str_wv, str_wv_nz, 3
-            // );
             list<vector<short>> states;
             vector<Complex> ampls;
             u_work->get_state_full(
@@ -581,9 +580,6 @@ void OracleTool__::launch()
                 // compute the output state
                 timer_comp.Start();
                 YMIX::print_log(env_, "Circuit computation... ", 0, false, false);
-                // u_work->get_wavefunction(
-                //     u_work->get_standart_output_format(), str_wv, str_wv_nz, 3
-                // );
                 u_work->get_state_zero_ancillae(
                     u_work->get_standart_output_format(), 
                     str_wv_zero_anc, 
@@ -602,7 +598,7 @@ void OracleTool__::launch()
                 );
                 timer_comp.Stop();
                 YMIX::print_log(env_, "duration: " + timer_comp.get_dur_str_s());
-                YMIX::print_log(env_, "...Output state after " + stop_point_name + ": \n" + str_wv_all);
+                if(flag_print_output_) YMIX::print_log(env_, "...Output state after " + stop_point_name + ": \n" + str_wv_all);
             }
 
             // --- Store the output state at the very end of the circuit ---
@@ -632,7 +628,6 @@ void OracleTool__::launch()
                         "states"
                     );
                 }
-                
                 hfo_.close(); 
             }
         }

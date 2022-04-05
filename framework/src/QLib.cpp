@@ -127,24 +127,10 @@ ComplexMatrix2 YGV::mPhase(YCQR a)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool YMATH::is_zero(YCQR x)
 {
     // if(abs(x) < std::numeric_limits<double>::min())
-    if(abs(x) < 1e-14)
+    if(abs(x) < ZERO_ERROR)
         return true;
     else
         return false;

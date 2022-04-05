@@ -8,10 +8,10 @@ class BaseTool__
 {
 public:
     /**
-     * @brief Construct a new OracleTool__ object
      * @param[in] project_name  is a project name that defines names of input and output files.
      * @param[in] path_to_inputs is path to input files.
-     * @param[in] flag_compute_output if True, compute output states, otherwise only input states
+     * @param[in] flag_compute_output if True, compute output states;
+     * @param[in] flag_print_output if True, print output states on screen;
      * @param[in] flag_circuit print or not .circuit files;
      * @param[in] flag_tex print or not .tex files;
      * @param[in] flag_layers to calculate or not the layer for each gate;
@@ -22,6 +22,7 @@ public:
         YCS project_name, 
         YCS path_to_inputs, 
         YCB flag_compute_output,
+        YCB flag_print_output,
         YCB flag_circuit,
         YCB flag_tex,
         YCB flag_layer,
@@ -34,7 +35,7 @@ public:
     
 protected:
     void read_data();
-    void read_input_file(YS data);
+    void read_input_file(YS data, YCS file_name="");
     virtual void read_circuit_structure_from_file(YCS data) = 0;
     
 protected:
@@ -48,12 +49,13 @@ protected:
     std::map<std::string, YSQ> ocs_; // circuits
     YSQ oc_to_launch_ = nullptr; // a circuit to launch
 
-    bool flag_compute_output_; // if True, compute output states from an oracle;
+    bool flag_compute_output_; // if True, compute output states;
+    bool flag_print_output_; // if True, print output states on screen;
     bool flag_circuit_; // print or not .circuit files;
     bool flag_tex_; // print or not .circuit files;
     bool flag_layers_; // to calculate or not the layers;
     bool flag_hdf5_; // to create the hdf5 file;
-
+    
     YMIX::H5File hfo_; // an .hdf5 file where output data are to write down;
 };
 

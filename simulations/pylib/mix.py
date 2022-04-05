@@ -831,6 +831,17 @@ def find_int_from_bit_array(bit_array):
     return int_res
 
 
+def is_zero(a):
+    if(np.abs(a) > 1e-10):
+        return False
+    else:
+        return True
+
+
+
+
+
+
 
 
 

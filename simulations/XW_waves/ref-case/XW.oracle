@@ -1,3 +1,8 @@
+// Launch from the current folder
+// ../../../framework/build_oracle/oracletool XW ./ -flag_circuit 0 -flag_tex 0 -flag_compute_output 1 -flag_print_output  1  -tex_CL  10 
+
+
+
 //-> Reference case with Nx = 1024
 CONSTANTS  
 nj  10    //-> size of a space grid

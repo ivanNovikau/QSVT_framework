@@ -9,9 +9,6 @@
  * ---
  * The 0-th qubit is the least significant 
  * (the rightmost in the statevector and the very bottom qubit in the quantum circuit)
- * ---
- * Definitions:
- * -> CF is the text representation of a circuit component (e.g. gate) in the circuit file.
  */
 class QCircuit{
     public:
@@ -430,7 +427,6 @@ class QCircuit{
     }
 
     /** Set Pauli X gate at \p t target qubit. 
-     * CF: X target
      * @param[in] t target qubit;
      * @param[in] cs control qubits;
      * @return pointer to the circuit.
@@ -439,7 +435,6 @@ class QCircuit{
     YQCP x(YCVI ts, YVIv cs = {});
 
     /** Set Pauli Y gate at \p t target qubit. 
-     * CF: Y target
      * @param[in] t target qubit;
      * @param[in] cs control qubits;
      * @return pointer to the circuit.
@@ -448,7 +443,6 @@ class QCircuit{
     YQCP y(YCVI ts, YVIv cs = {});
 
     /** Set Hadamard gate at \p t target qubit.  
-     * CF: H target
      * @param[in] t target qubit;
      * @param[in] cs control qubits;
      * @return pointer to the circuit. 
@@ -457,7 +451,6 @@ class QCircuit{
     YQCP h(YCVI ts, YVIv cs = {});
 
     /** Set Pauli Z gate at \p t target qubit. 
-     * CF: Z target
      * @param[in] t target qubit;
      * @param[in] cs control qubits;
      * @return pointer to the circuit.
@@ -466,7 +459,6 @@ class QCircuit{
     YQCP z(YCVI ts, YVIv cs = {});
 
     /** Set a Rx-rotation gate.   
-     * CF: Rx target angle
      * @param[in] t target qubit;
      * @param[in] a angle to rotate on;
      * @return pointer to the circuit.
@@ -474,7 +466,6 @@ class QCircuit{
     inline YQCP rx(YCI t, YCQR a, YVIv cs = {}, YCB flag_inv = false){ return add_sq_rg<Rx__>(t, a, cs, flag_inv); }
 
     /** Set a Ry-rotation gate.   
-     * CF: Ry target angle
      * @param[in] t target qubit;
      * @param[in] a angle to rotate on;
      * @return pointer to the circuit.
@@ -482,7 +473,6 @@ class QCircuit{
     inline YQCP ry(YCI t, YCQR a, YVIv cs = {}, YCB flag_inv = false){ return add_sq_rg<Ry__>(t, a, cs, flag_inv); }
 
     /** Set a Rz-rotation gate.   
-     * CF: Rz target angle
      * @param[in] t target qubit;
      * @param[in] a angle to rotate on;
      * @return pointer to the circuit.
@@ -490,7 +480,6 @@ class QCircuit{
     inline YQCP rz(YCI t, YCQR a, YVIv cs = {}, YCB flag_inv = false){ return add_sq_rg<Rz__>(t, a, cs, flag_inv); }
 
     /** Set the Rc-rotation gate: Ry(ay).Rz(az)   
-     * CF: Rc target angles
      * @param[in] t target qubit;
      * @param[in] az angle of the Rz-rotation;
      * @param[in] ay angle of the Ry-rotation;
@@ -669,6 +658,9 @@ class QCircuit{
 
 private:
     qreal get_value_from_word(YCS word);
+
+
+
 
 
 private:

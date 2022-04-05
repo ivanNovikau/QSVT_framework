@@ -1,4 +1,5 @@
-// ../../../framework/build_oracle/oracletool XW_init ./    1  0  1  10
+// Launch from the current folder
+// ../../../framework/build_oracle/oracletool XW_init ./ -flag_circuit 0 -flag_tex 0 -flag_compute_output 1 -flag_print_output  1  -tex_CL  10 
 
 CONSTANTS
 nj  6

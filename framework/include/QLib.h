@@ -19,10 +19,11 @@
 #include <iterator>
 #include <algorithm>
 
+#include <time.h>
 #include <stdlib.h> 
+#include <stdio.h> 
 
 #include <limits>
-// #include <time.h>
 #include <chrono>
 #include <stdarg.h>
 #include <memory>
@@ -116,8 +117,12 @@
 #define FORMAT_LOG        ".log"s
 #define FORMAT_QSP        ".qsp"s
 #define FORMAT_INIT       ".init_state"s
+#define FORMAT_RANDOM     ".random"s
 #define ENDING_FORMAT_OUTPUT "_OUTPUT.hdf5"s
 #define ENDING_FORMAT_RESTART "_RESTART.hdf5"s
+
+#define ZERO_ERROR 1e-14
+#define PARAMETER_ACCURACY 12
 
 
 enum SEL_INIT_STATE_PREP {use_init_vector, use_init_oracle};

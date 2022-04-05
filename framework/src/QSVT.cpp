@@ -296,15 +296,7 @@ void QSVT__::read_angles_def_parity(YCS line_parity, YVQ phis, uint32_t& N_angle
 void QSVT__::read_block_encoding_oracle()
 {
     YMIX::print_log(env_, "Reading the block-encoding oracle...");
-    OracleTool__* oo = new OracleTool__(
-        env_, 
-        project_name_, 
-        path_inputs_, 
-        false,
-        false,
-        false,
-        false
-    );
+    OracleTool__* oo = new OracleTool__(env_, project_name_, path_inputs_);
     u_ = oo->get_circuit();
     delete oo;
 }
@@ -449,15 +441,7 @@ void QSVT__::set_init_vector()
         YMIX::print_log(env_, "----------------------------------------------------");
         YMIX::print_log(env_, "Reading oracle for the circuit initialization...");
         YMIX::print_log(env_, "----------------------------------------------------");
-        OracleTool__* oo = new OracleTool__(
-            env_, 
-            project_name_ + "_init", 
-            path_inputs_, 
-            false,
-            false,
-            false,
-            false
-        );
+        OracleTool__* oo = new OracleTool__(env_, project_name_ + "_init", path_inputs_);
         oc_init_ = oo->get_circuit();
         delete oo;
 

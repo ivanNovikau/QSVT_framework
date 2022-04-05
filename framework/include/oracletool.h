@@ -7,10 +7,10 @@ class OracleTool__ : public BaseTool__
 {
 public:
     /**
-     * @brief Construct a new OracleTool__ object
      * @param[in] project_name  is a project name that defines names of input and output files.
      * @param[in] path_to_inputs is path to input files.
      * @param[in] flag_compute_output if True, compute output states, otherwise only input states
+     * @param[in] flag_print_output if True, print output states on screen;
      * @param[in] flag_circuit print or not .circuit files;
      * @param[in] flag_tex print or not .tex files;
      * @param[in] flag_layers to calculate or not the layer for each gate;
@@ -20,9 +20,10 @@ public:
         const QuESTEnv& env, 
         YCS project_name, 
         YCS path_to_inputs, 
-        YCB flag_compute_output,
-        YCB flag_circuit,
-        YCB flag_tex,
+        YCB flag_compute_output = false,
+        YCB flag_print_output = false,
+        YCB flag_circuit = false,
+        YCB flag_tex = false,
         YCB flag_layer = false,
         YCB flag_hdf5 = false
     );

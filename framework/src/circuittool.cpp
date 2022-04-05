@@ -6,21 +6,31 @@ CircuitTool__::CircuitTool__(
     const QuESTEnv& env, 
     YCS pname, 
     YCS path_to_inputs, 
+    YCB flag_random,
     YCB flag_compute_output,
+    YCB flag_print_output,
     YCB flag_tex,
     YCB flag_hdf5
 ) : BaseTool__(
     env, pname, path_to_inputs, 
-    flag_compute_output, false, flag_tex, false, flag_hdf5
+    flag_compute_output, flag_print_output, 
+    flag_random, flag_tex, false, flag_hdf5
 ){
     format_file_ = FORMAT_CIRCUIT;
-    read_data();
+    flag_random_ = flag_random;
+
+    if(!flag_random)
+        read_data();
+    else
+        create_random_circuit();
 }
+
 
 CircuitTool__::~CircuitTool__()
 {
     YMIX::print_log(env_, "*** Destruction of the circuit tool is done. ***");
 }
+
 
  void CircuitTool__::read_circuit_structure_from_file(YCS data)
  {
@@ -165,25 +175,181 @@ CircuitTool__::~CircuitTool__()
  }
 
 
- void CircuitTool__::launch()
- {
-     // print the gates:
-     oc_to_launch_->print_gates();
+void CircuitTool__::create_random_circuit()
+{
+    uint32_t nq = 0;
+    uint64_t n_max_gates = 0;
+    string circuit_name = pname_;
 
-     // calculate the output state:
-     if(flag_compute_output_)
-     {
+    // --- READ .random file to now the desired shape of the random circuit ---
+    string file_name = path_inputs_ + "/" + pname_ + FORMAT_RANDOM;
+    string data;
+    read_input_file(data, file_name);
+
+    istringstream istr(data);
+    istr >> nq >> n_max_gates;
+
+    // --- CONSTRUCT the random circuit ---
+    {
+        oc_to_launch_ = make_shared<QCircuit>(
+                    circuit_name, env_, path_inputs_, nq, 
+                    map<string, qreal>(),
+                    flag_circuit_, flag_tex_, flag_layers_
+                );
+        YMIX::print_log(
+                env_, 
+                "Circuit [" + circuit_name + "] with " + to_string(nq) + " qubits is created."
+            );
+        oc_to_launch_->add_register("r", nq, false);
+        oc_to_launch_->save_regs();
+        oc_to_launch_->set_standart_output_format();
+    }
+
+    uint32_t n_avail_gates = Gate__::avail_gate_names_.size();
+    srand (time(NULL));
+    uint32_t tq1, tq2, cq;
+    string gate_name;
+    qreal rot_angle;
+    for(uint64_t counter_gate = 0; counter_gate < n_max_gates; counter_gate++)
+    {
+        int temp = rand() % n_avail_gates;
+        gate_name = Gate__::avail_gate_names_[temp];
+        tq1 = rand() % nq;
+        rot_angle = float(rand())/float((RAND_MAX)) * (2*M_PI);
+
+        if(YMIX::compare_strings(gate_name, X__::name_shared_))
+            oc_to_launch_->x(tq1);
+        if(YMIX::compare_strings(gate_name, Y__::name_shared_))
+            oc_to_launch_->y(tq1);
+        if(YMIX::compare_strings(gate_name, Z__::name_shared_))
+            oc_to_launch_->z(tq1);
+        if(YMIX::compare_strings(gate_name, H__::name_shared_))
+            oc_to_launch_->h(tq1);
+        if(YMIX::compare_strings(gate_name, Rx__::name_shared_))
+            oc_to_launch_->rx(tq1, rot_angle);
+        if(YMIX::compare_strings(gate_name, Ry__::name_shared_))
+            oc_to_launch_->ry(tq1, rot_angle);
+        if(YMIX::compare_strings(gate_name, Rz__::name_shared_))
+            oc_to_launch_->rz(tq1, rot_angle);
+        if(YMIX::compare_strings(gate_name, Phase__::name_shared_))
+            oc_to_launch_->phase(tq1, rot_angle);
+        if(YMIX::compare_strings(gate_name, "SWAP"))
+        {
+            tq2 = rand() % nq;
+            while(tq2 == tq1) tq2 = rand() % nq;
+            oc_to_launch_->swap(tq1, tq2);
+        }
+        if(YMIX::compare_strings(gate_name, "CNOT"))
+        {
+            cq = rand() % nq;
+            while(cq == tq1) cq = rand() % nq;
+            oc_to_launch_->x(tq1, YVIv {int(cq)});
+        }
+        if(YMIX::compare_strings(gate_name, "CH"))
+        {
+            cq = rand() % nq;
+            while(cq == tq1) cq = rand() % nq;
+            oc_to_launch_->h(tq1, YVIv {int(cq)});
+        }
+        if(YMIX::compare_strings(gate_name, "CRy"))
+        {
+            cq = rand() % nq;
+            while(cq == tq1) cq = rand() % nq;
+            oc_to_launch_->ry(tq1, rot_angle, YVIv {int(cq)});
+        }
+    }
+}
+
+
+void CircuitTool__::launch()
+{
+    // print the gates:
+    oc_to_launch_->print_gates();
+
+    // ---- store basic data:
+    if(flag_hdf5_)
+    {
+        hfo_.open_w();
+
+        // number of qubits
+        hfo_.add_scalar(oc_to_launch_->get_n_qubits(), "nq", "basic");
+        hfo_.add_scalar(oc_to_launch_->get_na(), "na", "basic");
+
+        // register names
+        string res_lin = "";
+        for(auto const& reg_name: oc_to_launch_->get_reg_names())
+            res_lin += reg_name + ", ";
+        res_lin.pop_back(); res_lin.pop_back();
+        hfo_.add_scalar(res_lin, "register-names", "basic");
+
+        // number of qubits in every register:
+        hfo_.add_vector(oc_to_launch_->get_standart_output_format(), "register-nq", "basic");
+
+        // number of initial states:
+        hfo_.add_scalar(1, "n-init-states", "states");
+
+        hfo_.close();
+    }
+
+    // calculate the circuit states:
+    if(flag_compute_output_)
+    {
         YMIX::YTimer timer_gen;
-        string str_wv, str_wv_nz;
+        string str_wv_all;
+        list<vector<short>> states;
+        vector<Complex> ampls;
 
+        // --- For consistency, store the initial state, which is always  |000..00> ---
+        if(flag_hdf5_)
+        {
+            oc_to_launch_->get_state_full(
+                oc_to_launch_->get_standart_output_format(), 
+                str_wv_all, 
+                states,
+                ampls,
+                YVshv {},
+                3
+            );
+            hfo_.open_w();
+            hfo_.add_vector(ampls,  "initial-amplitudes-0"s, "states");
+            hfo_.add_matrix(states, "initial-states-0"s,     "states");
+            hfo_.close(); 
+        }
+
+
+        // --- Calculate the output state ---
         YMIX::print_log(env_, "\n--- Calculating the output state... ---");
         timer_gen.Start();
         oc_to_launch_->generate();
-        oc_to_launch_->get_wavefunction(
-            oc_to_launch_->get_standart_output_format(), str_wv, str_wv_nz, 3
+
+        oc_to_launch_->get_state_full(
+            oc_to_launch_->get_standart_output_format(), 
+            str_wv_all, 
+            states,
+            ampls,
+            YVshv {},
+            3
         );
+
         timer_gen.Stop();
         YMIX::print_log(env_, "Done: duration: " + timer_gen.get_dur_str_s());
-        YMIX::print_log(env_, "Output state:\n" + str_wv_nz);
-     }
- }
+        if(flag_print_output_) YMIX::print_log(env_, "Output state:\n" + str_wv_all);
+
+        // --- Store the output state ---
+        if(flag_hdf5_)
+        {
+            hfo_.open_w();
+            hfo_.add_vector(
+                ampls,  
+                "output-all-amplitudes-0"s, 
+                "states"
+            );
+            hfo_.add_matrix(
+                states, 
+                "output-all-states-0"s,     
+                "states"
+            );
+            hfo_.close(); 
+        }
+    }
+}

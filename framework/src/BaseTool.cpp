@@ -7,6 +7,7 @@ BaseTool__::BaseTool__(
     YCS pname, 
     YCS path_to_inputs, 
     YCB flag_compute_output,
+    YCB flag_print_output,
     YCB flag_circuit,
     YCB flag_tex,
     YCB flag_layers,
@@ -16,6 +17,7 @@ BaseTool__::BaseTool__(
     pname_(pname),
     path_inputs_(path_to_inputs),
     flag_compute_output_(flag_compute_output),
+    flag_print_output_(flag_print_output),
     flag_circuit_(flag_circuit),
     flag_tex_(flag_tex),
     flag_layers_(flag_layers),
@@ -69,10 +71,13 @@ void BaseTool__::read_data()
 }
 
 
-void BaseTool__::read_input_file(YS data)
-{
-    ifstream ff(ifname_);
-    if(!ff.is_open()) throw "Error: Here there is not a file: " + ifname_;
+void BaseTool__::read_input_file(YS data, YCS file_name)
+{   
+    string file_name_res = file_name;
+    if(file_name_res.empty()) file_name_res = ifname_;
+
+    ifstream ff(file_name_res);
+    if(!ff.is_open()) throw "Error: Here there is not a file: " + file_name_res;
     data = string((istreambuf_iterator<char>(ff)), istreambuf_iterator<char>());
     ff.close();
 
