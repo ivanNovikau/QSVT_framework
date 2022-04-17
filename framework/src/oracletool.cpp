@@ -475,10 +475,7 @@ void OracleTool__::read_state(YISS istr)
 
 void OracleTool__::launch()
 {
-    string str_wv_all, str_wv_zero_anc;
-    YMIX::YTimer timer_gen;
     YMIX::YTimer timer_comp;
-
     YMIX::print_log(
         env_, 
         "--- Analysis of the circuit [" + oc_to_launch_->get_name() + "] ---"
@@ -536,27 +533,19 @@ void OracleTool__::launch()
 
         // --- Print the initial state ---
         {
-            list<vector<short>> states;
-            vector<Complex> ampls;
-            u_work->get_state_full(
-                u_work->get_standart_output_format(), 
-                str_wv_all, 
-                states,
-                ampls,
-                YVshv {},
-                3
-            );
+            YMIX::StateVectorOut outF;
+            u_work->get_state(outF);
             YMIX::print_log(
                 env_,
-                ".....................\n...Initial state " + to_string(count_init_state) + "...\n" + str_wv_all
+                ".....................\n...Initial state " + to_string(count_init_state) + "...\n" + outF.str_wv
             );
         
             // --- Store the initial state ---
             if(flag_hdf5_)
             {
                 hfo_.open_w();
-                hfo_.add_vector(ampls,  "initial-amplitudes-"s + to_string(count_init_state), "states");
-                hfo_.add_matrix(states, "initial-states-"s + to_string(count_init_state),     "states");
+                hfo_.add_vector(outF.ampls,  "initial-amplitudes-"s + to_string(count_init_state), "states");
+                hfo_.add_matrix(outF.states, "initial-states-"s + to_string(count_init_state),     "states");
                 hfo_.close(); 
             }
         }
@@ -566,39 +555,23 @@ void OracleTool__::launch()
         {
             int id_current_gate = 0;
             string stop_point_name;
-            list<vector<short>> states_all, states_zero_anc;
-            vector<Complex>     ampls_all,  ampls_zero_anc;
+            YMIX::StateVectorOut outF, outZ;
+            outZ.flag_str = false;
             while(id_current_gate < u_work->get_n_gates())
             {
                 // generate the circuit:
-                timer_gen.Start();
-                YMIX::print_log(env_, "Circuit generation... ", 0, false, false);
-                u_work->generate(stop_point_name, id_current_gate);
-                timer_gen.Stop();
-                YMIX::print_log(env_, "duration: " + timer_gen.get_dur_str_s());
-
-                // compute the output state
                 timer_comp.Start();
-                YMIX::print_log(env_, "Circuit computation... ", 0, false, false);
-                u_work->get_state_zero_ancillae(
-                    u_work->get_standart_output_format(), 
-                    str_wv_zero_anc, 
-                    states_zero_anc, 
-                    ampls_zero_anc,
-                    YVshv {},
-                    3
-                );
-                u_work->get_state_full(
-                    u_work->get_standart_output_format(), 
-                    str_wv_all, 
-                    states_all, 
-                    ampls_all,
-                    YVshv {},
-                    3
-                );
+                YMIX::print_log(env_, "Calculating the circuit... ", 0, false, false);
+                u_work->generate(stop_point_name, id_current_gate);
+                u_work->get_state(outZ, true);
+                u_work->get_state(outF);
                 timer_comp.Stop();
                 YMIX::print_log(env_, "duration: " + timer_comp.get_dur_str_s());
-                if(flag_print_output_) YMIX::print_log(env_, "...Output state after " + stop_point_name + ": \n" + str_wv_all);
+                if(flag_print_output_) 
+                    YMIX::print_log(
+                        env_, 
+                        "...Output state after " + stop_point_name + ": \n" + outF.str_wv
+                    );
             }
 
             // --- Store the output state at the very end of the circuit ---
@@ -606,24 +579,24 @@ void OracleTool__::launch()
             {
                 hfo_.open_w();
                 hfo_.add_vector(
-                    ampls_all,  
+                    outF.ampls,  
                     "output-all-amplitudes-"s + to_string(count_init_state), 
                     "states"
                 );
                 hfo_.add_matrix(
-                    states_all, 
+                    outF.states, 
                     "output-all-states-"s + to_string(count_init_state),     
                     "states"
                 );
-                if(ampls_zero_anc.size() > 0)
+                if(outZ.ampls.size() > 0)
                 {
                     hfo_.add_vector(
-                        ampls_zero_anc,  
+                        outZ.ampls,  
                         "output-zero-anc-amplitudes-"s + to_string(count_init_state), 
                         "states"
                     );
                     hfo_.add_matrix(
-                        states_zero_anc, 
+                        outZ.states, 
                         "output-zero-anc-states-"s + to_string(count_init_state),     
                         "states"
                     );

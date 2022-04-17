@@ -294,61 +294,34 @@ void CircuitTool__::launch()
     // calculate the circuit states:
     if(flag_compute_output_)
     {
-        YMIX::YTimer timer_gen;
-        string str_wv_all;
-        list<vector<short>> states;
-        vector<Complex> ampls;
+        YMIX::YTimer timer;
+        YMIX::StateVectorOut outF;
 
         // --- For consistency, store the initial state, which is always  |000..00> ---
         if(flag_hdf5_)
         {
-            oc_to_launch_->get_state_full(
-                oc_to_launch_->get_standart_output_format(), 
-                str_wv_all, 
-                states,
-                ampls,
-                YVshv {},
-                3
-            );
+            oc_to_launch_->get_state(outF);
             hfo_.open_w();
-            hfo_.add_vector(ampls,  "initial-amplitudes-0"s, "states");
-            hfo_.add_matrix(states, "initial-states-0"s,     "states");
+            hfo_.add_vector(outF.ampls,  "initial-amplitudes-0"s, "states");
+            hfo_.add_matrix(outF.states, "initial-states-0"s,     "states");
             hfo_.close(); 
         }
 
-
         // --- Calculate the output state ---
         YMIX::print_log(env_, "\n--- Calculating the output state... ---");
-        timer_gen.Start();
+        timer.Start();
         oc_to_launch_->generate();
-
-        oc_to_launch_->get_state_full(
-            oc_to_launch_->get_standart_output_format(), 
-            str_wv_all, 
-            states,
-            ampls,
-            YVshv {},
-            3
-        );
-
-        timer_gen.Stop();
-        YMIX::print_log(env_, "Done: duration: " + timer_gen.get_dur_str_s());
-        if(flag_print_output_) YMIX::print_log(env_, "Output state:\n" + str_wv_all);
+        oc_to_launch_->get_state(outF);
+        timer.Stop();
+        YMIX::print_log(env_, "Done: duration: " + timer.get_dur_str_s());
+        if(flag_print_output_) YMIX::print_log(env_, "Output state:\n" + outF.str_wv);
 
         // --- Store the output state ---
         if(flag_hdf5_)
         {
             hfo_.open_w();
-            hfo_.add_vector(
-                ampls,  
-                "output-all-amplitudes-0"s, 
-                "states"
-            );
-            hfo_.add_matrix(
-                states, 
-                "output-all-states-0"s,     
-                "states"
-            );
+            hfo_.add_vector(outF.ampls,  "output-all-amplitudes-0"s, "states");
+            hfo_.add_matrix(outF.states, "output-all-states-0"s,     "states");
             hfo_.close(); 
         }
     }

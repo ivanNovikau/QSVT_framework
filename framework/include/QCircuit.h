@@ -549,98 +549,17 @@ class QCircuit{
 
     inline void add_gate(std::shared_ptr<Gate__> oo){ gates_.push_back(oo); }
 
-    /** Circuit wavefunction analysis.
-     * @param[in] organize_state input array that indicates how to output every state
-     *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
-     *        amplitude  |i3 i2> |i1> |i0>;
-     * @param[in] prec input precision of state amplitudes to output;
-     * */
-    void wavefunction_standard_analysis(
-        const std::vector<unsigned>& organize_state, 
-        const unsigned& prec = 3
-    );
+    /**
+     * @brief Return the reference to the circuit statevector. 
+     */
+    void get_ref_to_state_vector(qreal*& state_real, qreal*& state_imag);
 
     /**
-     * @brief Get strings with all states and states with only nonzero amplitudes;
-     * @param[in] organize_state input array that indicates how to output every state
-     *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
-     *        amplitude  |i3 i2> |i1> |i0>;
-     * @param[in] prec input precision of state amplitudes to output;
-     * @param[out] str_wv string with the all states;
-     * @param[out] str_wv_nz string only with states that have non-zero amplitudes;
+     * Return states with nonzero amplitudes.
+     * @param[in] flag_ZeroHighPriorAnc if true, then assume that all ancillae are 
+     * the high-priority qubits, and calculate only states where these ancillae are in the zero state.
      */
-    void get_wavefunction(
-        const std::vector<unsigned>& organize_state, 
-        YS str_wv, 
-        YS str_wv_nz,
-        const unsigned& prec = 3
-    );
-
-    /**
-     * @brief Get a special wavefunction.
-     * @param[in] states_to_choose array with bits that a state must have to be chosen:
-     *   Elements of this vector must be 0 or 1. 
-     *   -1 means that it can be either 0 or 1.
-     *   The first element correspond to the most significant qubit.
-     * @param[in] organize_state input array that indicates how to output every state
-     *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
-     *        amplitude  |i3 i2> |i1> |i0>;
-     * @param[out] str_wv_chosen string with chosen states;
-     * @param[in] prec input precision of state amplitudes to output;
-     */
-    void get_special_wavefunction(
-        const std::vector<short>& state_to_choose,
-        const std::vector<unsigned>& organize_state, 
-        YS str_wv_chosen,
-        YCU prec = 3 
-    );
-    void get_special_wavefunction(
-        const std::vector<short>& state_to_choose,
-        const std::vector<unsigned>& organize_state, 
-        YS str_wv_chosen,
-        std::list<std::vector<short>>& states_chosen,
-        std::vector<Complex>& ampls_chosen,
-        YCU prec = 3 
-    );
-
-    /**
-     * @brief Return the state vector of the circuit. 
-     */
-    void get_state_vector(YVQ state_real, YVQ state_imag);
-
-    /**
-     * @brief Assume that ancillae are the top-priority qubits.
-     * Calculates amplitudes of all qubits except the ancillae.
-     * @param organize_state input array that indicates how to output every state:
-     *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
-     *        amplitude  |i3 i2> |i1> |i0>.
-     *        This array must take into account ancillae.
-     * @param[out] str_wv_out string with resulting states (set all ancillae to zero);
-     * @param[out] states_out resulting states (set all ancillae to zero);
-     * @param[out] ampls_out amplitudes of the resulting states;
-     * @param[in] state_to_choose array with bits that a state must have to be chosen:
-     *   Elements of this vector must be 0 or 1. 
-     *   -1 means that it can be either 0 or 1.
-     *   The first elements in the array correspond to the high-priority qubits.
-     *   The size of the array must take into account the ancillae.
-     * @param prec precision of the amplitudes in \p str_wv_out;
-     */
-    void get_state_zero_ancillae(
-        YCVU organize_state, 
-        YS str_wv_out,
-        std::list<std::vector<short>>& states_out,
-        std::vector<Complex>& ampls_out,
-        YCVsh state_to_choose = YVshv{},
-        YCU prec = 3
-    );
-    void get_state_full(
-        YCVU organize_state, 
-        YS str_wv_out,
-        std::list<std::vector<short>>& states_out,
-        std::vector<Complex>& ampls_out,
-        YCVsh state_to_choose = YVshv{},
-        YCU prec = 3
-    );
+    void get_state(YMIX::StateVectorOut& out, YCB flag_ZeroHighPriorAnc = false);
 
     /**
      * @brief Make the entire circuit controlled by qubit cs.

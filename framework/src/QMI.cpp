@@ -65,11 +65,7 @@ void QMI__::simulation()
 {
     YMIX::YTimer timer;
     auto ts_box = YMATH::get_range(0,nq_-1);
-
-    std::string str_wv_out;
-    list<vector<short>> states_out;
-    vector<Complex> ampls_out;
-
+    YMIX::StateVectorOut outZ;
 
     // --- Resulting QSVT circuit ---
     timer.StartPrint(env_, "Structuring the QSVT circuit... ");
@@ -80,53 +76,28 @@ void QMI__::simulation()
     timer.StopPrint(env_);
 
     // --- generate the circuit ---
-    timer.StartPrint(env_, "Generating the QSVT circuit... ");
+    timer.StartPrint(env_, "Calculating the QSVT circuit... ");
     oc_->generate();
+    oc_->get_state(outZ, true);
     timer.StopPrint(env_);
-
-    // --- compute output states ---
-    timer.StartPrint(env_, "Measurement...");
-    oc_->get_state_zero_ancillae(
-        oc_->get_standart_output_format(), 
-        str_wv_out, 
-        states_out, 
-        ampls_out,
-        YVshv {},
-        3
-    );
-    timer.StopPrint(env_);
-
-    // // --- Print the resulting zero-ancilla state ---
     if(flag_print_zero_states_)
     {
         cout << "resulting zero-ancilla state ->\n";
-        cout << str_wv_out << endl;
+        cout << outZ.str_wv << endl;
     }
     
-
     // --- Save the resulting zero-ancilla states to .hdf5 file ---
     hfo_.open_w();
-
-    // amplitudes:
-    hfo_.add_vector(ampls_out, "output-amplitudes", "states");
-
-    // states:
-    hfo_.add_matrix(states_out, "output-states", "states");
-
+    hfo_.add_vector(outZ.ampls, "output-amplitudes", "states");
+    hfo_.add_matrix(outZ.states, "output-states", "states");
     hfo_.close(); 
 
     // --- Print full state ---
     if(flag_print_all_states_)
     {
-        oc_->get_state_full(
-            oc_->get_standart_output_format(), 
-            str_wv_out, 
-            states_out, 
-            ampls_out,
-            YVshv {},
-            3
-        );
+        YMIX::StateVectorOut outF;
+        oc_->get_state(outF);
         cout << "resulting full state ->\n";
-        cout << str_wv_out << endl;
+        cout << outF.str_wv << endl;
     } 
 }

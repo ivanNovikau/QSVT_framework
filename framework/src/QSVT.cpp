@@ -564,22 +564,13 @@ void QSVT__::set_init_vector()
     // -------------------------------------------------------------------------
     // --- Save the initial state ---
     // -------------------------------------------------------------------------
-    std::string str_out;
-    list<vector<short>> states;
-    vector<Complex> ampls;
-    oc_->get_state_full(
-        oc_->get_standart_output_format(), 
-        str_out, 
-        states,
-        ampls,
-        YVshv {},
-        3
-    );
-    YMIX::print_log(env_, "Initial state: \n"s + str_out);
+    YMIX::StateVectorOut outF;
+    oc_->get_state(outF);
+    YMIX::print_log(env_, "Initial state: \n"s + outF.str_wv);
     hfo_.open_w();
     hfo_.add_scalar(coef_time_norm_, "normalization-coef", "basic");
-    hfo_.add_vector(ampls, "initial-amplitudes", "states");
-    hfo_.add_matrix(states, "initial-states", "states");
+    hfo_.add_vector(outF.ampls, "initial-amplitudes", "states");
+    hfo_.add_matrix(outF.states, "initial-states", "states");
     hfo_.close(); 
 }
 
@@ -612,11 +603,11 @@ void QSVT__::save_restart_data()
     rf_.add_scalar(coef_time_norm_, "coef-time-norm", "parameters");
 
     // save the last state of the circuit
-    vector<qreal> state_real, state_imag;
-    oc_->get_state_vector(state_real, state_imag);
-    rf_.add_vector(state_real, "real", "state");
-    rf_.add_vector(state_imag, "imag", "state");
-
+    qreal *state_real, *state_imag;
+    uint64_t N = 1<<nq_;
+    oc_->get_ref_to_state_vector(state_real, state_imag);
+    rf_.add_array(state_real, N, "real", "state");
+    rf_.add_array(state_imag, N, "imag", "state");
     rf_.close();
 }
 

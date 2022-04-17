@@ -56,6 +56,8 @@
 #define YVU  std::vector<uint32_t>&
 #define YVUv std::vector<uint32_t>
 
+#define YCUL const uint64_t&
+
 #define YCI  const int&
 #define YCVI const std::vector<int>&
 #define YVI  std::vector<int>&
@@ -121,7 +123,7 @@
 #define ENDING_FORMAT_OUTPUT "_OUTPUT.hdf5"s
 #define ENDING_FORMAT_RESTART "_RESTART.hdf5"s
 
-#define ZERO_ERROR 1e-14
+#define ZERO_ERROR 1e-18
 #define PARAMETER_ACCURACY 12
 
 
@@ -391,119 +393,41 @@ namespace YMIX{
             std::chrono::time_point<std::chrono::steady_clock> end_;
     };
 
-    void get_state_vector(const Qureg& qq, YCU nq, YVQ state_real, YVQ state_imag);
 
-    /** Form a string with a circuit wavefunction
-    * @param[out] str_wv output string with a full state vector;
-    * @param[in]  ampls  input amplitudes of different \p states;
-    * @param[in]  states input states;
-    * @param[in]  organize_state input array that indicates how to output every state
-    *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
-    *        amplitude  |i3 i2> |i1> |i0>;
-    * @param[in] ampl_prec precision of amplitudes to output in \p str_wv;
-    */
-    void getStrWavefunction(
-        YS str_wv, 
-        YCVCo ampls, 
-        const std::list<std::vector<short>>& states, 
-        YCVU organize_state, 
-        YCU ampl_prec = 3 
-    );
+    struct StateVectorOut
+    {
+        std::list<std::vector<short>> states; // output states.
+        std::vector<Complex> ampls; // output state amplitudes.
+        uint32_t n_low_prior_qubits; // a number of first low-priority qubits to calculate.
 
-    /** Compute all states of a given circuit and their amplitudes 
-    * @param[in] qq circuit;
-    * @param[in] organize_state input array that indicates how to output every state
-    *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
-    *        amplitude  |i3 i2> |i1> |i0>;
-    * @param[in] ampl_prec input precision of amplitude to output in \p str_wv;
-    * @param[out] str_wv: output string with a full state vector;
-    * @param[out] states: output resulting states;
-    * @param[out] ampls:  output amplitudes of different \p states;
-    */
-    void Wavefunction(
-        const Qureg& qq, 
-        YS str_wv, 
-        std::list<std::vector<short>>& states, 
-        YVCo ampls, 
-        YCVU organize_state,
-        YCU ampl_prec = 3
-    );
+        std::vector<uint32_t> organize_state; // indicates how to print each state:
+            // e.g. if n_low_prior_qubits = 4, and organize_state = [2,1,1], then
+            // print  |q3 q2> |q1> |q0>;
 
-    /** Compute first \p n_states states starting from the low-priority qubits.
-     * Returns only states with non-zero probability. 
-    * @param[in] qq circuit;
-    * @param[in] n_states a number of first low-priority to calculate.
-    * @param[in] organize_state input array that indicates how to output every state
-    *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
-    *        amplitude  |i3 i2> |i1> |i0>;
-    * @param[out] str_wv output string with a full state vector;
-    * @param[out] states output resulting states;
-    * @param[out] ampls  output amplitudes of different \p states;
-    * @param[in] state_to_choose array with bits that a state must have to be chosen:
-    *   Elements of this vector must be 0 or 1. 
-    *   -1 means that it can be either 0 or 1.
-    *   The first elements in the array correspond to the high-priority qubits.
-    *   The size of the array must take into account the ancillae.
-    * @param[in] prec input precision of amplitude to output in \p str_wv;
-    */
-    void Wavefunction_NonzeroProbability(
-        const Qureg& qq, 
-        YCU n_states,
-        YCVU organize_state,
-        YS str_wv, 
-        std::list<std::vector<short>>& states, 
-        YVCo ampls, 
-        YCVsh state_to_choose = YVshv{},
-        YCU prec = 3
-    );
+        std::vector<short> state_to_choose; // array with bits that a state must have to be chosen:
+            // Elements of this vector must be 0 or 1. 
+            // -1 means that it can be either 0 or 1.
+            // The first elements in the array correspond to the high-priority qubits.
+        bool flag_str; // if true, then form a string representation of the statevector.
+        std::string str_wv; // a string representation of the statevector.
+        uint32_t prec; // precision of amplitudes to print in str_wv;
 
-    /** Get only states with non-zero amplitudes 
-    * @param[in] states_init initial circuit states;
-    * @param[in] ampls_init  initial state amplitudes;
-    * @param[in] organize_state input array that indicates how to output every state
-    *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
-    *        amplitude  |i3 i2> |i1> |i0>;
-    * @param[in] ampl_prec input precision of amplitude to output in \p str_wv;
-    * @param[out] str_wv output string with states with only non-zero ampltides;
-    * @param[out] states output states with only non-zero ampltides;
-    * @param[out] ampls  output non-zero amplitudes of different \p states;
-    */
-    void getNonzeroWavefunction(
-        const std::list<std::vector<short>>& states_init, 
-        const std::vector<Complex>& ampls_init, 
-        const std::vector<unsigned>& organize_state, 
-        std::string& str_wv, 
-        std::list<std::vector<short>>& states, 
-        std::vector<Complex>& ampls, 
-        const unsigned ampl_prec = 3 
-    );
+        StateVectorOut()
+        {
+            n_low_prior_qubits = 0;
+            flag_str = true;
+            prec = 3;
+            state_to_choose = std::vector<short>{};
+        }
+    };
 
-    /** Get special states (but only with non-zero amplitudes).
-    * @param[in] states_to_choose array with bits that \p states_init must have to be chosen:
-    *   E.g. states_init = |x2 x1 x0>. 
-    *   If states_to_choose = {0},   choose only states with x2 = 0.
-    *   If states_to_choose = {0,1}, choose only states with x2 = 0, x1 = 1.
-    *   If states_to_choose = {0,-1, 1}, choose only states with x2 = 0, x0 = 1 and any x1.
-    * @param[in] state_init initial circuit states;
-    * @param[in] ampls_init  initial state amplitudes;
-    * @param[in] organize_state input array that indicates how to output every state
-    *        e.g. if n_qubits = 4, and organize_state = [2,1,1], then
-    *        amplitude  |i3 i2> |i1> |i0>;
-    * @param[in] ampl_prec input precision of amplitude to output in \p str_wv;
-    * @param[out] str_wv output string with chosen states;
-    * @param[out] states chosen states;
-    * @param[out] ampls  amplitudes of the chosen states \p states;
-    */
-    void getSpecialStates(
-        const std::vector<short>& state_to_choose,
-        const std::list<std::vector<short>>& states_init, 
-        const std::vector<Complex>& ampls_init, 
-        const std::vector<unsigned>& organize_state, 
-        std::string& str_wv, 
-        std::list<std::vector<short>>& states, 
-        std::vector<Complex>& ampls, 
-        const unsigned ampl_prec = 3 
-    );
+
+    /** Form a string representation of the statevector. */
+    void getStrWavefunction(StateVectorOut& out);
+
+
+    /** Return states with non-zero probability. */
+    void Wavefunction_NonzeroProbability(const Qureg& qq, StateVectorOut& out);
 
 
     struct File
@@ -701,6 +625,18 @@ namespace YMIX{
         }
 
         template<class T>
+        void add_array(const T* v, YCUL N, YCS dname, YCS gname)
+        {
+            if(!flag_opened) 
+                throw "HDF5 File " + name_ + 
+                    " is not opened to add a dataset " + dname + " to a group " + gname;
+            // add_group(gname);
+
+            H5::Group grp(f_->openGroup(gname));
+            write(v, N, dname, grp);
+        }
+
+        template<class T>
         void add_matrix(const std::list<std::vector<T>>& v, YCS dname, YCS gname)
         {
             if(!flag_opened) 
@@ -808,6 +744,15 @@ namespace YMIX{
 
                 H5::DataSet dataset = grp.createDataSet(dname, dtype, dspace);
                 dataset.write(&v[0], dtype);
+            }
+
+            inline void write(const double* v, YCUL N, YCS dname, H5::Group& grp)
+            {
+                hsize_t dims[] = {N};
+                H5::DataSpace dspace(1, dims);
+                auto dtype = H5::PredType::NATIVE_DOUBLE;
+                H5::DataSet dataset = grp.createDataSet(dname, dtype, dspace);
+                dataset.write(v, dtype);
             }
 
             inline void write(short* v, const unsigned long& nr, const unsigned long& nc, YCS dname, H5::Group& grp)

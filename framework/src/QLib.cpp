@@ -348,53 +348,205 @@ bool YMATH::is_number(YCS str)
 }
 
 
+// void YMIX::Wavefunction_NonzeroProbability(
+//     const Qureg& qq, 
+//     YCU n_states,
+//     YCVU organize_state,
+//     YS str_wv, 
+//     list<vector<short>>& states, 
+//     YVCo ampls, 
+//     YCVsh state_to_choose,
+//     YCU ampl_prec
+// ){ 
+//     const unsigned n = qq.numQubitsRepresented; // number of qubits;
+//     long long N = pow(2, n_states);
+//     Complex aa;
+//     qreal prob;
+//     bool flag_chosen;
+//     bool flag_to_choose; 
 
-void YMIX::get_state_vector(const Qureg& qq, YCU nq, YVQ state_real, YVQ state_imag)
-{
-    Complex vv;
-    unsigned long long N = pow(2, nq);
+//     // check whether it is necessary to choose a special state or not
+//     flag_to_choose = true;
+//     if(state_to_choose.empty()) flag_to_choose = false;
 
-    state_real = YVQv(N);
-    state_imag = YVQv(N);
-    for(unsigned long long ii = 0; ii < N; ii++)
+//     // find states available for such a number of qubits and their amplitudes:
+//     ampls.clear();
+//     states.clear();
+//     copyStateFromGPU(qq);
+//     for(unsigned id_state = 0; id_state < N; id_state++)
+//     {
+//         // aa = getAmp(qq, id_state);
+//         aa.real = qq.stateVec.real[id_state];
+//         aa.imag = qq.stateVec.imag[id_state];
+
+//         // check whether the corresponding probability is not equal to zero
+//         prob = sqrt(pow(aa.real, 2) + pow(aa.imag, 2));
+//         if(!YMATH::is_zero(prob)){
+//             flag_chosen = true;
+
+//             vector<short> one_state(n);
+//             YMATH::intToBinary(id_state, one_state);
+
+//             // compare the computed state with a necessary pattern:
+//             if(flag_to_choose)
+//                 for(unsigned id_qubit = 0; id_qubit < state_to_choose.size(); ++id_qubit)
+//                 {
+//                     if(state_to_choose[id_qubit] < 0)
+//                         continue;
+//                     if(state_to_choose[id_qubit] != one_state[id_qubit])
+//                     {
+//                         flag_chosen = false;
+//                         break;
+//                     }
+//                 }
+
+//             // save the state and its amplitude if it corresponds to the pattern:
+//             if(flag_chosen)
+//             {
+//                 ampls.push_back(aa);
+//                 states.push_back(one_state);
+//             }
+//         }
+//     }
+
+//     // form the resulting string:
+//     getStrWavefunction(str_wv, ampls, states, organize_state, ampl_prec);
+// }
+
+
+// void YMIX::getStrWavefunction(
+//     YS str_wv, 
+//     YCVCo ampls, 
+//     const std::list<std::vector<short>>& states, 
+//     YCVU organize_state, 
+//     YCU ampl_prec
+// ){ 
+//     unsigned n = states.front().size();
+//     std::ostringstream oss;
+//     oss << std::scientific << std::setprecision(ampl_prec);
+
+//     str_wv = "";
+//     unsigned count_i = 0;
+//     std::string str_state;
+//     Complex aa;
+//     qreal ar, ai;
+//     unsigned w_str  = 9 + ampl_prec;
+//     for(auto& one_state:states){
+//         str_state = "|";
+//         if(organize_state.empty())
+//             for(auto& one_qubit_state:one_state)
+//                 str_state += std::to_string(one_qubit_state);
+//         else{
+//             unsigned count_org = 0;
+//             unsigned prev_sum = 0;
+//             for(unsigned jj = 0; jj < n; ++jj){
+//                 str_state += std::to_string(one_state[jj]);
+//                 if(jj == prev_sum + organize_state[count_org]-1){
+//                     prev_sum += organize_state[count_org];
+//                     ++count_org;
+//                     if(count_org < organize_state.size())
+//                         str_state += ">|";
+//                 }
+//             }
+//         }
+//         str_state += ">";
+
+//         oss.str(std::string());
+
+//         aa = ampls.at(count_i);
+//         ar = aa.real; 
+//         ai = aa.imag;
+
+//         oss << std::setw(w_str) << ar;
+//         oss << std::setw(w_str) << ai << "j";    
+//         str_wv += oss.str() + "   " + str_state + "\n";
+
+//         ++count_i;
+//     }
+// }
+
+
+void YMIX::Wavefunction_NonzeroProbability(const Qureg& qq, StateVectorOut& out)
+{ 
+    const unsigned n = qq.numQubitsRepresented; // number of qubits;
+    long long N = pow(2, out.n_low_prior_qubits);
+    Complex aa;
+    qreal prob;
+    bool flag_chosen;
+    bool flag_to_choose; 
+
+    // check whether it is necessary to choose a special state or not
+    flag_to_choose = true;
+    if(out.state_to_choose.empty()) flag_to_choose = false;
+
+    // find states available for such a number of qubits and their amplitudes:
+    out.ampls.clear();
+    out.states.clear();
+    copyStateFromGPU(qq);
+    for(unsigned id_state = 0; id_state < N; id_state++)
     {
-        vv = getAmp(qq, ii);
-        state_real[ii] = vv.real;
-        state_imag[ii] = vv.imag;
+        // aa = getAmp(qq, id_state);
+        aa.real = qq.stateVec.real[id_state];
+        aa.imag = qq.stateVec.imag[id_state];
+
+        // check whether the corresponding probability is not equal to zero
+        prob = sqrt(pow(aa.real, 2) + pow(aa.imag, 2));
+        if(!YMATH::is_zero(prob))
+        {
+            flag_chosen = true;
+            vector<short> one_state(n);
+            YMATH::intToBinary(id_state, one_state);
+            if(flag_to_choose)
+                for(unsigned id_qubit = 0; id_qubit < out.state_to_choose.size(); ++id_qubit)
+                {
+                    if(out.state_to_choose[id_qubit] < 0)
+                        continue;
+                    if(out.state_to_choose[id_qubit] != one_state[id_qubit])
+                    {
+                        flag_chosen = false;
+                        break;
+                    }
+                }
+            if(flag_chosen)
+            {
+                out.ampls.push_back(aa);
+                out.states.push_back(one_state);
+            }
+        }
     }
+    getStrWavefunction(out);
 }
 
-void YMIX::getStrWavefunction(
-    YS str_wv, 
-    YCVCo ampls, 
-    const std::list<std::vector<short>>& states, 
-    YCVU organize_state, 
-    YCU ampl_prec
-){ 
-    unsigned n = states.front().size();
-    std::ostringstream oss;
-    oss << std::scientific << std::setprecision(ampl_prec);
 
-    str_wv = "";
+void YMIX::getStrWavefunction(StateVectorOut& out)
+{ 
+    out.str_wv = "";
+    if(!out.flag_str) return;
+
+    unsigned n = out.states.front().size();
+    std::ostringstream oss;
+    oss << std::scientific << std::setprecision(out.prec);
+
     unsigned count_i = 0;
     std::string str_state;
     Complex aa;
     qreal ar, ai;
-    unsigned w_str  = 9 + ampl_prec;
-    for(auto& one_state:states){
+    unsigned w_str  = 9 + out.prec;
+    for(auto& one_state:out.states){
         str_state = "|";
-        if(organize_state.empty())
+        if(out.organize_state.empty())
             for(auto& one_qubit_state:one_state)
                 str_state += std::to_string(one_qubit_state);
-        else{
+        else
+        {
             unsigned count_org = 0;
             unsigned prev_sum = 0;
             for(unsigned jj = 0; jj < n; ++jj){
                 str_state += std::to_string(one_state[jj]);
-                if(jj == prev_sum + organize_state[count_org]-1){
-                    prev_sum += organize_state[count_org];
+                if(jj == prev_sum + out.organize_state[count_org]-1){
+                    prev_sum += out.organize_state[count_org];
                     ++count_org;
-                    if(count_org < organize_state.size())
+                    if(count_org < out.organize_state.size())
                         str_state += ">|";
                 }
             }
@@ -403,169 +555,18 @@ void YMIX::getStrWavefunction(
 
         oss.str(std::string());
 
-        aa = ampls.at(count_i);
+        aa = out.ampls.at(count_i);
         ar = aa.real; 
         ai = aa.imag;
 
         oss << std::setw(w_str) << ar;
         oss << std::setw(w_str) << ai << "j";    
-        str_wv += oss.str() + "   " + str_state + "\n";
+        out.str_wv += oss.str() + "   " + str_state + "\n";
 
         ++count_i;
     }
 }
 
-void YMIX::Wavefunction(
-    const Qureg& qq, 
-    YS str_wv, 
-    std::list<std::vector<short>>& states, 
-    YVCo ampls, 
-    YCVU organize_state, 
-    YCU ampl_prec
-){ 
-    const unsigned n = qq.numQubitsRepresented; // number of qubits;
-    unsigned N = pow(2, n);
-    Complex amp;
-
-    // find states available for such a number of qubits and their amplitudes:
-    for(unsigned ii = 0; ii < N; ii++){
-        std::vector<short> one_state(n);
-        YMATH::intToBinary(ii, one_state);
-        states.push_back(one_state);
-        amp = getAmp(qq, ii);
-        ampls.push_back(amp);
-    }
-
-    // form the resulting string:
-    getStrWavefunction(str_wv, ampls, states, organize_state, ampl_prec);
-}
-
-void YMIX::Wavefunction_NonzeroProbability(
-    const Qureg& qq, 
-    YCU n_states,
-    YCVU organize_state,
-    YS str_wv, 
-    list<vector<short>>& states, 
-    YVCo ampls, 
-    YCVsh state_to_choose,
-    YCU ampl_prec
-){ 
-    const unsigned n = qq.numQubitsRepresented; // number of qubits;
-    long long N = pow(2, n_states);
-    Complex aa;
-    qreal prob2;
-    bool flag_chosen;
-    bool flag_to_choose; 
-
-    // check whether it is necessary to choose a special state or not
-    flag_to_choose = true;
-    if(state_to_choose.empty()) flag_to_choose = false;
-
-    // find states available for such a number of qubits and their amplitudes:
-    ampls.clear();
-    states.clear();
-    for(unsigned id_state = 0; id_state < N; id_state++){
-
-        // calculate the amplitude of a state
-        aa = getAmp(qq, id_state);
-
-        // check whether the corresponding probability is not equal to zero
-        prob2 = pow(aa.real, 2) + pow(aa.imag, 2);
-        if(!YMATH::is_zero(prob2)){
-            flag_chosen = true;
-
-            vector<short> one_state(n);
-            YMATH::intToBinary(id_state, one_state);
-
-            // compare the computed state with a necessary pattern:
-            if(flag_to_choose)
-                for(unsigned id_qubit = 0; id_qubit < state_to_choose.size(); ++id_qubit)
-                {
-                    if(state_to_choose[id_qubit] < 0)
-                        continue;
-                    if(state_to_choose[id_qubit] != one_state[id_qubit])
-                    {
-                        flag_chosen = false;
-                        break;
-                    }
-                }
-
-            // save the state and its amplitude if it corresponds to the pattern:
-            if(flag_chosen)
-            {
-                ampls.push_back(aa);
-                states.push_back(one_state);
-            }
-        }
-    }
-
-    // form the resulting string:
-    getStrWavefunction(str_wv, ampls, states, organize_state, ampl_prec);
-}
-
-void YMIX::getNonzeroWavefunction(
-    const std::list<std::vector<short>>& states_init, 
-    const std::vector<Complex>& ampls_init, 
-    const std::vector<unsigned>& organize_state, 
-    std::string& str_wv,
-    std::list<std::vector<short>>& states, 
-    std::vector<Complex>& ampls, 
-    const unsigned ampl_prec
-){
-    Complex aa;
-    qreal prob2;
-    unsigned count_state = 0;
-    for(auto& one_state:states_init){
-        aa = ampls_init[count_state];
-        prob2 = pow(aa.real, 2) + pow(aa.imag, 2);
-        if(!YMATH::is_zero(prob2)){
-            ampls.push_back(aa);
-            states.push_back(one_state);
-        }
-        ++count_state;
-    } 
-
-    // form the resulting string:
-    getStrWavefunction(str_wv, ampls, states, organize_state, ampl_prec);
-}
-
-void YMIX::getSpecialStates(
-    const std::vector<short>& state_to_choose,
-    const std::list<std::vector<short>>& states_init, 
-    const std::vector<Complex>& ampls_init, 
-    const std::vector<unsigned>& organize_state, 
-    std::string& str_wv, 
-    std::list<std::vector<short>>& states, 
-    std::vector<Complex>& ampls, 
-    const unsigned ampl_prec
-){
-    Complex aa;
-    bool flag_chosen;
-    unsigned count_state = 0;
-    for(auto& one_state:states_init){
-        flag_chosen = true;
-
-        for(unsigned i = 0; i < state_to_choose.size(); ++i)
-        {
-            if(state_to_choose[i] < 0)
-                continue;
-            if(state_to_choose[i] != one_state[i])
-            {
-                flag_chosen = false;
-                break;
-            }
-        }
-
-        if(flag_chosen){
-            ampls.push_back(ampls_init[count_state]);
-            states.push_back(one_state);
-        }
-        ++count_state;
-    }
-
-    // form the resulting string:
-    getStrWavefunction(str_wv, ampls, states, organize_state, ampl_prec);
-}
 
 void YMIX::print(const ComplexMatrix2& a, YCI prec)
 {

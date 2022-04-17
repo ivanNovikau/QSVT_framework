@@ -736,136 +736,22 @@ YQCP QCircuit::h(YCVI ts, YVIv cs)
     return get_the_circuit();
 }
 
-void QCircuit::wavefunction_standard_analysis(
-    const vector<unsigned>& organize_state, 
-    const unsigned& prec
-){
-    if(env_.rank == 0) printf("\n--- Circuit %s: wavefunction standard analysis ---\n", name_.c_str());
 
-    string str_wv;
-    string str_wv_nz;
-    get_wavefunction(organize_state, str_wv, str_wv_nz, prec);
-    if(env_.rank == 0){
-        cout << "Full wavefunction :\n";
-        cout << str_wv << "\n";
-        cout << "States with non-zero amplitudes:\n";
-        cout << str_wv_nz << "\n";
-    }
-}
-
-void QCircuit::get_wavefunction(
-    const vector<unsigned>& organize_state, 
-    YS str_wv, 
-    YS str_wv_nz,
-    const unsigned& prec
-){
-    vector<Complex> ampls;
-    list<vector<short>> states;
-
-    YMIX::Wavefunction(c_, str_wv, states, ampls, organize_state, prec);
-        
-    list<vector<short>> states_nz;
-    vector<Complex> ampls_nz;
-    YMIX::getNonzeroWavefunction(
-        states, ampls, organize_state, 
-        str_wv_nz, states_nz, ampls_nz,
-        prec
-    );
-}
-
-void QCircuit::get_special_wavefunction(
-    const std::vector<short>& state_to_choose,
-    const std::vector<unsigned>& organize_state, 
-    YS str_wv_chosen,
-    const unsigned& prec
-){
-    vector<Complex> ampls;
-    list<vector<short>> states;
-    string str_wv, str_wv_nz;
-    YMIX::Wavefunction(c_, str_wv, states, ampls, organize_state, prec);
-        
-    list<vector<short>> states_nz;
-    vector<Complex> ampls_nz;
-    YMIX::getNonzeroWavefunction(
-        states, ampls, organize_state, 
-        str_wv_nz, states_nz, ampls_nz,
-        prec
-    );
-
-    list<vector<short>> states_sp;
-    vector<Complex> ampls_sp;
-    YMIX::getSpecialStates(
-        state_to_choose, states_nz, ampls_nz, 
-        organize_state, 
-        str_wv_chosen, 
-        states_sp, ampls_sp, 
-        prec 
-    );
-}
-void QCircuit::get_special_wavefunction(
-    const std::vector<short>& state_to_choose,
-    const std::vector<unsigned>& organize_state, 
-    YS str_wv_chosen,
-    list<vector<short>>& states_chosen,
-    vector<Complex>& ampls_chosen,
-    const unsigned& prec
-){
-    vector<Complex> ampls;
-    list<vector<short>> states;
-    string str_wv, str_wv_nz;
-    YMIX::Wavefunction(c_, str_wv, states, ampls, organize_state, prec);
-        
-    list<vector<short>> states_nz;
-    vector<Complex> ampls_nz;
-    YMIX::getNonzeroWavefunction(
-        states, ampls, organize_state, 
-        str_wv_nz, states_nz, ampls_nz,
-        prec
-    );
-
-    YMIX::getSpecialStates(
-        state_to_choose, states_nz, ampls_nz, 
-        organize_state, 
-        str_wv_chosen, states_chosen, ampls_chosen, 
-        prec 
-    );
-}
-
-void QCircuit::get_state_vector(YVQ state_real, YVQ state_imag)
+void QCircuit::get_ref_to_state_vector(qreal*& state_real, qreal*& state_imag)
 {
-    YMIX::get_state_vector(c_, nq_, state_real, state_imag);
+    copyStateFromGPU(c_);
+    state_real = c_.stateVec.real;
+    state_imag = c_.stateVec.imag;
 }
 
-void QCircuit::get_state_zero_ancillae(
-    YCVU organize_state, 
-    YS str_wv_out,
-    list<vector<short>>& states_out,
-    vector<Complex>& ampls_out,
-    YCVsh state_to_choose,
-    YCU prec
-){
-    unsigned n_states = nq_ - ancs_.size();
-    YMIX::Wavefunction_NonzeroProbability(
-        c_, n_states, organize_state, 
-        str_wv_out, states_out, ampls_out, 
-        state_to_choose, prec  
-    );
+
+void QCircuit::get_state(YMIX::StateVectorOut& out, YCB flag_ZeroPriorAnc)
+{
+    out.n_low_prior_qubits = flag_ZeroPriorAnc ? (nq_ - ancs_.size()): nq_;
+    out.organize_state = get_standart_output_format();
+    YMIX::Wavefunction_NonzeroProbability(c_, out);
 }
-void QCircuit::get_state_full(
-    YCVU organize_state, 
-    YS str_wv_out,
-    list<vector<short>>& states_out,
-    vector<Complex>& ampls_out,
-    YCVsh state_to_choose,
-    YCU prec
-){
-    unsigned n_states = nq_;
-    YMIX::Wavefunction_NonzeroProbability(
-        c_, n_states, organize_state, 
-        str_wv_out, states_out, ampls_out, 
-        state_to_choose, prec  
-    );
-}
+
 
 void QCircuit::controlled(YCVI cs)
 {

@@ -102,14 +102,7 @@ void QDYN__::simulation()
     int b = nq_ - 1;
     auto ts_box = YMATH::get_range(0,nq_-2);
     YVIv cs_box = {b};
-
-    std::string str_wv_out;
-    list<vector<short>> states_out;
-    vector<Complex> ampls_out;
-
-    string time_step_str;
-
-    // iterate on time steps
+    YMIX::StateVectorOut outZ;
     for(unsigned i = 0; i < nt; ++i)
     {
         if(env_.rank == 0)
@@ -142,48 +135,30 @@ void QDYN__::simulation()
         timer.StopPrint(env_);
 
         // --- generate the circuit ---
-        timer.StartPrint(env_, "Generating the QSVT circuit... ");
+        timer.StartPrint(env_, "Calculating the QSVT circuit... ");
         oc_->generate();
-        timer.StopPrint(env_);
-
-        // --- Compute zero-ancilla states ---
-        timer.StartPrint(env_, "Measurement...");
-        oc_->get_state_zero_ancillae(
-            oc_->get_standart_output_format(), 
-            str_wv_out, 
-            states_out, 
-            ampls_out,
-            YVshv {},
-            3
-        );
+        oc_->get_state(outZ, true);
         timer.StopPrint(env_);
 
         if(flag_print_zero_states_)
         {
             cout << "resulting zero-ancilla state ->\n";
-            cout << str_wv_out << endl;
+            cout << outZ.str_wv << endl;
         }
 
         // --- Save the resulting zero-ancilla states to .hdf5 file ---
         hfo_.open_w();
-        time_step_str = "t-step-" + to_string(i);
-        hfo_.add_vector(ampls_out, time_step_str + "--output-amplitudes", "states");
-        hfo_.add_matrix(states_out, time_step_str + "--output-states", "states");
+        hfo_.add_vector(outZ.ampls,  "t-step-" + to_string(i) + "--output-amplitudes", "states");
+        hfo_.add_matrix(outZ.states, "t-step-" + to_string(i) + "--output-states", "states");
         hfo_.close(); 
 
         // --- Get the full state ---
         if(flag_print_all_states_)
         {
-            oc_->get_state_full(
-                oc_->get_standart_output_format(), 
-                str_wv_out, 
-                states_out, 
-                ampls_out,
-                YVshv {},
-                3
-            );
+            YMIX::StateVectorOut outF;
+            oc_->get_state(outF);
             cout << "resulting full state ->\n";
-            cout << str_wv_out << endl;
+            cout << outF.str_wv << endl;
         }
     }
     
