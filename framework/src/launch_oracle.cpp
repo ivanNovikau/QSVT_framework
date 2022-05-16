@@ -48,6 +48,7 @@ int main(int argc, char *argv[])
     bool flag_print_output = true;
     bool flag_tex = true;
     bool flag_layers = false;
+    bool flag_print_zero_anc = false;
 
     id_arg += 1;
     while(id_arg < (argc - 1))
@@ -82,6 +83,11 @@ int main(int argc, char *argv[])
             id_arg += 1;
             flag_layers = stoi(string (argv[id_arg]));
         }
+        if(YMIX::compare_strings(argv[id_arg], "-flag_print_zero_anc"))
+        {
+            id_arg += 1;
+            flag_print_zero_anc = stoi(string (argv[id_arg]));
+        }
 
         id_arg += 1;
     }
@@ -111,7 +117,8 @@ int main(int argc, char *argv[])
             flag_circuit,
             flag_tex,
             flag_layers,
-            true
+            true,
+            flag_print_zero_anc
         );
         
         // launch the circuit with different input states:

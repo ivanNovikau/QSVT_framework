@@ -838,6 +838,25 @@ def is_zero(a):
         return True
 
 
+def get_Rc_angles(complex_value):
+    import cmath
+    ww = cmath.polar(complex_value)
+    angle_z = -2.*ww[1]
+    angle_y =  2.*np.arccos(ww[0])
+    return angle_z, angle_y
+
+
+def get_angles_source_init_IV(ampl_0, ampl_1):
+    # ampl_0: amplitude of |0>, is assumed to be real;
+    # ampl_1: amplitude of |1>, can be complex;
+    # Rz[angle_beta] @ Ry[angle_y] @ Rz[angle_delta]
+    angle_y     = 2*np.arccos(np.real(ampl_0))
+    angle_beta  = np.arccos(np.real(ampl_1)/np.sin(angle_y/2.))
+    angle_delta = - angle_beta
+    return angle_beta, angle_y, angle_delta
+
+
+
 
 
 

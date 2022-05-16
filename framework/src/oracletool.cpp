@@ -10,7 +10,8 @@ OracleTool__::OracleTool__(
     YCB flag_circuit,
     YCB flag_tex,
     YCB flag_layers,
-    YCB flag_hdf5
+    YCB flag_hdf5,
+    YCB flag_print_zero_anc
 ) : BaseTool__(
     env, pname, path_to_inputs, 
     flag_compute_output, flag_print_output, 
@@ -18,6 +19,7 @@ OracleTool__::OracleTool__(
     flag_layers, flag_hdf5
 ){
     format_file_ = FORMAT_ORACLE;
+    flag_print_zero_anc_ = flag_print_zero_anc;
     read_data();
 }
 
@@ -550,13 +552,12 @@ void OracleTool__::launch()
             }
         }
 
-        // --- Print all output states ---
+        // --- Print output states ---
         if(flag_compute_output_)
         {
             int id_current_gate = 0;
             string stop_point_name;
             YMIX::StateVectorOut outF, outZ;
-            outZ.flag_str = false;
             while(id_current_gate < u_work->get_n_gates())
             {
                 // generate the circuit:
@@ -568,10 +569,18 @@ void OracleTool__::launch()
                 timer_comp.Stop();
                 YMIX::print_log(env_, "duration: " + timer_comp.get_dur_str_s());
                 if(flag_print_output_) 
-                    YMIX::print_log(
-                        env_, 
-                        "...Output state after " + stop_point_name + ": \n" + outF.str_wv
-                    );
+                {
+                    if(flag_print_zero_anc_)
+                        YMIX::print_log(
+                            env_, 
+                            "...Output zero-ancilla states after " + stop_point_name + ": \n" + outZ.str_wv
+                        );
+                    else
+                        YMIX::print_log(
+                            env_, 
+                            "...Output all states after " + stop_point_name + ": \n" + outF.str_wv
+                        );
+                }
             }
 
             // --- Store the output state at the very end of the circuit ---

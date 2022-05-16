@@ -256,6 +256,9 @@ void QSP__::simulation()
             oc_->phase(b, -M_PI_2);
             oc_->x(b)->h(b)->rz(b, aa);
 
+            // oc_->x(0); // for non-hermitian
+
+
             aa = angles_phis_[2*count_angle+1];
             oc_->rz(b, -aa)->h(b);
             oc_->insert_gates_from(
@@ -264,10 +267,15 @@ void QSP__::simulation()
             );
             oc_->phase(b, M_PI_2);
             oc_->h(b)->rz(b, aa);
+
+            // oc_->x(0); // for non-hermitian
         }
         aa = angles_phis_[N_angles_-1];
         oc_->rz(b, aa);
         oc_->h(b)->h(q);
+
+        // oc_->x(0); // for non-hermitian
+
         timer.StopPrint(env_);
 
         // --- Generate the circuit ---

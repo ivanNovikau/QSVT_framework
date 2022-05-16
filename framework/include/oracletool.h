@@ -25,7 +25,8 @@ public:
         YCB flag_circuit = false,
         YCB flag_tex = false,
         YCB flag_layer = false,
-        YCB flag_hdf5 = false
+        YCB flag_hdf5 = false,
+        YCB flag_print_zero_anc = false
     );
     ~OracleTool__();
     void launch();
@@ -52,6 +53,8 @@ private:
     // every init. state is represented by several registers, 
     //  where several qubits might be set to 1.
     std::vector<std::map<std::string, std::vector<int>>> init_states_;
+
+    bool flag_print_zero_anc_;
 
 
 };

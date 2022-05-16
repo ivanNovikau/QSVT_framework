@@ -54,6 +54,9 @@ By default, `-flag_tex 1`.
 `-tex_CL`: length of each row in the circuit, when it is printed to the `.tex` file.
 By default, `-tex_CL 10`.
 
+`-flag_print_zero_anc`: print only states, where all ancillae are in the zero state
+(assuming that all ancilla qubit are the high-priority qubits).
+
 To understand the format of the `.oracle` file, see the wiki page:<br> 
 https://github.com/ivanNovikau/QSVT_framework/wiki
 
