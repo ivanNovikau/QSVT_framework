@@ -280,7 +280,7 @@ def get_str_state(q, format_q):
     return ll
 
 
-def choose_a_state(dd, choice, def_value=0):
+def create_mask(dd, choice, def_value=0):
     nq  = dd["nq"]
     ch_state = [def_value] * nq
     for reg_name, reg_int in choice.items():
@@ -300,7 +300,7 @@ def get_state_on_t(dd, choice):
     print(dd["regs"])
     print("")
 
-    ch_state = choose_a_state(dd, choice)
+    ch_state = create_mask(dd, choice)
     print("Find amplitudes of the following state: ")
     print(get_str_state(ch_state, dd["reg-nq"]))
 
@@ -333,7 +333,7 @@ def get_x_grid(dd, reg_x):
 # All other registers are set zero.
 def get_amplitudes_xt(dd, vars_enc, reg_x):
     # prepare a preliminary state defined by "vars_enc":
-    ch_state = choose_a_state(dd, vars_enc)
+    ch_state = create_mask(dd, vars_enc)
 
     # create all possible combinations of a register "reg_x" in "ch_state":
     Nt = np.size(dd["t"])
@@ -391,7 +391,7 @@ def get_total_prob(dd, id_t):
 
 
 ## Set a part of the "state" to a bit-array represented by an integer "int_repr".
-# "state" is a list of size nq, where nq is a total number of qubits in a QSP circuit.
+# "state" is a list of size nq, where nq is a total number of qubits in the circuit.
 # "reg_name" defines a part of the array "state" that must be set to "int_repr".
 # Return a new state as an 1-D np.array.
 def set_reg(dd, state, int_repr, reg_name):
@@ -412,7 +412,7 @@ def set_reg(dd, state, int_repr, reg_name):
 # the function returns all available states from this register.
 # Return the chosen states and their amplitudes at a chosen time moment "id_t".
 def get_several_chosen_states_at_t1(dd, choice, id_t):
-    ch_state = choose_a_state(dd, choice, -1)
+    ch_state = create_mask(dd, choice, -1)
 
     one_step_states = dd["states"][id_t]["state"]
     one_step_ampls = dd["states"][id_t]["ampls"]
@@ -437,7 +437,12 @@ def get_several_chosen_states_at_t1(dd, choice, id_t):
 
 ## Return an integer representation of a state encoded in a register "reg_name"
 # in a given state "input_state".
-# Remark: the first bit in a state has the highest priority.
+# Remark: the first bit in a state is the most significant.
+# !!! Does not take into account the position of the register within the circuit !!!
+# !!! Means, the same two bit-arrays, which lie in two different places of the circuit,
+#            will return the same integer !!!
+# !!! Yet, in general, more significant register must return a larger integers, just because
+#   the register has more significant qubits !!!
 def get_int_from_reg_state(dd, reg_name, input_state):
     n_reg = dd["regs"][reg_name]
     shift_reg = dd["reg-shifts"][reg_name]
@@ -662,7 +667,7 @@ class Meas__:
     # available states. 
     # Usually, the available states are the states with zero ancillae registers.
     def get_rel_ampl(self, choice, id_t):
-        ch_state = choose_a_state(self.dd_, choice, -1)
+        ch_state = self.create_mask(self.dd_, choice, -1)
 
         one_step_states = self.states_[id_t]["state"]
         one_step_ampls = self.states_[id_t]["ampls"]
@@ -707,16 +712,16 @@ class Meas__:
     #           correspond to different points on x.
     # All other registers are set to zero.
     def get_var_x(self, vars_enc, reg_x):
-        # prepare a preliminary state defined by "vars_enc":
-        ch_state = self.choose_a_state(vars_enc)
+        # # prepare a preliminary state defined by "vars_enc":
+        # ch_state = self.create_mask(vars_enc)
 
-        # create all possible combinations of the register "reg_x" in "ch_state":
+        # # create all possible combinations of the register "reg_x" in "ch_state":
         nx = self.dd_["regs"][reg_x]
         Nx = 2**nx
-        ch_states_x = [None] * Nx
-        for id_x in range(Nx):
-            ch_states_x[id_x] = self.set_reg(ch_state, id_x, reg_x)
-            # print(get_str_state(ch_states_x[id_x], dd["reg-nq"]))
+        # ch_states_x = [None] * Nx
+        # for id_x in range(Nx):
+        #     ch_states_x[id_x] = self.set_reg(ch_state, id_x, reg_x)
+        #     # print(get_str_state(ch_states_x[id_x], dd["reg-nq"]))
 
         # prepare a dictionary that defines a set of states to be considered at every time step:
         var_to_cons = {}
@@ -736,13 +741,50 @@ class Meas__:
         # every state in the considered set of states must correspond to one space point:
         nstates = len(states_to_search)
         for i_state in range(nstates):
-            int_x = self.get_int_from_reg_state(reg_x, states_to_search[i_state])
+            int_x = self.convert_reg_state_to_int(reg_x, states_to_search[i_state])
             one_ampl = ampls_to_search[i_state]
             ampls[int_x] = np.complex(one_ampl["real"], one_ampl["imag"])
         return ampls
 
+    ## Return the variable defined by "vars_enc" as a function of x1 and x2.
+    # The dependence on x1 (x2) is encoded in the register reg_x1 (reg_x2).
+    # "vars_enc" is {"reg_name_1": int_to_choose, ...};
+    # "reg_x1" (reg_x2) is the register name where different combinations of qubits
+    #           correspond to different points on x1 (x2).
+    # All other registers are set to zero.
+    def get_var_x1x2(self, vars_enc, reg_x1, reg_x2):
+        Nx1 = 2**self.dd_["regs"][reg_x1]
+        Nx2 = 2**self.dd_["regs"][reg_x2]
 
-    def choose_a_state(self, choice, def_value=0):
+        # prepare a dictionary that defines a set of states to be considered at every time step:
+        var_to_cons = {}
+        for reg_name in self.dd_["reg-names"]:
+            if reg_name in vars_enc.keys():
+                var_to_cons[reg_name] = vars_enc[reg_name]
+                continue
+            if reg_name != reg_x1 and reg_name != reg_x2:
+                var_to_cons[reg_name] = 0
+                continue
+        ampls = np.zeros((Nx1, Nx2), dtype=np.complex)
+
+        # consider only states for the chosen variable encoded by vars_enc:
+        ampls_to_search, states_to_search = self.get_several_chosen_states_at_t1(var_to_cons, -1)
+
+        # every state in the considered set of states must correspond to one space point:
+        nstates = len(states_to_search)
+        for i_state in range(nstates):
+            int_x1 = self.convert_reg_state_to_int(reg_x1, states_to_search[i_state])
+            int_x2 = self.convert_reg_state_to_int(reg_x2, states_to_search[i_state])
+            one_ampl = ampls_to_search[i_state]
+            ampls[int_x1, int_x2] = np.complex(one_ampl["real"], one_ampl["imag"])
+        return ampls
+
+
+    ## Create an 1D-array of size 2**nq (nq - number of qubits in the circuit),
+    # where corresponding pieces of the array are filled by binary representations of
+    # the register states from the "choice" map.
+    # The rest of the array elements are filled with the "def_value". 
+    def create_mask(self, choice, def_value=0):
         nq  = self.dd_["nq"]
         ch_state = [def_value] * nq
         for reg_name, reg_int in choice.items():
@@ -754,7 +796,7 @@ class Meas__:
 
 
     ## Set a part of the "state" to a bit-array represented by the integer "int_repr".
-    # "state" is a list of size nq, where nq is a total number of qubits in the QSP circuit.
+    # "state" is a list of size nq, where nq is a total number of qubits in the circuit.
     # "reg_name" defines a part of the array "state" that must be set to "int_repr".
     # Return a new state as an 1-D np.array.
     def set_reg(self, state, int_repr, reg_name):
@@ -775,10 +817,10 @@ class Meas__:
     # the function returns all available states from this register.
     # Return the chosen states and their amplitudes at the chosen time moment "id_t".
     def get_several_chosen_states_at_t1(self, choice, id_t):
-        ch_state = choose_a_state(self.dd_, choice, -1)
+        ch_state = self.create_mask(choice, -1)
 
         one_step_states = self.states_[id_t]["state"]
-        one_step_ampls = self.states_[id_t]["ampls"]
+        one_step_ampls  = self.states_[id_t]["ampls"]
 
         nstates, _ = one_step_states.shape
         res_ampls = []
@@ -798,17 +840,19 @@ class Meas__:
         return res_ampls, res_states
 
 
-    ## Return an integer representation of a state encoded in a register "reg_name"
-    # in a given state "input_state".
-    # Remark: the first bit in a state has the highest priority.
-    def get_int_from_reg_state(self, reg_name, input_state):
+    ## The "input_state" is 1-D array of size 2**nq (nq - number of qubits in the circuit);
+    # The register name "reg_name" chooses a piece of the array "input_state".
+    # This piece contains a bit-array.
+    # Taking into account nq and (but the position of the bit-array within the array "input_state"),
+    # the function returns the integer representation of the bit-array.
+    # THe zeroth bit in the register is assumed to be the most significant.
+    def convert_reg_state_to_int(self, reg_name, input_state):
         n_reg = self.dd_["regs"][reg_name]
         shift_reg = self.dd_["reg-shifts"][reg_name]
         int_repr = 0
         for iq in range(n_reg):
             int_repr += 2**(n_reg-iq-1) * input_state[shift_reg + iq]
         return int_repr
-
 
 
 # -------------------------------------------------------------------------------
@@ -837,7 +881,6 @@ class MeasInverse__(Meas__):
             self.states_[-1]["state"] = np.transpose(np.array(st["output-states"])) 
             self.states_[-1]["ampls"] = np.array(st["output-amplitudes"])
         return
-
 
 
 # -------------------------------------------------------------------------------

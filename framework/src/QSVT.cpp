@@ -377,6 +377,9 @@ void QSVT__::create_circuit_component_def_parity(
     // --- Structure the circuit component ---
     timer.StartPrint(env_, "creating... ");
 
+    // vector<qreal> phis = vector<qreal>(phis_in);
+    // reverse(phis.begin(), phis.end());
+
     circ->h(q);
     if(flag_imaginary)
         circ->z(q);
@@ -391,7 +394,8 @@ void QSVT__::create_circuit_component_def_parity(
             u_.get(), 
             make_shared<Box__>("U", ureg, YVIv {})
         );
-        circ->z(q);
+        if(count_angle == (N_angles - 1)) // set the Z-gate only if N_angles is even (odd polynomial)
+            circ->z(q);
 
         aa = 2*phis[count_angle];
         circ->x(a_ancs);
@@ -405,7 +409,7 @@ void QSVT__::create_circuit_component_def_parity(
                 iu_.get(), 
                 make_shared<Box__>("iU", ureg, YVIv {})
             );
-            circ->z(q);
+            // circ->z(q);
 
             aa = 2*phis[count_angle];
             circ->x(a_ancs);
