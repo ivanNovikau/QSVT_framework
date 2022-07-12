@@ -85,7 +85,7 @@ class QCircuit{
      * @param regs_new registers of the current circuit to which the new gates are applied.
      *  \p regs_new.size() has to be = \p circ.nq_ .
      *  E.g., \p circ has two qubits: 0, 1 (0 - least significant (bottom) qubit).
-     *  If \p circ = [3,2], then 0->3, 1->2: zero qubit of \p circ is applied to 
+     *  If \p regs_new = [3,2], then 0->3, 1->2: zero qubit of \p circ is applied to 
      *  the qubit 3 of the current circuit, while qubit 1 of \p circ is applied to
      *  the qubit 2 of the current circuit.
      * @param box a ghost gate to indicate boundaries where 
@@ -219,11 +219,17 @@ class QCircuit{
     void read_structure_gate_condR_split(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_adder1(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_subtractor1(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_adder(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_swap(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_phase_estimation(
         YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv
     );
+
+    /**
+     * @brief store qubit indices to the output vector \p ids_target.
+     * The qubits start from the less singificant one.
+     */ 
     void read_reg_int(YISS istr, YVI ids_target, YCS word_start=std::string());
     void read_end_gate(YISS istr, YVI ids_control, YVI ids_x, YVVI ids_control_it, YVVI ids_x_it);
 
@@ -507,12 +513,21 @@ class QCircuit{
     /** @brief integer encoded to \p ts is decremented */
     YQCP subtractor_by_one(YCVI ts, YCVI cs, YCB flag_inv);
 
+    /** @brief addition of two variables (v1 and v2) encoded to the registers \p ts1 and \p ts2;
+     * the three registers must be of the same size;
+     * the output sum (v1 + v2) is written to the qubits [ts2[:], ts3[0]].
+     * The register ts3 must be initialized to the zero state.
+     * The qubits ts3[1:] are used to store carry bits and are returned in the zero state.
+     * @param flag_box if true, draw the operator as a box, not as a circuit;
+     */
+    YQCP adder(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv = false, YCB flag_box = false);
+
     /** @brief Add a swap operator between qubits \p t1 and \p t2. */
     YQCP swap(YCI t1, YCI t2, YVIv cs = {});
 
     /** @brief Quantum Fourier circuit placed to the qubits \p ts and
      *         controlled by the qubits \p cs;
-     * @param flag_box if true, draw teh operator as a box, not as a circuit;
+     * @param flag_box if true, draw the operator as a box, not as a circuit;
      */
     YQCP quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv = false, YCB flag_box = false);
 
@@ -599,7 +614,7 @@ private:
 
     // registers:
     // regs_[rname][i] is the i-th qubit in the register "rname";
-    // the 0-th qubit is the least signficant in the register.
+    // the 0-th qubit is the least significant in the register.
     std::map<std::string, YVIv> regs_; 
 
     // which registers are ancilla:

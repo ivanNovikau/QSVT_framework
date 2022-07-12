@@ -1066,6 +1066,34 @@ void QCircuit::read_structure_gate_subtractor1(YISS istr, YCS path_in, YCB flag_
 }
 
 
+void QCircuit::read_structure_gate_adder(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target_1, ids_target_2, ids_target_3, ids_control, ids_x;
+    long long nt;
+
+    // --- read target qubits ---
+    read_reg_int(istr, ids_target_1);
+    read_reg_int(istr, ids_target_2);
+    read_reg_int(istr, ids_target_3);
+
+    if(ids_target_1.size() != ids_target_2.size())
+        throw string("target registers must have the same size");
+    if(ids_target_1.size() != ids_target_3.size())
+        throw string("target registers must have the same size");
+    if(ids_target_2.size() != ids_target_3.size())
+        throw string("target registers must have the same size");
+
+    // --- read the end of the gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // --- adder of two variables ---
+    x(ids_x); 
+    adder(ids_target_1, ids_target_2, ids_target_3, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
 void QCircuit::read_structure_gate_swap(YISS istr, YCS path_in, YCB flag_inv)
 {
     YVIv ids_target_1, ids_target_2, ids_control, ids_x;
@@ -1201,6 +1229,71 @@ YQCP QCircuit::subtractor_by_one(YCVI ts, YCVI cs, YCB flag_inv)
     {
         adder_by_one(ts, cs, false);
     }
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::adder(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv, YCB flag_box)
+{
+    uint32_t nt = ts1.size();
+    string oracle_name_tex = "ADD";
+    YVIv ts_total; 
+    ts_total.insert(ts_total.end(), ts1.begin(), ts1.end());
+    ts_total.insert(ts_total.end(), ts2.begin(), ts2.end());
+    ts_total.insert(ts_total.end(), ts3.begin()+1, ts3.end());
+    ts_total.insert(ts_total.end(), ts3.begin(),   ts3.begin()+1);
+    uint32_t nt_total = ts_total.size();
+
+    // --- create an envelop circuit for the adder operator ---
+    auto oc_adder = make_shared<QCircuit>(
+        "ADD", env_, path_to_output_, nt_total
+    );
+    auto rc = oc_adder->add_register("rc", nt);
+    auto rb = oc_adder->add_register("rb", nt);
+    auto ra = oc_adder->add_register("ra", nt);
+
+    for(uint32_t ii = 0; ii < nt; ii++)
+    {
+        oc_adder->x(rc[ii], YVIv {rb[ii], ra[ii]});
+        oc_adder->x(rb[ii], YVIv {ra[ii]});
+        if(ii > 0)
+            oc_adder->x(rc[ii], YVIv {rc[ii-1], rb[ii]});
+    } 
+
+    if(nt > 1) 
+    {
+        oc_adder->x(rb[nt-1], YVIv {rc[nt-2]});
+        for(uint32_t ii = nt-2; ii > 0; ii--)
+        {
+            oc_adder->x(rc[ii], YVIv {rc[ii-1], rb[ii]});
+            oc_adder->x(rb[ii], YVIv {ra[ii]});
+            oc_adder->x(rc[ii], YVIv {rb[ii], ra[ii]});
+            oc_adder->x(rb[ii], YVIv {ra[ii]});
+            oc_adder->x(rb[ii], YVIv {rc[ii-1]});
+        }
+        oc_adder->x(rb[0], YVIv {ra[0]});
+        oc_adder->x(rc[0], YVIv {rb[0], ra[0]});
+        oc_adder->x(rb[0], YVIv {ra[0]});
+    }
+
+    // --- invert the circuit if necessary ---
+    if(flag_inv)
+    {
+        oc_adder->conjugate_transpose();
+        oracle_name_tex += "^\\dagger";
+    }
+
+    // --- copy the adder circuit to the current circuit ---
+    auto box = YSB(nullptr);
+    if(flag_box)
+        box = YMBo("ADD", ts_total, YVIv{}, oracle_name_tex);
+    copy_gates_from(
+        oc_adder,
+        ts_total,
+        box, 
+        false,    
+        cs        // add the control nodes at the cs qubits;
+    );
     return get_the_circuit();
 }
 
