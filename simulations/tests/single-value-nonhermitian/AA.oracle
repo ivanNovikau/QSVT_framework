@@ -1,0 +1,82 @@
+// ../../../framework/build_oracle/oracletool AA ./ -flag_circuit 1 -flag_tex 1 -flag_compute_output 1 -flag_print_output  1  -tex_CL  10
+
+// H =  coef_complex
+// H_ext = |   0  H |
+//         | Hcc  0 |
+
+
+CONSTANTS
+az -3.302974e-01
+ay 1.833819e+00 
+END_CONSTANTS
+
+
+CIRCUITS_DECLARATION
+OF  2        c 1 1 r 1 0 
+OH  3  a 1 1 c 1 1 r 1 0 
+OM  2        c 1 1 r 1 0 
+U   3  a 1 1 c 1 1 r 1 0 
+END_CIRCUITS_DECLARATION
+
+INPUT_STATES   U         
+STATE 1   r 1     end_register  
+END_INPUT_STATES
+
+
+CIRCUIT_STRUCTURE OF 
+gate X  c 1 ocontrol r 1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE OH
+gate  Rc a 1 <az> <ay>  control c 1 ocontrol r 1 end_gate
+igate Rc a 1 <az> <ay> ocontrol c 1  control r 1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE OM
+gate swap   c -1   r -1  end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+CIRCUIT_STRUCTURE U
+circuit  OF 2 r -1 c -1       0 end_circuit
+circuit  OH 3 r -1 c -1 a 1   0 end_circuit
+circuit  OM 2 r -1 c -1       0 end_circuit
+icircuit OF 2 r -1 c -1       0 end_circuit
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

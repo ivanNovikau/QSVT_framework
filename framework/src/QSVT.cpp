@@ -384,6 +384,10 @@ void QSVT__::create_circuit_component_def_parity(
     if(flag_imaginary)
         circ->z(q);
 
+    // // for the correct controlled projector:
+    // for(uint32_t ii = 0; ii < a_ancs.size(); ii++)
+    //     circ->x(a_ancs[ii], YVIv {q});
+
     aa = 2*phis[0];
     circ->x(a_ancs);
     circ->x(q, a_ancs)->rz(q, aa)->x(q, a_ancs);
@@ -417,6 +421,11 @@ void QSVT__::create_circuit_component_def_parity(
             circ->x(a_ancs);
         }
     }
+
+    // // for the correct controlled projector:
+    // for(uint32_t ii = 0; ii < a_ancs.size(); ii++)
+    //     circ->x(a_ancs[ii], YVIv {q});
+
     circ->h(q);
     timer.StopPrint(env_);
 

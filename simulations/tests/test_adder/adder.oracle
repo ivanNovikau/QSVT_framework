@@ -1,0 +1,128 @@
+// ../../../framework/build_oracle/oracletool adder ./ -flag_circuit 1 -flag_tex 1 -flag_compute_output 1 -flag_print_output  1  -tex_CL  10
+// ../../../framework/build_oracle/oracletool adder ./ -flag_tex 1 -flag_compute_output 1 -flag_print_output  1 -flag_print_zero_anc 1
+
+
+// add one variable encoded to a bit string of size <n>
+// to another variable of the SAME size;
+// the register "a" encodes the first variable v1;
+// the register "b" encodes the second variable v2;
+// the register "c" encodes the caryy out bits;
+// OUTPUT: the bits [b[:], c[0]] encode the sum v1 + v2;  
+
+CONSTANTS
+n 1
+END_CONSTANTS
+
+
+CIRCUITS_DECLARATION
+U   4  cc 1 0 c <n> 0 b <n> 0 a <n> 0 
+END_CIRCUITS_DECLARATION
+
+
+INPUT_STATES   U         
+STATE 2   b 0 a 0     end_register  
+STATE 2   b 0 a 1     end_register  
+STATE 2   b 1 a 0     end_register
+STATE 2   b 1 a 1     end_register
+END_INPUT_STATES
+
+// INPUT_STATES   U         
+// STATE 3 cc 1 b 0 a 0     end_register  
+// STATE 3 cc 1 b 0 a 1     end_register  
+// STATE 3 cc 1 b 1 a 0     end_register
+// STATE 3 cc 1 b 1 a 1     end_register
+// END_INPUT_STATES
+
+// INPUT_STATES   U         
+// STATE 2 a 0 c 0     end_register  
+// STATE 2 a 0 c 1     end_register  
+// STATE 2 a 1 c 0     end_register
+// STATE 2 a 1 c 1     end_register
+// END_INPUT_STATES
+
+
+// INPUT_STATES   U         
+// STATE 2   b 3 a 0     end_register  
+// STATE 2   b 3 a 1     end_register  
+// STATE 2   b 3 a 2     end_register
+// STATE 2   b 3 a 3     end_register
+// END_INPUT_STATES
+
+// INPUT_STATES   U         
+// STATE 2   b 7 a 0     end_register  
+// STATE 2   b 7 a 1     end_register  
+// STATE 2   b 7 a 2     end_register  
+// STATE 2   b 7 a 3     end_register
+// STATE 2   b 7 a 4     end_register
+// STATE 2   b 7 a 5     end_register
+// STATE 2   b 7 a 6     end_register
+// STATE 2   b 7 a 7     end_register
+// END_INPUT_STATES
+
+
+// INPUT_STATES   U         
+// // STATE 2   b 0 a 0     end_register  
+// // STATE 2   b 15 a 15   end_register  
+// // STATE 2   b 9 a 8     end_register
+// // STATE 2   b 3 a 12    end_register
+// STATE 2   b 10 a 12    end_register  
+// STATE 2   b 8  a 4     end_register  
+// STATE 2   b 2  a 14    end_register
+// STATE 2   b 1  a 15    end_register
+// END_INPUT_STATES
+
+
+CIRCUIT_STRUCTURE U 
+gate adder a -1 b -1 c -1 ocontrol cc 1 end_gate
+END_CIRCUIT_STRUCTURE
+
+// CIRCUIT_STRUCTURE U 
+// gate adder c -1 a -1 b -1 end_gate
+// END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

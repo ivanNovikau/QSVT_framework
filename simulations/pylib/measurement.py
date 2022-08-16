@@ -496,7 +496,7 @@ def compare_states(output_state_dict, qiskit_ampls, qiskit_states, err_comp = 1e
     return
 
 
-# calculate the total probability of the state defined only the list_qubits;
+# calculate the total probability of the state defined only by the list_qubits;
 def calc_tot_prob_wrt(state_dict, list_qubits):
     ampls = get_complex(state_dict["ampls"])
     n_states, _ = state_dict["state"].shape
@@ -667,7 +667,7 @@ class Meas__:
     # available states. 
     # Usually, the available states are the states with zero ancillae registers.
     def get_rel_ampl(self, choice, id_t):
-        ch_state = self.create_mask(self.dd_, choice, -1)
+        ch_state = self.create_mask(choice, -1)
 
         one_step_states = self.states_[id_t]["state"]
         one_step_ampls = self.states_[id_t]["ampls"]
@@ -871,6 +871,7 @@ class MeasInverse__(Meas__):
             bg = f["basic"]
 
             self.dd_["kappa"] = bg["kappa"][()]
+            self.dd_["eps"] = bg["qsvt-error"][()]
             self.dd_["qsp"]["odd-angles"] = bg["odd-angles"][()]
         return
 

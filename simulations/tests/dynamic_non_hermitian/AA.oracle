@@ -1,0 +1,116 @@
+//-> python3 ./pylib/oracletool.py AA2 ./oracletool/buildgpu/oracletool ./QSP/examples/test_inverse/inverse_AA2/ 1
+
+//-> --- Matrix ---
+//-> | cos(aa/2) cos(ab/2)               0           0 |
+//-> | cos(ab/2) cos(ac/2)               0           0 |
+//-> |           0          0    cos(ad/2)           0 |
+//-> |           0          0            0   cos(aw/2) |
+
+//-> The circuit returns Matrix/d, where d - sparsity;
+
+
+CONSTANTS
+// --- Hermitian version ---
+// aa  1.433770e+00
+// ab  2.407245e+00
+// ba  2.407245e+00
+// ac  7.343477e-01
+// ad  4.132992e+00  
+// aw  2.349221e+00
+
+// --- non-Hermitian version ---
+aa 1.591886e+00
+ab 2.462311e+00
+ba 2.095036e+00
+ac 1.046557e+00
+ad 4.055957e+00
+aw 2.409055e+00
+END_CONSTANTS
+
+
+CIRCUITS_DECLARATION
+OF  2        c 2 1 r 2 0 
+OH  3  a 1 1 c 2 1 r 2 0 
+OM  2        c 2 1 r 2 0 
+U   3  a 1 1 c 2 1 r 2 0 
+END_CIRCUITS_DECLARATION
+
+LAUNCH_SECTION
+sel_launch  full	
+//-> sel_launch  draw
+//-> flag_draw  OF
+//-> flag_draw  OH
+//-> flag_draw  OM
+//-> flag_draw   U
+//-> flag_redraw U
+END_LAUNCH_SECTION
+
+
+INPUT_STATES   U         
+STATE 1    r 2     end_register  
+END_INPUT_STATES
+
+
+CIRCUIT_STRUCTURE OF 
+gate H  c 1 ocontrol r 2 end_gate
+gate X  c 2  control r 2 end_gate
+gate X  c 1  control r 3 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE OH
+gate Ry a 1 <aa> ocontrol 2 c 3 r 3              		end_gate
+gate Ry a 1 <ab> ocontrol 2 c 2 r 3  control c 1 		end_gate
+gate Ry a 1 <ba> ocontrol 2 c 3 r 2  control r 1 		end_gate
+gate Ry a 1 <ac> ocontrol 2 c 2 r 2  control 2 c 1 r 1 	end_gate
+gate Ry a 1 <ad> ocontrol 2 c 1 r 1  control 2 c 2 r 2 	end_gate
+gate Ry a 1 <aw>                     control 2 c 3 r 3 	end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE OM
+gate swap   c -1   r -1  end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+CIRCUIT_STRUCTURE U
+circuit  OF 2 r -1 c -1       0 end_circuit
+circuit  OH 3 r -1 c -1 a 1   0 end_circuit
+circuit  OM 2 r -1 c -1       0 end_circuit
+icircuit OF 2 r -1 c -1       0 end_circuit
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

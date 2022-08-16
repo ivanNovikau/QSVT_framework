@@ -1,7 +1,11 @@
 #ifndef QLIB_H
 #define QLIB_H
 
+
 #include "QuEST.h"
+#include <armadillo> // to remove
+#include <mpi.h> // to remove
+
 
 #include <sstream>
 #include <iostream>
@@ -30,12 +34,7 @@
 #include <numeric>
 #include <unistd.h>
 
-#include <armadillo> // to remove
-
-#include <mpi.h> // to remove
-
 #include <cuda_runtime_api.h>
-
 #include "H5Cpp.h"
 
 #define YMPI  false

@@ -1,0 +1,67 @@
+
+// Launch from the current folder
+// ../../../framework/build_oracle/oracletool AA ./    1  1  1     10   
+// [exe-file] [oracle-name] [work-project] 
+//    [flag-comp-output] [flag-circuit] [flag-tex] 
+//    [tex-circuit-length] 
+
+CONSTANTS
+nq 3
+a2 	1.570796327e+00
+a4 	7.853981634e-01
+END_CONSTANTS
+
+
+
+CIRCUITS_DECLARATION
+A  1  r <nq> 0 
+END_CIRCUITS_DECLARATION
+
+INPUT_STATES   A        
+STATE 1    r 1     end_register  
+END_INPUT_STATES
+
+
+CIRCUIT_STRUCTURE A
+gate H r 4 end_gate
+gate Phase r 4 <a2> control r 2 end_gate
+gate Phase r 4 <a4> control r 1 end_gate
+gate H r 2 end_gate
+gate Phase r 2 <a2> control r 1 end_gate
+gate H r 1 end_gate
+gate Swap r 1 r 4 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
