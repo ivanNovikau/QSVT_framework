@@ -43,7 +43,9 @@ private:
     void read_gate(YISS istr, YPQC oc, YCB flag_inv=false);
     void read_subcircuit(YISS istr, YPQC oc, YCB flag_inv=false);
     void read_state(YISS istr);
+    void read_state_init_file();
     qreal get_value_from_word(YCS word);
+    void calc(std::shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX::YTimer& timer_comp);
 
 private:
     // dictuinary of constants to create the oracle:
@@ -53,6 +55,13 @@ private:
     // every init. state is represented by several registers, 
     //  where several qubits might be set to 1.
     std::vector<std::map<std::string, std::vector<int>>> init_states_;
+
+    // amplitudes of the initial state read from the initial state file:
+    std::vector<qreal> init_ampl_vec_real_;
+    std::vector<qreal> init_ampl_vec_imag_;
+
+    // true if the initial state is read from the .init_state file:
+    bool flag_init_state_file_;
 
     bool flag_print_zero_anc_;
 

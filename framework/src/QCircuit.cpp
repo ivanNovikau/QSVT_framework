@@ -242,7 +242,6 @@ void QCircuit::finish_tex_file()
 }
 
 
-
 void QCircuit::generate()
 {
     YMIX::YTimer timer;
@@ -254,6 +253,7 @@ void QCircuit::generate()
     }
     id_start_ += gates_.end() - start;
 }
+
 
 void QCircuit::generate(string& stop_name, int& id_current)
 {
@@ -427,6 +427,7 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv, YC
     }
 }
 
+
 void QCircuit::insert_gates_from(const QCircuit* of, YCCB box)
 {
     if(box)
@@ -450,6 +451,7 @@ void QCircuit::insert_gates_from(const QCircuit* of, YCCB box)
         gates_.push_back(oo);
     }
 }
+
 
 YVIv QCircuit::add_register(YCS name, YCU n_qubits, YCB flag_ancilla)
 {
@@ -486,6 +488,7 @@ YVIv QCircuit::add_register(YCS name, YCU n_qubits, YCB flag_ancilla)
     return qubits_positions;
 }
 
+
 void QCircuit::print_reg_positions(std::ofstream& of) const
 {
     for(auto const& reg_name: regnames_)
@@ -495,6 +498,7 @@ void QCircuit::print_reg_positions(std::ofstream& of) const
             of << id_q << " ";
     }
 }
+
 
 void QCircuit::set_standart_output_format()
 {
@@ -516,6 +520,7 @@ void QCircuit::set_standart_output_format()
     int diff = nq_ - reg_size_total;
     if(diff > 0) standart_output_format_.push_back(diff);
 }
+
 
 void QCircuit::save_regs()
 {
@@ -560,6 +565,7 @@ void QCircuit::save_regs()
         }
     }
 }
+
 
 YQCP QCircuit::get_the_circuit()
 {
@@ -628,6 +634,25 @@ void QCircuit::set_init_vector(YCI qb, YCI nq, YVQ ampl_vec_real, YVQ ampl_vec_i
     init_state.flag_defined = true;
     init_state.b_ampl = b_ampl;
     init_state.n_ampls = n_ampls;
+    init_state.ampl_vec_real = YVQv(ampl_vec_real);
+    init_state.ampl_vec_imag = YVQv(ampl_vec_imag);
+    init_state_.push_back(init_state);
+}
+
+
+void QCircuit::set_init_vector(YVQ ampl_vec_real, YVQ ampl_vec_imag)
+{
+    long long b_ampl = 0;
+    long long N_ampls = ampl_vec_real.size();
+    if(N_ampls != ampl_vec_imag.size())
+        throw string("vectors with real and imaginary parts of the initial state are of different size.");
+
+    setAmps(c_, b_ampl, &ampl_vec_real[0], &ampl_vec_imag[0], N_ampls);
+
+    INIT_STATE__ init_state;
+    init_state.flag_defined = true;
+    init_state.b_ampl = b_ampl;
+    init_state.n_ampls = N_ampls;
     init_state.ampl_vec_real = YVQv(ampl_vec_real);
     init_state.ampl_vec_imag = YVQv(ampl_vec_imag);
     init_state_.push_back(init_state);
@@ -878,7 +903,6 @@ void QCircuit::read_reg_int(YISS istr, YVI ids_target, YCS word_start)
     int n_regs, integer_qu, n_bitA;
     int nq_reg;
 
-    // nodes can sit on several registers
     if(word_start.empty())
         istr >> word;
     else 

@@ -519,7 +519,7 @@ void QSVT__::set_init_vector()
                 continue;
             }
 
-            // number of elements in a vector:
+            // number of elements in the vector:
             if(YMIX::compare_strings(key_name, "N"))
             {
                 iss >> N;
@@ -528,7 +528,7 @@ void QSVT__::set_init_vector()
                 continue;
             }
 
-            // real part of an initial state
+            // real part of the initial state
             if(YMIX::compare_strings(key_name, "real"))
             {
                 for(unsigned i = 0; i < N; ++i)
@@ -536,7 +536,7 @@ void QSVT__::set_init_vector()
                 continue;
             }
 
-            // imaginary part of an initial state
+            // imaginary part of the initial state
             if(YMIX::compare_strings(key_name, "imag"))
             {
                 for(unsigned i = 0; i < N; ++i)
@@ -550,7 +550,7 @@ void QSVT__::set_init_vector()
     }
 
     // -------------------------------------------------------------------------
-    // --- Initialization via the restart fiel ---
+    // --- Initialization via the restart file ---
     // -------------------------------------------------------------------------
     if(flag_restart_)
     {

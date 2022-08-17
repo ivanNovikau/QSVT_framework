@@ -155,6 +155,8 @@ class QCircuit{
     void set_init_binary_state(const bool& flag_mpi_bcast = false);
 
     /**
+     * !!! ATTENTION !!!: seem to be incorrect, qb does not give correct position of 
+     * an element within a state vector.
      * @brief Set initial amplitudes to specified qubits.
      * @param[in] qb first qubit to set;
      * @param[in] nq number of qubits to set;
@@ -163,6 +165,16 @@ class QCircuit{
      */
     void set_init_vector(YCI qb, YCI nq, YVQ ampl_vec_real, YVQ ampl_vec_imag);
     void reset_init_vector(INIT_STATE__& state);
+
+    /**
+     * @brief Set initial amplitudes to specified qubits.
+     * Elements \p ampl_vec_ in the state vector are filled starting from 
+     * the elements corresponding to the low-priority qubit.
+     * \p ampl_vec_real and \p ampl_vec_imag are assumed of the same size
+     * @param[in] ampl_vec_real vector with real parts of amplitudes of size 2^nq;
+     * @param[in] ampl_vec_imag vector with imaginary parts of amplitudes of size 2^nq;
+     */
+    void set_init_vector(YVQ ampl_vec_real, YVQ ampl_vec_imag);
 
     /**
      * @brief Set the qubit with id \p id_q to 1.
