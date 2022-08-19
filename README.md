@@ -1,5 +1,6 @@
 # QSVT_framework
-QSVT and QSP Hamiltonian simulations and matrix inversion
+QSVT and QSP Hamiltonian simulations and matrix inversion.
+If one wants to check the code used in Ref. [1], go to the branch PRA22.
 
 ## Prepare the code
 The code uses QuEST quantum emulator (https://github.com/quest-kit/QuEST).
