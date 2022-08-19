@@ -563,7 +563,6 @@ void OracleTool__::read_state_init_file()
 }
 
 
-
 void OracleTool__::launch()
 {
     YMIX::YTimer timer_comp;
