@@ -12,6 +12,10 @@ framework/build_*/oracletool
 framework/build_*/qsvt
 framework/build_*/qc_circuit
 
+simulations/waves_vacuum_init_value
+simulations/matrix_inversion
+simulations/XW_waves
+
 *.png
 *.jpg
 *.pylog
