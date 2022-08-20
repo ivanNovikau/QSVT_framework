@@ -477,76 +477,76 @@ void QSVT__::set_init_vector()
         YMIX::print_log(env_, "Circuit initialization via a pre-calculated vector...");
         YMIX::print_log(env_, "----------------------------------------------------");
 
-        int N, nq;
+        // int N;
         vector<qreal> ampl_vec_real;
         vector<qreal> ampl_vec_imag;
 
-        // read text from the file
-        string data;
-        {
-            ifstream ff(fname_init_);
-            if(!ff.is_open()) throw "Error: there is not a file: " + fname_init_;
-            data = string((istreambuf_iterator<char>(ff)), istreambuf_iterator<char>());
-            ff.close();
-        }
+        // // read text from the file
+        // string data;
+        // {
+        //     ifstream ff(fname_init_);
+        //     if(!ff.is_open()) throw "Error: there is not the file: " + fname_init_;
+        //     data = string((istreambuf_iterator<char>(ff)), istreambuf_iterator<char>());
+        //     ff.close();
+        // }
         
-        // clean the buffer from empty lines and comments
-        {
-            istringstream istr(data);
-            string data_clr = "";
-            string line;
-            while(getline(istr, line))
-            {
-                line = YMIX::remove_comment(line);
-                line = YMIX::trim(line);
-                if(line.find_first_not_of(' ') == string::npos)
-                    continue;
-                data_clr += line + "\n";
-            }
-            std::transform(data_clr.begin(), data_clr.end(), data_clr.begin(), ::tolower);
-            data = data_clr;
-        }
+        // // clean the buffer from empty lines and comments
+        // {
+        //     istringstream istr(data);
+        //     string data_clr = "";
+        //     string line;
+        //     while(getline(istr, line))
+        //     {
+        //         line = YMIX::remove_comment(line);
+        //         line = YMIX::trim(line);
+        //         if(line.find_first_not_of(' ') == string::npos)
+        //             continue;
+        //         data_clr += line + "\n";
+        //     }
+        //     std::transform(data_clr.begin(), data_clr.end(), data_clr.begin(), ::tolower);
+        //     data = data_clr;
+        // }
         
-        // read the data
-        string key_name;
-        istringstream iss(data);
-        while(iss >> key_name)
-        {
-            // time normalization factor
-            if(YMIX::compare_strings(key_name, "beta"))
-            {
-                iss >> coef_time_norm_;
-                continue;
-            }
+        // // read the data
+        // string key_name;
+        // istringstream iss(data);
+        // while(iss >> key_name)
+        // {
+        //     // time normalization factor
+        //     if(YMIX::compare_strings(key_name, "beta"))
+        //     {
+        //         iss >> coef_time_norm_;
+        //         continue;
+        //     }
 
-            // number of elements in the vector:
-            if(YMIX::compare_strings(key_name, "N"))
-            {
-                iss >> N;
-                ampl_vec_real = vector<qreal>(N);
-                ampl_vec_imag = vector<qreal>(N);
-                continue;
-            }
+        //     // number of elements in the vector:
+        //     if(YMIX::compare_strings(key_name, "N"))
+        //     {
+        //         iss >> N;
+        //         ampl_vec_real = vector<qreal>(N);
+        //         ampl_vec_imag = vector<qreal>(N);
+        //         continue;
+        //     }
 
-            // real part of the initial state
-            if(YMIX::compare_strings(key_name, "real"))
-            {
-                for(unsigned i = 0; i < N; ++i)
-                    iss >> ampl_vec_real[i];
-                continue;
-            }
+        //     // real part of the initial state
+        //     if(YMIX::compare_strings(key_name, "real"))
+        //     {
+        //         for(unsigned i = 0; i < N; ++i)
+        //             iss >> ampl_vec_real[i];
+        //         continue;
+        //     }
 
-            // imaginary part of the initial state
-            if(YMIX::compare_strings(key_name, "imag"))
-            {
-                for(unsigned i = 0; i < N; ++i)
-                    iss >> ampl_vec_imag[i];
-                continue;
-            }
-        }
+        //     // imaginary part of the initial state
+        //     if(YMIX::compare_strings(key_name, "imag"))
+        //     {
+        //         for(unsigned i = 0; i < N; ++i)
+        //             iss >> ampl_vec_imag[i];
+        //         continue;
+        //     }
+        // }
 
-        nq = log2(N);
-        oc_->set_init_vector(0, nq, ampl_vec_real, ampl_vec_imag);
+        YMIX::read_init_state(fname_init_, ampl_vec_real, ampl_vec_imag);
+        oc_->set_init_vector(ampl_vec_real, ampl_vec_imag);
     }
 
     // -------------------------------------------------------------------------
@@ -558,7 +558,6 @@ void QSVT__::set_init_vector()
         YMIX::print_log(env_, "Initial state is read from the restart file...");
         YMIX::print_log(env_, "----------------------------------------------------");
 
-        int N, nq;
         vector<qreal> ampl_vec_real;
         vector<qreal> ampl_vec_imag;
 
@@ -569,9 +568,7 @@ void QSVT__::set_init_vector()
         rf_.read_vector(ampl_vec_imag,   "imag", "state");
         rf_.close();
 
-        N = ampl_vec_real.size();
-        nq = log2(N);
-        oc_->set_init_vector(0, nq, ampl_vec_real, ampl_vec_imag);
+        oc_->set_init_vector(ampl_vec_real, ampl_vec_imag);
     }
 
     // -------------------------------------------------------------------------

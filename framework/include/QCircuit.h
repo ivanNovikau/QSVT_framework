@@ -154,16 +154,6 @@ class QCircuit{
      */
     void set_init_binary_state(const bool& flag_mpi_bcast = false);
 
-    /**
-     * !!! ATTENTION !!!: seem to be incorrect, qb does not give correct position of 
-     * an element within a state vector.
-     * @brief Set initial amplitudes to specified qubits.
-     * @param[in] qb first qubit to set;
-     * @param[in] nq number of qubits to set;
-     * @param[in] ampl_vec_real vector with real parts of amplitudes of size 2^nq;
-     * @param[in] ampl_vec_imag vector with imaginary parts of amplitudes of size 2^nq;
-     */
-    void set_init_vector(YCI qb, YCI nq, YVQ ampl_vec_real, YVQ ampl_vec_imag);
     void reset_init_vector(INIT_STATE__& state);
 
     /**
@@ -619,7 +609,7 @@ private:
     std::string path_to_output_; // path where output files to be written
     unsigned nq_; // number of qubits in the circuit;
 
-    std::vector<INIT_STATE__> init_state_; // initial state (as a vector)
+    INIT_STATE__ init_state_; // initial state;
 
     std::string cfname_;  // name of the .circuit file;
     std::string texname_; // name of the .tex file;

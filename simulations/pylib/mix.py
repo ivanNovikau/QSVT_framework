@@ -1,5 +1,6 @@
 import numpy as np
 import importlib as imp
+import h5py
 # import pylib.Global_variables as GLO
 import sys
 
@@ -737,34 +738,45 @@ def write_profile_condR(name_var, var_to_write, path_root):
             str_to_write = "{:0.6e}".format(one_var)
             f.write(str_to_write + "\n") 
 
-def write_init_state(name_var, path_root, init_real, init_imag, beta):
-    fname = path_root + "/" + name_var + ".init_state"
-    print("writing the initial state of " + name_var)
+# def write_init_state(name_var, path_root, init_real, init_imag, beta):
+#     fname = path_root + "/" + name_var + ".init_state"
+#     print("writing the initial state of " + name_var)
 
-    N = len(init_real)
-    with open(fname, 'w') as f:
-        # write a time normalization:
-        str_to_write = "{:0.3e}".format(beta)
-        f.write("beta\n")
-        f.write(str_to_write + "\n\n")
+#     N = len(init_real)
+#     with open(fname, 'w') as f:
+#         # write a time normalization:
+#         str_to_write = "{:0.3e}".format(beta)
+#         f.write("beta\n")
+#         f.write(str_to_write + "\n\n")
 
-        # write a number of elements in an initial state:
-        str_to_write = "{:d}".format(N)
-        f.write("N\n")
-        f.write(str_to_write + "\n\n") 
+#         # write a number of elements in an initial state:
+#         str_to_write = "{:d}".format(N)
+#         f.write("N\n")
+#         f.write(str_to_write + "\n\n") 
 
-        # write a real part of an initial state:
-        f.write("real\n")
-        for x in init_real:
-            str_to_write = "{:0.3e}".format(x)
-            f.write(str_to_write + "\n") 
-        f.write("\n\n")
+#         # write a real part of an initial state:
+#         f.write("real\n")
+#         for x in init_real:
+#             str_to_write = "{:0.3e}".format(x)
+#             f.write(str_to_write + "\n") 
+#         f.write("\n\n")
 
-        # write an imaginary part of an initial state:
-        f.write("imag\n")
-        for x in init_imag:
-            str_to_write = "{:0.3e}".format(x)
-            f.write(str_to_write + "\n") 
+#         # write an imaginary part of an initial state:
+#         f.write("imag\n")
+#         for x in init_imag:
+#             str_to_write = "{:0.3e}".format(x)
+#             f.write(str_to_write + "\n") 
+
+
+def write_init_state(name_var, path_root, init_real, init_imag):
+    fname = path_root + "/" + name_var + "_INIT_STATE.hdf5"
+    print("writing the initial state oto the file:\n" + fname)
+    with h5py.File(fname, "w") as f:
+        grp = f.create_group("init_state")
+        grp.create_dataset('real', data=init_real)
+        grp.create_dataset('imag', data=init_imag)
+    print("Done")
+    return
 
 
 def save_dat_plot_1d_file(full_fname, x, y):

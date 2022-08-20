@@ -117,7 +117,8 @@
 #define FORMAT_ANGLES     ".angles"s
 #define FORMAT_LOG        ".log"s
 #define FORMAT_QSP        ".qsp"s
-#define FORMAT_INIT       ".init_state"s
+// #define FORMAT_INIT       ".init_state"s
+#define FORMAT_INIT       "_INIT_STATE.hdf5"s
 #define FORMAT_RANDOM     ".random"s
 #define ENDING_FORMAT_OUTPUT "_OUTPUT.hdf5"s
 #define ENDING_FORMAT_RESTART "_RESTART.hdf5"s
@@ -136,7 +137,7 @@ enum SEL_INIT_STATE_PREP {use_init_vector, use_init_oracle};
 struct INIT_STATE__
 {
     bool flag_defined = false;
-    long long b_ampl; // position of the first element in a state vector to set
+    long long b_ampl;   // position of the first element in a state vector to set
     long long n_ampls; // number of elements to set
     YVQv ampl_vec_real;
     YVQv ampl_vec_imag;
@@ -146,7 +147,6 @@ struct INIT_STATE__
 // --- Structure with Global variables --- 
 // ------------------------------------------
 struct YGlobalVariables{
-
     static int tex_circuit_length;
     static const std::string reg_whole_circuit;
     static const qreal inv_sqrt2;
@@ -803,6 +803,9 @@ namespace YMIX{
             bool flag_opened;
             H5::H5File* f_;
     };
+
+
+    void read_init_state(YCS fname, YVQ v_real, YVQ v_imag);
 }
 
 

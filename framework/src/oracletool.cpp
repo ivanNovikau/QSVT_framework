@@ -494,72 +494,9 @@ void OracleTool__::read_state_init_file()
     int N;
     flag_init_state_file_ = true;
 
-    // read text from the file
-    string data;
-    {
-        string fname_init = path_inputs_ + "/" + pname_ + FORMAT_INIT;
-        cout << "Reading the file: " << path_inputs_ + "/" + pname_ + FORMAT_INIT << endl;
-        ifstream ff(fname_init);
-        if(!ff.is_open()) throw "Error: there is not a file: " + fname_init;
-        data = string((istreambuf_iterator<char>(ff)), istreambuf_iterator<char>());
-        ff.close();
-    }
-    
-    // clean the buffer from empty lines and comments
-    {
-        istringstream istr(data);
-        string data_clr = "";
-        string line;
-        while(getline(istr, line))
-        {
-            line = YMIX::remove_comment(line);
-            line = YMIX::trim(line);
-            if(line.find_first_not_of(' ') == string::npos)
-                continue;
-            data_clr += line + "\n";
-        }
-        std::transform(data_clr.begin(), data_clr.end(), data_clr.begin(), ::tolower);
-        data = data_clr;
-    }
-    
-    // read the data
-    string key_name;
-    istringstream iss(data);
-    while(iss >> key_name)
-    {
-        // // time normalization factor
-        // if(YMIX::compare_strings(key_name, "beta"))
-        // {
-        //     iss >> coef_time_norm_;
-        //     continue;
-        // }
-
-        // number of elements in the vector:
-        if(YMIX::compare_strings(key_name, "N"))
-        {
-            iss >> N;
-            init_ampl_vec_real_ = vector<qreal>(N);
-            init_ampl_vec_imag_ = vector<qreal>(N);
-            continue;
-        }
-
-        // real part of the initial state
-        if(YMIX::compare_strings(key_name, "real"))
-        {
-            for(unsigned i = 0; i < N; ++i)
-                iss >> init_ampl_vec_real_[i];
-            continue;
-        }
-
-        // imaginary part of the initial state
-        if(YMIX::compare_strings(key_name, "imag"))
-        {
-            for(unsigned i = 0; i < N; ++i)
-                iss >> init_ampl_vec_imag_[i];
-            continue;
-        }
-    }
-    
+    string fname_init = path_inputs_ + "/" + pname_ + FORMAT_INIT;
+    cout << "Reading the file: " << path_inputs_ + "/" + pname_ + FORMAT_INIT << endl;
+    YMIX::read_init_state(fname_init, init_ampl_vec_real_, init_ampl_vec_imag_);
 }
 
 

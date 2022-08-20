@@ -348,124 +348,6 @@ bool YMATH::is_number(YCS str)
 }
 
 
-// void YMIX::Wavefunction_NonzeroProbability(
-//     const Qureg& qq, 
-//     YCU n_states,
-//     YCVU organize_state,
-//     YS str_wv, 
-//     list<vector<short>>& states, 
-//     YVCo ampls, 
-//     YCVsh state_to_choose,
-//     YCU ampl_prec
-// ){ 
-//     const unsigned n = qq.numQubitsRepresented; // number of qubits;
-//     long long N = pow(2, n_states);
-//     Complex aa;
-//     qreal prob;
-//     bool flag_chosen;
-//     bool flag_to_choose; 
-
-//     // check whether it is necessary to choose a special state or not
-//     flag_to_choose = true;
-//     if(state_to_choose.empty()) flag_to_choose = false;
-
-//     // find states available for such a number of qubits and their amplitudes:
-//     ampls.clear();
-//     states.clear();
-//     copyStateFromGPU(qq);
-//     for(unsigned id_state = 0; id_state < N; id_state++)
-//     {
-//         // aa = getAmp(qq, id_state);
-//         aa.real = qq.stateVec.real[id_state];
-//         aa.imag = qq.stateVec.imag[id_state];
-
-//         // check whether the corresponding probability is not equal to zero
-//         prob = sqrt(pow(aa.real, 2) + pow(aa.imag, 2));
-//         if(!YMATH::is_zero(prob)){
-//             flag_chosen = true;
-
-//             vector<short> one_state(n);
-//             YMATH::intToBinary(id_state, one_state);
-
-//             // compare the computed state with a necessary pattern:
-//             if(flag_to_choose)
-//                 for(unsigned id_qubit = 0; id_qubit < state_to_choose.size(); ++id_qubit)
-//                 {
-//                     if(state_to_choose[id_qubit] < 0)
-//                         continue;
-//                     if(state_to_choose[id_qubit] != one_state[id_qubit])
-//                     {
-//                         flag_chosen = false;
-//                         break;
-//                     }
-//                 }
-
-//             // save the state and its amplitude if it corresponds to the pattern:
-//             if(flag_chosen)
-//             {
-//                 ampls.push_back(aa);
-//                 states.push_back(one_state);
-//             }
-//         }
-//     }
-
-//     // form the resulting string:
-//     getStrWavefunction(str_wv, ampls, states, organize_state, ampl_prec);
-// }
-
-
-// void YMIX::getStrWavefunction(
-//     YS str_wv, 
-//     YCVCo ampls, 
-//     const std::list<std::vector<short>>& states, 
-//     YCVU organize_state, 
-//     YCU ampl_prec
-// ){ 
-//     unsigned n = states.front().size();
-//     std::ostringstream oss;
-//     oss << std::scientific << std::setprecision(ampl_prec);
-
-//     str_wv = "";
-//     unsigned count_i = 0;
-//     std::string str_state;
-//     Complex aa;
-//     qreal ar, ai;
-//     unsigned w_str  = 9 + ampl_prec;
-//     for(auto& one_state:states){
-//         str_state = "|";
-//         if(organize_state.empty())
-//             for(auto& one_qubit_state:one_state)
-//                 str_state += std::to_string(one_qubit_state);
-//         else{
-//             unsigned count_org = 0;
-//             unsigned prev_sum = 0;
-//             for(unsigned jj = 0; jj < n; ++jj){
-//                 str_state += std::to_string(one_state[jj]);
-//                 if(jj == prev_sum + organize_state[count_org]-1){
-//                     prev_sum += organize_state[count_org];
-//                     ++count_org;
-//                     if(count_org < organize_state.size())
-//                         str_state += ">|";
-//                 }
-//             }
-//         }
-//         str_state += ">";
-
-//         oss.str(std::string());
-
-//         aa = ampls.at(count_i);
-//         ar = aa.real; 
-//         ai = aa.imag;
-
-//         oss << std::setw(w_str) << ar;
-//         oss << std::setw(w_str) << ai << "j";    
-//         str_wv += oss.str() + "   " + str_state + "\n";
-
-//         ++count_i;
-//     }
-// }
-
-
 void YMIX::Wavefunction_NonzeroProbability(const Qureg& qq, StateVectorOut& out)
 { 
     const unsigned n = qq.numQubitsRepresented; // number of qubits;
@@ -774,26 +656,6 @@ void YMIX::H5File::add_group(YCS gname)
 }
 
 
-
-
-
-
-
-// void YMIX::H5File::read_string(YS str, YCS dname, YCS gname)
-// {
-//     if(!flag_opened) 
-//         throw "HDF5 File " + name_ + 
-//               " is not opened to read a dataset " + dname + " from a group " + gname;
-//     if(find(grp_names_.begin(), grp_names_.end(), gname) == grp_names_.end())
-//         throw "There is not a group " + gname + " in a file " + name_;
-
-//     H5::Group grp(f_->openGroup(gname));
-//     H5::DataSet dataset = grp.openDataSet(dname);
-//     H5::DataType dtype = dataset.getDataType();
-//     str="";
-//     dataset.read(str, dtype);
-// }
-
 void YMIX::get_array_from_list(
     const std::list<std::vector<short>>& v, 
     short* array_1d, 
@@ -828,4 +690,14 @@ void YMIX::print(short* a, const unsigned long& nr, const unsigned long& nc)
         }
         cout << "\n";
     }
+}
+
+
+void YMIX::read_init_state(YCS fname, YVQ v_real, YVQ v_imag)
+{
+    YMIX::H5File ff;
+    ff.set_name(fname);
+    ff.open_r();
+    ff.read_vector(v_real, "real", "init_state");
+    ff.read_vector(v_imag, "imag", "init_state");
 }

@@ -75,7 +75,7 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
     initZeroState(c_);
 
     path_to_output_ = oc->path_to_output_;
-    init_state_     = vector<INIT_STATE__>(oc->init_state_);
+    init_state_     = oc->init_state_;
     regs_           = map<string, YVIv>(oc->regs_);
     flags_anc_regs_ = map<string, bool>(oc->flags_anc_regs_);
     regnames_       = vector<string>(oc->regnames_);
@@ -589,9 +589,8 @@ void QCircuit::reset()
     destroyQureg(c_, env_);
     c_ = createQureg(nq_, env_);
 
-    if(!init_state_.empty())
-        for(auto& state: init_state_)
-            reset_init_vector(state);
+    if(init_state_.flag_defined)
+        reset_init_vector(init_state_);
     else{
         if(!ib_state_.empty())
             set_init_binary_state();
@@ -619,26 +618,6 @@ void QCircuit::set_init_binary_state(const bool& flag_mpi_bcast)
     initClassicalState(c_, ii);
 }
 
-/**
- * !!! ATTENTION !!!: seem to be incorrect, qb does not give correct position of an element within a state vector
- */
-void QCircuit::set_init_vector(YCI qb, YCI nq, YVQ ampl_vec_real, YVQ ampl_vec_imag)
-{
-    long long b_ampl = 1 << qb;
-    if(qb == 0) b_ampl = 0;
-
-    long long n_ampls = 1 << nq;
-    setAmps(c_, b_ampl, &ampl_vec_real[0], &ampl_vec_imag[0], n_ampls);
-
-    INIT_STATE__ init_state;
-    init_state.flag_defined = true;
-    init_state.b_ampl = b_ampl;
-    init_state.n_ampls = n_ampls;
-    init_state.ampl_vec_real = YVQv(ampl_vec_real);
-    init_state.ampl_vec_imag = YVQv(ampl_vec_imag);
-    init_state_.push_back(init_state);
-}
-
 
 void QCircuit::set_init_vector(YVQ ampl_vec_real, YVQ ampl_vec_imag)
 {
@@ -646,16 +625,13 @@ void QCircuit::set_init_vector(YVQ ampl_vec_real, YVQ ampl_vec_imag)
     long long N_ampls = ampl_vec_real.size();
     if(N_ampls != ampl_vec_imag.size())
         throw string("vectors with real and imaginary parts of the initial state are of different size.");
-
     setAmps(c_, b_ampl, &ampl_vec_real[0], &ampl_vec_imag[0], N_ampls);
 
-    INIT_STATE__ init_state;
-    init_state.flag_defined = true;
-    init_state.b_ampl = b_ampl;
-    init_state.n_ampls = N_ampls;
-    init_state.ampl_vec_real = YVQv(ampl_vec_real);
-    init_state.ampl_vec_imag = YVQv(ampl_vec_imag);
-    init_state_.push_back(init_state);
+    init_state_.flag_defined = true;
+    init_state_.b_ampl = b_ampl;
+    init_state_.n_ampls = N_ampls;
+    init_state_.ampl_vec_real = YVQv(ampl_vec_real);
+    init_state_.ampl_vec_imag = YVQv(ampl_vec_imag);
 }
 
 
