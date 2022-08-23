@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
     }
     function_h.parity = avail_functions_[function_h.id].parity;
     function_h.param = param;
-    function_h.coef_norm = 0.25;
+    function_h.coef_norm = 0.125;
 
     cudaGetDeviceCount(&nDevices);
     if(nDevices == 0)

@@ -16,6 +16,9 @@ simulations/waves_vacuum_init_value
 simulations/matrix_inversion
 simulations/XW_waves
 
+simulations/tests/test_matrix_inversion
+simulations/tests/test_matrix_inversion.ipynb
+
 *.png
 *.jpg
 *.pylog
