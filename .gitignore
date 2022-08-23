@@ -18,6 +18,8 @@ simulations/XW_waves
 
 simulations/tests/test_matrix_inversion
 simulations/tests/test_matrix_inversion.ipynb
+simulations/tests/small-qsvt-real
+simulations/tests/small_qsvt_sims.ipynb
 
 *.png
 *.jpg
