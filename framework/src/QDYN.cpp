@@ -32,7 +32,7 @@ bool QDYN__::read_special_parameters(std::istringstream& iss, std::string& key_n
         }
         if(YMATH::is_zero(dt))
         {
-            YMIX::print_log_err(env_, "Error: dt == 0;");
+            YMIX::print_log_err("Error: dt == 0;");
         }
 
         f_par_ = dt;
@@ -61,18 +61,6 @@ void QDYN__::read_angles()
         read_angles_def_parity("even", angles_phis_even_, N_angles_even_);
         read_angles_def_parity("odd",  angles_phis_odd_,  N_angles_odd_);
     }
-    
-    // // --- pass the data to other processors ---
-    // if(YMPI)
-    // {
-    //     if(kappa_ < 0) MPI_Bcast(&t_current_,    1, MPI_QuEST_REAL, 0, MPI_COMM_WORLD);
-    //     MPI_Bcast(&eps_current_,  1, MPI_QuEST_REAL, 0, MPI_COMM_WORLD);
-    //     MPI_Bcast(&N_angles_odd_,     1, MPI_INT,        0, MPI_COMM_WORLD);
-    // }
-    
-    // if(env_.rank != 0)
-    //     angles_phis_odd_ = YVQv(N_angles_odd_);
-    // if(YMPI) MPI_Bcast(&angles_phis_odd_[0], N_angles_odd_, MPI_QuEST_REAL, 0, MPI_COMM_WORLD);
 }
 
 

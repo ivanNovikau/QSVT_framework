@@ -58,7 +58,7 @@ void QSVT__::read_main_parameters()
 {
     ifstream ff(fname_input_);
     if(!ff.is_open())
-        YMIX::print_log_err(env_, "Error: there is not a file: " + fname_input_);
+        YMIX::print_log_err("Error: there is not a file: " + fname_input_);
 
     string line;
     string key_name;
@@ -264,7 +264,7 @@ void QSVT__::read_angles_def_parity(YCS line_parity, YVQ phis, uint32_t& N_angle
     }
     else
     {
-        YMIX::print_log_err(env_, "There is not the following file\n" + fname_full);
+        YMIX::print_log_err("There is not the following file\n" + fname_full);
     }
 
     // --- recheck the parameters ---

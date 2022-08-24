@@ -611,7 +611,6 @@ void QCircuit::set_init_binary_state(const bool& flag_mpi_bcast)
         if(env_.rank > 0)
             if(ib_state_.empty())
                 ib_state_ = vector<short>(nq);
-        if(YMPI) MPI_Bcast(&ib_state_[0], nq, MPI_SHORT, 0, MPI_COMM_WORLD);
     }
 
     long long int ii = YMATH::binaryToInt(ib_state_);
@@ -901,11 +900,7 @@ void QCircuit::read_reg_int(YISS istr, YVI ids_target, YCS word_start)
     {
         if(flag_read_reg_name) istr >> reg_name;
         if(!YMIX::is_present(regnames_, reg_name))
-        {
-            if(YMPI) MPI_Barrier(MPI_COMM_WORLD);
             throw "no register with the name " + reg_name;
-            if(YMPI) MPI_Barrier(MPI_COMM_WORLD);
-        }
 
         try
         {
@@ -960,28 +955,12 @@ void QCircuit::read_structure_gate_condR_split(YISS istr, YCS path_in, YCB flag_
     // --- read a file with condR parameters ---
     string data;
     string ifname = path_in + "/" + name + FORMAT_PROFILE;
-    char cdata[YSIZE_CHAR_ARRAY];
-    if(env_.rank == 0)
-    {
-        ifstream ff(ifname);
-        if(!ff.is_open()) throw "Error: there is not a file: " + ifname;
-        data = string((istreambuf_iterator<char>(ff)), istreambuf_iterator<char>());
-        ff.close();
-    }
 
-    int size_data;
-    if(env_.rank == 0) 
-    {
-        if(YSIZE_CHAR_ARRAY < data.size()) 
-            throw "Error: Size of the char array is too small to save the input file."s;
-
-        strcpy(cdata, data.c_str());
-        size_data = data.size();
-    }
-    if(YMPI) MPI_Bcast(&size_data, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
-    if(YMPI) MPI_Bcast(cdata, size_data+1, MPI_CHAR, 0, MPI_COMM_WORLD);
-    if(env_.rank > 0) data = string(cdata);
-
+    ifstream ff(ifname);
+    if(!ff.is_open()) throw "Error: there is not a file: " + ifname;
+    data = string((istreambuf_iterator<char>(ff)), istreambuf_iterator<char>());
+    ff.close();
+    
     istringstream iss(data);
 
     // --- read value profiles ---

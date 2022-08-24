@@ -520,48 +520,42 @@ void YMIX::print_log(
     const bool& flag_new_line
 )
 {
-    if(env.rank == 0)
+    string line_print = line;
+
+    if(n_indent>0)
     {
-        string line_print = line;
+        string str_indent = "";
+        for(unsigned i = 0; i < n_indent; i++) str_indent += LOG_INDENT;
+        insert_indent(line_print, str_indent);
+    }
+    
+    YMIX::LogFile cf;
+    cf << line_print; 
+    if(flag_new_line) cf << "" << endl;
 
-        if(n_indent>0)
-        {
-            string str_indent = "";
-            for(unsigned i = 0; i < n_indent; i++) str_indent += LOG_INDENT;
-            insert_indent(line_print, str_indent);
-        }
-        
-        YMIX::LogFile cf;
-        cf << line_print; 
-        if(flag_new_line) cf << "" << endl;
-
-        if(!flag_only_file)
-        {
-            cout << line_print;
-            if(flag_new_line) cout << "" << endl;
-        }
+    if(!flag_only_file)
+    {
+        cout << line_print;
+        if(flag_new_line) cout << "" << endl;
     }
 }
-void YMIX::print_log_flush(const QuESTEnv& env, YCS line, YCI n_indent)
+void YMIX::print_log_flush(YCS line, YCI n_indent)
 {
-    if(env.rank == 0)
+    string line_print = line;
+    if(n_indent>0)
     {
-        string line_print = line;
-        if(n_indent>0)
-        {
-            string str_indent = "";
-            for(unsigned i = 0; i < n_indent; i++) str_indent += LOG_INDENT;
-            insert_indent(line_print, str_indent);
-        }
-        
-        YMIX::LogFile cf;
-        cf   << line_print << flush; 
-        cout << line_print << flush;
+        string str_indent = "";
+        for(unsigned i = 0; i < n_indent; i++) str_indent += LOG_INDENT;
+        insert_indent(line_print, str_indent);
     }
+    
+    YMIX::LogFile cf;
+    cf   << line_print << flush; 
+    cout << line_print << flush;
 }
-void YMIX::print_log_err(const QuESTEnv& env, YCS line)
+void YMIX::print_log_err(YCS line)
 {
-    if(env.rank == 0) throw line;
+    throw line;
 }
 
 string YMIX::ltrim(YCS s)

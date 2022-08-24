@@ -42,7 +42,7 @@ bool QSP__::read_special_parameters(std::istringstream& iss, std::string& key_na
         }
         if(YMATH::is_zero(dt))
         {
-            YMIX::print_log_err(env_, "Error: dt == 0;");
+            YMIX::print_log_err("Error: dt == 0;");
         }
 
         f_par_ = dt;
@@ -92,7 +92,7 @@ void QSP__::read_angles()
         }
         else
         {
-            YMIX::print_log_err(env_, "There is not the following file\n" + fname_full);
+            YMIX::print_log_err("There is not the following file\n" + fname_full);
         }
 
         // --- recheck the parameters ---
@@ -111,15 +111,6 @@ void QSP__::read_angles()
         ocs << "N of angles = "    << N_angles_ << ";\n";
         YMIX::print_log(env_, "\n"s + ocs.str());
     }
-    
-    // --- pass the data to other processors ---
-    if(YMPI)
-    {
-        MPI_Bcast(&N_angles_,     1, MPI_INT,        0, MPI_COMM_WORLD);
-    }
-    if(env_.rank != 0)
-        angles_phis_ = YVQv(N_angles_);
-    if(YMPI) MPI_Bcast(&angles_phis_[0], N_angles_, MPI_QuEST_REAL, 0, MPI_COMM_WORLD);
 
     // --- Save the angles to .hdf5 file ---
     YMIX::print_log(env_, "\nWriting angles to .hdf5 file");

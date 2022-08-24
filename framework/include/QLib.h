@@ -3,9 +3,6 @@
 
 
 #include "QuEST.h"
-#include <armadillo> // to remove
-#include <mpi.h> // to remove
-
 
 #include <sstream>
 #include <iostream>
@@ -37,7 +34,6 @@
 #include <cuda_runtime_api.h>
 #include "H5Cpp.h"
 
-#define YMPI  false
 #define YCUDA true
 
 // ------------------------------------------
@@ -337,8 +333,8 @@ namespace YMIX{
         const bool& flag_only_file=false, 
         const bool& flag_new_line=true
     );
-    void print_log_flush(const QuESTEnv& env, YCS line, YCI n_indent=0);
-    void print_log_err(const QuESTEnv& env, YCS line);
+    void print_log_flush(YCS line, YCI n_indent=0);
+    void print_log_err(YCS line);
 
     /** Timer*/
     struct YTimer{
@@ -351,23 +347,17 @@ namespace YMIX{
             }
             void StartPrint(const QuESTEnv& env, YCS mess)
             {
-                if(env.rank == 0) 
-                {
-                    Start();
-                    print_log_flush(env, mess);
-                }
+                Start();
+                print_log_flush(mess);
             }
             void StopPrint(const QuESTEnv& env)
             {
-                if(env.rank == 0)
-                {
-                    Stop();
+                Stop();
 
-                    std::ostringstream oss;
-                    oss << std::scientific << std::setprecision(3) 
-                        << get_dur_s() << " s\n";
-                    print_log_flush(env, oss.str());
-                }
+                std::ostringstream oss;
+                oss << std::scientific << std::setprecision(3) 
+                    << get_dur_s() << " s\n";
+                print_log_flush(oss.str());
             }
             double get_dur(){
                 std::chrono::duration<double> dur_seconds = end_ - start_;

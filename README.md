@@ -3,21 +3,20 @@ QSVT and QSP Hamiltonian simulations and matrix inversion.
 If one wants to check the code used in Ref. [1], go to the branch PRA22.
 
 ## Prepare the code
-The code uses QuEST quantum emulator (https://github.com/quest-kit/QuEST).
-One needs to clone the QuEST repository.
-Then, create the global bash variable $QuESTHome to store the absolute path to the QuEST/ folder.
-
 One also needs `cmake` to compile the framework and `python` to analyse the simulations.
 In particular, one needs the `qiskit` and `h5py` modules:
 
 `pip install qiskit h5py`
 
-Correct the `-DGPU_COMPUTE_CAPABILITY` in the `tobuild` files according to your GPU device
-(https://developer.nvidia.com/cuda-gpus#compute).
-
 Remark: the code does not support multi-GPU parallelization.
 
 ## Compilation
+The code used the external repository, QuEST code (https://github.com/quest-kit/QuEST). Therefore, while cloning, use the flag `--recurse-submodules`.
+Since the code also needs the HDF5 library, in the `./framework/external/QuEST/CMakeLists.txt` file, add the line `find_package(HDF5 REQUIRED COMPONENTS CXX HL)` and replace the line `target_link_libraries(${OUTPUT_EXE} QuEST m)` by the line `target_link_libraries(${OUTPUT_EXE} QuEST m HDF5::HDF5)`.
+
+Correct the `-DGPU_COMPUTE_CAPABILITY` in the `tobuild` files according to your GPU device
+(https://developer.nvidia.com/cuda-gpus#compute).
+
 To compile the oracle-tool:
 1. Go to the folder `./framework/build_oracle`.
 2. `source tobuild`

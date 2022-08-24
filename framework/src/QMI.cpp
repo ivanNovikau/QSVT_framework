@@ -21,12 +21,12 @@ bool QMI__::read_special_parameters(std::istringstream& iss, std::string& key_na
 
         if(f_par_ < 0)
         {
-            YMIX::print_log_err(env_, "Error: kappa is negative;");
+            YMIX::print_log_err("Error: kappa is negative;");
         }
 
         if(YMATH::is_zero(f_par_))
         {
-            YMIX::print_log_err(env_, "Error: kappa == 0;");
+            YMIX::print_log_err("Error: kappa == 0;");
         }
 
         YMIX::LogFile cf;

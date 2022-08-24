@@ -11,5 +11,5 @@ cmake \
     -DUSER_SOURCE="${CPPFiles}" \
     -DGPUACCELERATED=1 \
     -DGPU_COMPUTE_CAPABILITY=75 \
-    ${QuESTHome}
+    "../external/QuEST"
     

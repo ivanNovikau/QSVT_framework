@@ -8,21 +8,19 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     QuESTEnv env = createQuESTEnv();
-    if(env.rank == 0)
+    if(argc < 2)
     {
-        if(argc < 2)
-        {
-            cerr << "Project name is missing" << endl;
-            exit(-1);
-        }
-        if(argc < 3)
-        {
-            cerr << "Path to input files is missing" << endl;
-            exit(-1);
-        }
-        cout << "Project name: " << argv[1] << endl;
-        cout << "Path to input files: " << argv[2] << "/" << endl;
+        cerr << "Project name is missing" << endl;
+        exit(-1);
     }
+    if(argc < 3)
+    {
+        cerr << "Path to input files is missing" << endl;
+        exit(-1);
+    }
+    cout << "Project name: " << argv[1] << endl;
+    cout << "Path to input files: " << argv[2] << "/" << endl;
+    
 
     // --------------------------------------------------------
     uint32_t id_arg;
@@ -34,11 +32,8 @@ int main(int argc, char *argv[])
     // --- path to input files ---
     id_arg += 1;
     string path_input(argv[id_arg]);
-    if(env.rank == 0)
-    {
-        YMIX::LogFile::name_global_ = path_input + "/" + pname + ".clog";
-        YMIX::LogFile cf(true);
-    }
+    YMIX::LogFile::name_global_ = path_input + "/" + pname + ".clog";
+    YMIX::LogFile cf(true);
     YMIX::print_log(env, "Number of ranks: " + to_string(env.numRanks));
 
     // --------------------------------------------------------
@@ -126,7 +121,7 @@ int main(int argc, char *argv[])
     }
     catch(YCS e)
     {
-        if(env.rank == 0) std::cerr << "\n" << e << endl;
+        std::cerr << "\n" << e << endl;
         destroyQuESTEnv(env);
         return -1;
     }

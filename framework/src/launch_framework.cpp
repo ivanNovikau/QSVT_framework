@@ -13,27 +13,25 @@ int main(int argc, char *argv[])
     QuESTEnv env = createQuESTEnv();
 
     // read [project_name], [path_to_input_files]:
-    if(env.rank == 0)
+    if(argc < 2)
     {
-        if(argc < 2)
-        {
-            cerr << "Project name is missing" << endl;
-            exit(-1);
-        }
-        if(argc < 3)
-        {
-            cerr << "Path to input files is missing" << endl;
-            exit(-1);
-        }
-        if(argc < 4)
-        {
-            cerr << "It is not indicated what to simulate: qsvt or qsp" << endl;
-            exit(-1);
-        }
-        cout << "Project name: "        << argv[1] << endl;
-        cout << "Path to input files: " << argv[2] << "/" << endl;
-        cout << "Case to simulate: "    << argv[3] << endl;
+        cerr << "Project name is missing" << endl;
+        exit(-1);
     }
+    if(argc < 3)
+    {
+        cerr << "Path to input files is missing" << endl;
+        exit(-1);
+    }
+    if(argc < 4)
+    {
+        cerr << "It is not indicated what to simulate: qsvt or qsp" << endl;
+        exit(-1);
+    }
+    cout << "Project name: "        << argv[1] << endl;
+    cout << "Path to input files: " << argv[2] << "/" << endl;
+    cout << "Case to simulate: "    << argv[3] << endl;
+    
 
     // --- project name ---
     string pname(argv[1]);
@@ -45,13 +43,9 @@ int main(int argc, char *argv[])
     string case_to_sim(argv[3]); // qsp, qsvt-dyn, qsvt-mi
 
     // --- create a QSP log file ---
-    if(env.rank == 0)
-    {
-        // create
-        YMIX::LogFile::name_global_ = path_input + "/" + pname + FORMAT_LOG;
-        YMIX::LogFile cf(true);
-    }
-
+    YMIX::LogFile::name_global_ = path_input + "/" + pname + FORMAT_LOG;
+    YMIX::LogFile cf(true);
+    
     // --- write an initial information about the project ---
     string str_date_time;
     YMIX::get_current_date_time(str_date_time);
@@ -116,7 +110,7 @@ int main(int argc, char *argv[])
     }
     catch(YCS e)
     {
-        if(env.rank == 0) std::cerr << "\n" << "Error: " << e << endl;
+        std::cerr << "\n" << "Error: " << e << endl;
         return -1;
     }
     catch(const std::exception& e)
