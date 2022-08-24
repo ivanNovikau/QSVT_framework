@@ -327,7 +327,6 @@ namespace YMATH{
 // ------------------------------------------
 namespace YMIX{
     void print_log(
-        const QuESTEnv& env, 
         YCS line, 
         YCI n_indent = 0, 
         const bool& flag_only_file=false, 
@@ -345,12 +344,12 @@ namespace YMIX{
             void Stop(){
                 end_ = std::chrono::steady_clock::now();
             }
-            void StartPrint(const QuESTEnv& env, YCS mess)
+            void StartPrint(YCS mess)
             {
                 Start();
                 print_log_flush(mess);
             }
-            void StopPrint(const QuESTEnv& env)
+            void StopPrint()
             {
                 Stop();
 

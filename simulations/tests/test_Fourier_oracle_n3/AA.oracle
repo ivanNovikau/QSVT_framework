@@ -1,15 +1,20 @@
 
-// Launch from the current folder
-// ../../../framework/build_oracle/oracletool AA ./    1  1  1     10   
-// [exe-file] [oracle-name] [work-project] 
-//    [flag-comp-output] [flag-circuit] [flag-tex] 
-//    [tex-circuit-length] 
+// ../../../framework/build_oracle/oracletool AA ./ 
 
 CONSTANTS
 nq 3
 a2 	1.570796327e+00
 a4 	7.853981634e-01
 END_CONSTANTS
+
+
+OPTIONS
+    sel_compute_output all
+	sel_print_output   zero-ancillae  // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     0
+	tex_CL  10 
+END_OPTIONS
 
 
 

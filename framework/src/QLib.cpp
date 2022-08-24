@@ -513,7 +513,6 @@ string YMIX::get_line(std::vector<int> a)
 }
 
 void YMIX::print_log(
-    const QuESTEnv& env, 
     YCS line, 
     YCI n_indent, 
     const bool& flag_only_file,

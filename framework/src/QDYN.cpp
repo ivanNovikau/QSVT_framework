@@ -23,12 +23,12 @@ bool QDYN__::read_special_parameters(std::istringstream& iss, std::string& key_n
         if(nt_points <= 0)
         {
             nt_points = 1;
-            YMIX::print_log(env_, "WARNING: nt_points is non-positive, set to 1;");
+            YMIX::print_log( "WARNING: nt_points is non-positive, set to 1;");
         }
         if(dt < 0)
         {
             dt = abs(dt);
-            YMIX::print_log(env_, "WARNING: dt is negative, set to |dt|;");
+            YMIX::print_log( "WARNING: dt is negative, set to |dt|;");
         }
         if(YMATH::is_zero(dt))
         {
@@ -55,7 +55,7 @@ bool QDYN__::read_special_parameters(std::istringstream& iss, std::string& key_n
 
 void QDYN__::read_angles()
 {
-    YMIX::print_log(env_, "Reading QSVD angles... ");
+    YMIX::print_log( "Reading QSVD angles... ");
     if(env_.rank == 0)
     {
         read_angles_def_parity("even", angles_phis_even_, N_angles_even_);
@@ -98,11 +98,11 @@ void QDYN__::simulation()
             ostringstream ocs;
             ocs << "\n--- Time step " << i << " ---\n";
             ocs << "   t = "          << t_grid_[i] << ";";
-            YMIX::print_log(env_, ocs.str());
+            YMIX::print_log( ocs.str());
         }
 
         // structure the QSVT circuit:
-        timer.StartPrint(env_, "Structuring the QSVT circuit... ");
+        timer.StartPrint("Structuring the QSVT circuit... ");
 
         // oc_->x(b);  // to have exp(-i*H*t)
         oc_->h(b);
@@ -120,13 +120,13 @@ void QDYN__::simulation()
         );
 
         oc_->h(b);
-        timer.StopPrint(env_);
+        timer.StopPrint();
 
         // --- generate the circuit ---
-        timer.StartPrint(env_, "Calculating the QSVT circuit... ");
+        timer.StartPrint("Calculating the QSVT circuit... ");
         oc_->generate();
         oc_->get_state(outZ, true);
-        timer.StopPrint(env_);
+        timer.StopPrint();
 
         if(flag_print_zero_states_)
         {

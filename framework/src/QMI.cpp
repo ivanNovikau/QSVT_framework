@@ -41,7 +41,7 @@ bool QMI__::read_special_parameters(std::istringstream& iss, std::string& key_na
 
 void QMI__::read_angles()
 {
-    YMIX::print_log(env_, "Reading QSVD angles... ");
+    YMIX::print_log( "Reading QSVD angles... ");
     if(env_.rank == 0)
     {
         read_angles_def_parity("odd", angles_phis_odd_, N_angles_odd_);
@@ -68,18 +68,18 @@ void QMI__::simulation()
     YMIX::StateVectorOut outZ;
 
     // --- Resulting QSVT circuit ---
-    timer.StartPrint(env_, "Structuring the QSVT circuit... ");
+    timer.StartPrint("Structuring the QSVT circuit... ");
     oc_->insert_gates_from(
         codd_.get(), 
         make_shared<Box__>("QC", ts_box, YVIv {})
     );
-    timer.StopPrint(env_);
+    timer.StopPrint();
 
     // --- generate the circuit ---
-    timer.StartPrint(env_, "Calculating the QSVT circuit... ");
+    timer.StartPrint("Calculating the QSVT circuit... ");
     oc_->generate();
     oc_->get_state(outZ, true);
-    timer.StopPrint(env_);
+    timer.StopPrint();
     if(flag_print_zero_states_)
     {
         cout << "resulting zero-ancilla state ->\n";

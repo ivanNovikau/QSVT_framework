@@ -1,5 +1,4 @@
-// ../../../framework/build_oracle/oracletool adder ./ -flag_circuit 1 -flag_tex 1 -flag_compute_output 1 -flag_print_output  1  -tex_CL  10
-// ../../../framework/build_oracle/oracletool adder ./ -flag_tex 1 -flag_compute_output 1 -flag_print_output  1 -flag_print_zero_anc 1
+// ../../../framework/build_oracle/oracletool adder ./ 
 
 
 // add one variable encoded to a bit string of size <n>
@@ -17,6 +16,15 @@ END_CONSTANTS
 CIRCUITS_DECLARATION
 U   4  cc 1 0 c <n> 0 b <n> 0 a <n> 0 
 END_CIRCUITS_DECLARATION
+
+
+OPTIONS
+    sel_compute_output all
+	sel_print_output   zero-ancillae  // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     0
+	tex_CL  10 
+END_OPTIONS
 
 
 INPUT_STATES   U         

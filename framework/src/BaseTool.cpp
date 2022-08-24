@@ -25,7 +25,7 @@ BaseTool__::BaseTool__(
 {
     if(flag_hdf5_)
     {
-        YMIX::print_log(env_, "Creating the output .hdf5 file...");
+        YMIX::print_log( "Creating the output .hdf5 file...");
         hfo_.create(path_inputs_ + "/" + pname_ + "_circuit"s + ENDING_FORMAT_OUTPUT);
         hfo_.add_group("basic"); 
         hfo_.add_group("states"); 
@@ -55,8 +55,8 @@ void BaseTool__::read_data()
     ifname_ = path_inputs_ + "/" + pname_ + format_file_;
 
     string current_path = filesystem::current_path();
-    YMIX::print_log(env_, "Current path: " + current_path);
-    YMIX::print_log(env_, "Start reading the input file: " + ifname_);
+    YMIX::print_log( "Current path: " + current_path);
+    YMIX::print_log( "Start reading the input file: " + ifname_);
 
     try
     {

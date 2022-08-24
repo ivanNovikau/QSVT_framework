@@ -33,12 +33,12 @@ bool QSP__::read_special_parameters(std::istringstream& iss, std::string& key_na
         if(nt_points <= 0)
         {
             nt_points = 1;
-            YMIX::print_log(env_, "WARNING: nt_points is non-positive, set to 1;");
+            YMIX::print_log( "WARNING: nt_points is non-positive, set to 1;");
         }
         if(dt < 0)
         {
             dt = abs(dt);
-            YMIX::print_log(env_, "WARNING: dt is negative, set to |dt|;");
+            YMIX::print_log( "WARNING: dt is negative, set to |dt|;");
         }
         if(YMATH::is_zero(dt))
         {
@@ -65,7 +65,7 @@ bool QSP__::read_special_parameters(std::istringstream& iss, std::string& key_na
 
 void QSP__::read_angles()
 {
-    YMIX::print_log(env_, "Reading QSP angles... ");
+    YMIX::print_log( "Reading QSP angles... ");
     if(env_.rank == 0)
     {
         string fname_full;
@@ -80,7 +80,7 @@ void QSP__::read_angles()
             FORMAT_ANGLES;
         fname_full = path_inputs_ + "/" + fname_res;
 
-        YMIX::print_log(env_, "Angles are read from the file "s + fname_full);
+        YMIX::print_log( "Angles are read from the file "s + fname_full);
         ff.open(fname_full.c_str());
         if(ff.is_open())
         {
@@ -109,11 +109,11 @@ void QSP__::read_angles()
         ocs << "function parameter = " << f_par << ";   ";
         ocs << "eps = "            << eps << ";   ";
         ocs << "N of angles = "    << N_angles_ << ";\n";
-        YMIX::print_log(env_, "\n"s + ocs.str());
+        YMIX::print_log( "\n"s + ocs.str());
     }
 
     // --- Save the angles to .hdf5 file ---
-    YMIX::print_log(env_, "\nWriting angles to .hdf5 file");
+    YMIX::print_log( "\nWriting angles to .hdf5 file");
     hfo_.open_w();
     hfo_.add_vector(angles_phis_, "qsp-angles-one-time-step", "basic");
     hfo_.close();
@@ -140,7 +140,7 @@ void QSP__::create_circuit_components()
     conjCU->conjugate_transpose();
     icu_ = make_shared<QCircuit>(conjCU);
 
-    YMIX::print_log(env_, "Qubitisation...");
+    YMIX::print_log( "Qubitisation...");
     create_W();
     create_iW();
 }
@@ -153,7 +153,7 @@ void QSP__::create_W()  // original W
     aq_ancs.push_back(regs_["qb"][0]);
 
     // --- create an iterate W ---
-    YMIX::print_log(env_, "-> cW creation");
+    YMIX::print_log( "-> cW creation");
     cw_ = make_shared<QCircuit>(
         "W", env_, path_inputs_, nq_,
         map<string, qreal>(),
@@ -169,13 +169,13 @@ void QSP__::create_W()  // original W
     YVIv cs_box = {rq};
     
     // add cU 
-    YMIX::print_log(env_, "Adding cU...");
+    YMIX::print_log( "Adding cU...");
     cw_->x(rq);
     cw_->copy_gates_from(cu_, YMATH::get_range(0, nq_), make_shared<Box__>("U", ts_box, cs_box));
     cw_->x(rq);
 
     // add cU*
-    YMIX::print_log(env_, "Adding cU*...");
+    YMIX::print_log( "Adding cU*...");
     auto conjU = make_shared<QCircuit>(cu_);
     conjU->conjugate_transpose();
     cw_->copy_gates_from(conjU, YMATH::get_range(0, nq_), make_shared<Box__>("U*", ts_box, cs_box));
@@ -204,7 +204,7 @@ void QSP__::create_W()  // original W
 
 void QSP__::create_iW()
 {
-    YMIX::print_log(env_, "-> icW creation...\n");
+    YMIX::print_log( "-> icW creation...\n");
     icw_ = make_shared<QCircuit>(cw_, "W*");
     icw_->conjugate_transpose();
     icw_->print_gates();
@@ -230,11 +230,11 @@ void QSP__::simulation()
             ostringstream ocs;
             ocs << "\n--- Time step " << i << " ---\n";
             ocs << "   t = "          << t_grid_[i] << ";";
-            YMIX::print_log(env_, ocs.str());
+            YMIX::print_log( ocs.str());
         }
 
         // structure a QSP circuit:
-        timer.StartPrint(env_, "Structuring a QSP circuit... ");
+        timer.StartPrint("Structuring a QSP circuit... ");
         oc_->h(b)->h(q);
         for(unsigned count_angle = 0; count_angle < int((N_angles_-1)/2); ++count_angle)
         {
@@ -267,13 +267,13 @@ void QSP__::simulation()
 
         // oc_->x(0); // for non-hermitian
 
-        timer.StopPrint(env_);
+        timer.StopPrint();
 
         // --- Generate the circuit ---
-        timer.StartPrint(env_, "Calculating the QSP circuit... ");
+        timer.StartPrint("Calculating the QSP circuit... ");
         oc_->generate();
         oc_->get_state(outZ, true);
-        timer.StopPrint(env_);
+        timer.StopPrint();
 
         if(flag_print_zero_states_)
         {

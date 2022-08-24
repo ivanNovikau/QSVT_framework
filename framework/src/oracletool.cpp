@@ -4,22 +4,19 @@ using namespace std;
 OracleTool__::OracleTool__(
     const QuESTEnv& env, 
     YCS pname, 
-    YCS path_to_inputs, 
-    YCB flag_compute_output,
-    YCB flag_print_output,
-    YCB flag_circuit,
-    YCB flag_tex,
-    YCB flag_layers,
-    YCB flag_hdf5,
-    YCB flag_print_zero_anc
+    YCS path_to_inputs
 ) : BaseTool__(
     env, pname, path_to_inputs, 
-    flag_compute_output, flag_print_output, 
-    flag_circuit, flag_tex, 
-    flag_layers, flag_hdf5
+    false,  // flag_compute_output (not used here),
+    false,  // flag_print_output (not used here),
+    false,  // default flag_circuit, 
+    false,  // default flag_tex, 
+    false,  // default flag_layers, 
+    true    // default flag_hdf5
 ){
     format_file_ = FORMAT_ORACLE;
-    flag_print_zero_anc_ = flag_print_zero_anc;
+    sel_compute_output_   = "zero-ancillae";
+    sel_print_output_     = "none";
     flag_init_state_file_ = false;
     read_data();
 }
@@ -27,7 +24,7 @@ OracleTool__::OracleTool__(
 
 OracleTool__::~OracleTool__()
 {
-    YMIX::print_log(env_, "*** Destruction of the oracle tool is done. ***");
+    YMIX::print_log( "*** Destruction of the oracle tool is done. ***");
 }
 
 
@@ -42,6 +39,9 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
         if(YMIX::compare_strings(word, "CONSTANTS"))
             read_constants(istr);
 
+        if(YMIX::compare_strings(word, "OPTIONS"))
+            read_options(istr);
+
         if(YMIX::compare_strings(word, "CIRCUITS_DECLARATION"))
             read_circuit_declaration(istr);
 
@@ -52,7 +52,7 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
             read_input_states(istr);
     }
 
-    YMIX::print_log(env_, "Finish reading file\n");
+    YMIX::print_log( "Finish reading file\n");
 
     // check if the circuit to launch is defined:
     if(!oc_to_launch_)
@@ -65,7 +65,7 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
     // set the output format for the circuit of interest:
     oc_to_launch_->set_standart_output_format();
 
-    YMIX::print_log(env_, "Oracle prepared.\n");
+    YMIX::print_log( "Oracle prepared.\n");
 }
 
 
@@ -73,7 +73,7 @@ void OracleTool__::read_constants(YISS istr)
 {
     string word, constant_name;
     qreal constant_value;
-    YMIX::print_log(env_, "Reading constants...");
+    YMIX::print_log( "Reading constants...");
 
     try
     {
@@ -95,9 +95,93 @@ void OracleTool__::read_constants(YISS istr)
     }
     catch(YCS e)
     {
-        throw "Eroor in the CONSTANTS section when one reads the constant "s + constant_name + ": "s + e;
+        throw "Error in the CONSTANTS section when one reads the constant "s + constant_name + ": "s + e;
     }
-    
+}
+
+
+void OracleTool__::read_options(YISS istr)
+{
+    string word;
+    YMIX::print_log( "Reading options...");
+
+    try
+    {
+        while(istr >> word)
+        {
+            if(YMIX::compare_strings(word, "END_OPTIONS"))
+                break;
+
+            if(YMIX::compare_strings(word, "sel_compute_output"))
+            {
+                istr >> sel_compute_output_;
+                if(!YMIX::compare_strings(sel_compute_output_, YVSv{"none", "all", "zero-ancillae"}))
+                    throw string(
+                        "unknown option ["s + sel_compute_output_ + "] for the selector sel_compute_output."s
+                    );
+                continue;
+            }
+            if(YMIX::compare_strings(word, "sel_print_output"))
+            {
+                istr >> sel_print_output_;
+                if(!YMIX::compare_strings(sel_print_output_, YVSv{"none", "all", "zero-ancillae"}))
+                    throw string(
+                        "unknown option ["s + sel_print_output_ + "] for the selector sel_print_output."s
+                    );
+                continue;
+            }
+
+            if(YMIX::compare_strings(word, "flag_circuit"))
+            {
+                istr >> flag_circuit_;
+                continue;
+            }
+
+            if(YMIX::compare_strings(word, "flag_tex"))
+            {
+                istr >> flag_tex_;
+                continue;
+            }
+
+            if(YMIX::compare_strings(word, "tex_CL"))
+            {
+                istr >> YGV::tex_circuit_length;
+                continue;
+            }
+        }
+
+        // correct the printing options:
+        string sel_comp = "none";
+        if(YMIX::compare_strings(sel_compute_output_, sel_comp))
+            if(!YMIX::compare_strings(sel_print_output_, sel_comp))
+                sel_print_output_ = sel_comp;
+
+        sel_comp = "zero-ancillae";
+        if(YMIX::compare_strings(sel_compute_output_, sel_comp))
+            if(YMIX::compare_strings(sel_print_output_, "all"))
+                sel_print_output_ = sel_comp; // "all" -> "zero-ancillae"
+
+        // output some options:
+        YMIX::print_log( "\n--- Initial OPTIONS ---");
+        if(!YMIX::compare_strings(sel_compute_output_, "none"))
+            YMIX::print_log("-> do not compute output states.");
+        if(!YMIX::compare_strings(sel_compute_output_, "all"))
+            YMIX::print_log("-> compute all output states.");
+        if(!YMIX::compare_strings(sel_compute_output_, "zero-ancillae are in the zero state."))
+            YMIX::print_log("-> compute only output states, where all ancillae are .");
+
+        if(!flag_circuit_)        YMIX::print_log("-> do not write the " + FORMAT_CIRCUIT + " files.");
+        if(!flag_tex_)            YMIX::print_log("-> do not write the " + FORMAT_TEX + " file.");
+        if(flag_tex_) 
+            YMIX::print_log(
+                "-> length of a single row in the .tex file = " + to_string(YGV::tex_circuit_length)
+            );
+        YMIX::print_log( "---\n");
+    }
+    catch(YCS e)
+    {
+        throw "Error in the OPTIONS section: "s + e;
+    }
 }
 
 
@@ -128,7 +212,7 @@ void OracleTool__::read_circuit_declaration(YISS istr)
     string word, circ_name, current_field;
     int n_regs, n_qubits_in_reg;
 
-    YMIX::print_log(env_, "Reading declaration of circuits...");
+    YMIX::print_log( "Reading declaration of circuits...");
 
     try
     {
@@ -177,7 +261,7 @@ void OracleTool__::read_circuit_declaration(YISS istr)
                 ostringstream inf;
                 inf << "Warning: The circuit " << circ_name <<  " is declared several times. " <<
                         "The first declaration is taken.\n";
-                YMIX::print_log(env_, inf.str());          
+                YMIX::print_log( inf.str());          
             }
             else
                 ocs_[circ_name] = make_shared<QCircuit>(
@@ -203,7 +287,7 @@ void OracleTool__::read_circuit_declaration(YISS istr)
     {
         ostringstream inf;
         inf << it.first << " with " << it.second->get_n_qubits() << " qubit(s):";
-        YMIX::print_log(env_, inf.str(), 1); 
+        YMIX::print_log( inf.str(), 1); 
 
         inf.str(""); inf.clear();
         auto reg_names = it.second->get_reg_names();
@@ -211,7 +295,7 @@ void OracleTool__::read_circuit_declaration(YISS istr)
         for(auto const& reg_name: reg_names)
             inf << "register " << reg_name << " with " << 
                 it.second->get_nq_in_reg(reg_name) << " qubit(s);\n";
-        YMIX::print_log(env_, inf.str(), 2); 
+        YMIX::print_log( inf.str(), 2); 
     }
 }
 
@@ -224,12 +308,12 @@ void OracleTool__::read_circuit_structure(YISS istr)
 
     // choose the circuit according to its name:
     istr >> word;
-    YMIX::print_log(env_, "Reading structure of the circuit " + word);
+    YMIX::print_log( "Reading structure of the circuit " + word);
     if(ocs_.find(word) == ocs_.end()) 
     {
         YMIX::print_log(
-            env_, 
-            "Warning: No circuit with the name " + word + " has been declared. Skip it.", 1);
+            "Warning: No circuit with the name " + word + " has been declared. Skip it.", 1
+        );
         return;
     }
     curr_circuit_name = word;
@@ -341,7 +425,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
         warn_line += "--- Warning: setting the structure of the circuit [" + curr_circuit_name + "] ---\n";
         warn_line += "The subcircuit [" + subcircuit_name + "] is not found. We skip it.\n";
         warn_line += "-------------------------------------------------------------------------------\n";
-        YMIX::print_log(env_, warn_line);
+        YMIX::print_log( warn_line);
         flag_skip = true;
     }
     if(YMIX::compare_strings(subcircuit_name, curr_circuit_name))
@@ -351,7 +435,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
         warn_line += "--- Warning: setting the structure of the circuit [" + curr_circuit_name + "] ---\n";
         warn_line += "Self-insertion: circuit cannot include itself as a subcircuit. We skip it.\n";
         warn_line += "-------------------------------------------------------------------------------\n";
-        YMIX::print_log(env_, warn_line);
+        YMIX::print_log( warn_line);
         flag_skip = true;
     }
     if(ocs_[subcircuit_name]->get_n_gates() == 0)
@@ -361,7 +445,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
         warn_line += "--- Warning: setting the structure of the circuit [" + curr_circuit_name + "] ---\n";
         warn_line += "The subcircuit [" + subcircuit_name + "] is empty. We skip it.\n";
         warn_line += "-------------------------------------------------------------------------------\n";
-        YMIX::print_log(env_, warn_line);
+        YMIX::print_log( warn_line);
         flag_skip = true;
     }
 
@@ -438,7 +522,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
 
 void OracleTool__::read_input_states(YISS istr)
 {
-    YMIX::print_log(env_, "Reading input states...");
+    YMIX::print_log( "Reading input states...");
     string word, name_of_main_circuit;
 
     // define a circuit to launch:
@@ -503,8 +587,7 @@ void OracleTool__::read_state_init_file()
 void OracleTool__::launch()
 {
     YMIX::YTimer timer_comp;
-    YMIX::print_log(
-        env_, 
+    YMIX::print_log( 
         "--- Analysis of the circuit [" + oc_to_launch_->get_name() + "] ---"
     );
 
@@ -577,7 +660,6 @@ void OracleTool__::launch()
 }
 
 
-
 void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX::YTimer& timer_comp)
 {
     // --- Print the initial state ---
@@ -585,7 +667,6 @@ void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX
         YMIX::StateVectorOut outF;
         u_work->get_state(outF);
         YMIX::print_log(
-            env_,
             ".....................\n...Initial state " + to_string(count_init_state) + "...\n" + outF.str_wv
         );
     
@@ -600,7 +681,7 @@ void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX
     }
 
     // --- Print output states ---
-    if(flag_compute_output_)
+    if(!YMIX::compare_strings(sel_compute_output_, "none"))
     {
         int id_current_gate = 0;
         string stop_point_name;
@@ -609,54 +690,59 @@ void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX
         {
             // generate the circuit:
             timer_comp.Start();
-            YMIX::print_log(env_, "Calculating the circuit... ", 0, false, false);
+            YMIX::print_log( "Calculating the circuit... ", 0, false, false);
             u_work->generate(stop_point_name, id_current_gate);
+
             u_work->get_state(outZ, true);
-            u_work->get_state(outF);
+            if(YMIX::compare_strings(sel_compute_output_, "all"))
+                u_work->get_state(outF);
+
             timer_comp.Stop();
-            YMIX::print_log(env_, "duration: " + timer_comp.get_dur_str_s());
-            if(flag_print_output_) 
-            {
-                if(flag_print_zero_anc_)
-                    YMIX::print_log(
-                        env_, 
-                        "...Output zero-ancilla states after " + stop_point_name + ": \n" + outZ.str_wv
-                    );
-                else
-                    YMIX::print_log(
-                        env_, 
+            YMIX::print_log( "duration: " + timer_comp.get_dur_str_s());
+
+            if(YMIX::compare_strings(sel_print_output_, "all"))
+                YMIX::print_log(
                         "...Output all states after " + stop_point_name + ": \n" + outF.str_wv
-                    );
-            }
+                );
+            else if(YMIX::compare_strings(sel_print_output_, "zero-ancillae"))
+                YMIX::print_log(
+                        "...Output zero-ancilla states after " + stop_point_name + ": \n" + outZ.str_wv
+                );
         }
 
         // --- Store the output state at the very end of the circuit ---
         if(flag_hdf5_)
         {
             hfo_.open_w();
-            hfo_.add_vector(
-                outF.ampls,  
-                "output-all-amplitudes-"s + to_string(count_init_state), 
-                "states"
-            );
-            hfo_.add_matrix(
-                outF.states, 
-                "output-all-states-"s + to_string(count_init_state),     
-                "states"
-            );
-            if(outZ.ampls.size() > 0)
+            if(YMIX::compare_strings(sel_compute_output_, "all"))
             {
                 hfo_.add_vector(
-                    outZ.ampls,  
-                    "output-zero-anc-amplitudes-"s + to_string(count_init_state), 
+                    outF.ampls,  
+                    "output-all-amplitudes-"s + to_string(count_init_state), 
                     "states"
                 );
                 hfo_.add_matrix(
-                    outZ.states, 
-                    "output-zero-anc-states-"s + to_string(count_init_state),     
+                    outF.states, 
+                    "output-all-states-"s + to_string(count_init_state),     
                     "states"
                 );
             }
+            
+            if(YMIX::compare_strings(sel_compute_output_, YVSv{"zero-ancillae", "all"}))
+                if(outZ.ampls.size() > 0)
+                {
+                    hfo_.add_vector(
+                        outZ.ampls,  
+                        "output-zero-anc-amplitudes-"s + to_string(count_init_state), 
+                        "states"
+                    );
+                    hfo_.add_matrix(
+                        outZ.states, 
+                        "output-zero-anc-states-"s + to_string(count_init_state),     
+                        "states"
+                    );
+                }
+
             hfo_.close(); 
         }
     }

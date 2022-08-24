@@ -25,7 +25,7 @@ QSVT__::QSVT__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
 
 QSVT__::~QSVT__()
 {
-    YMIX::print_log(env_, "Destruction of the QSVT framework...");
+    YMIX::print_log( "Destruction of the QSVT framework...");
 
     // destroy inner circuits:
     u_.reset();
@@ -41,7 +41,7 @@ QSVT__::~QSVT__()
     ofs << "Total simulation time of the QSVT circuit: " << scientific << setprecision(3) 
         << timer_.get_dur() << " ms; "
         << timer_.get_dur() / (60.e3) << " minutes.";
-    YMIX::print_log(env_, ofs.str());
+    YMIX::print_log( ofs.str());
 
     // save time of calculation to the .hdf5 file:
     stringstream sstr;
@@ -162,7 +162,7 @@ void QSVT__::prepare_hdf5_files()
     restart_counter_ = 0;
     if(flag_restart_)
     {
-        YMIX::print_log(env_, "Initial state is to be read from the restart file.");
+        YMIX::print_log( "Initial state is to be read from the restart file.");
         rf_.open_r();
         rf_.read_scalar(restart_counter_, "restart-counter", "parameters");
         str_res_counter = "_" + to_string(restart_counter_);
@@ -171,7 +171,7 @@ void QSVT__::prepare_hdf5_files()
     string fname_output = path_inputs_ + "/" + project_name_ + str_res_counter + ENDING_FORMAT_OUTPUT;
 
     // --- Create an output .hdf5 file ---
-    YMIX::print_log(env_, "Creating the output .hdf5 file...");
+    YMIX::print_log( "Creating the output .hdf5 file...");
     hfo_.create(fname_output);
     
     // add directories to the file:
@@ -252,7 +252,7 @@ void QSVT__::read_angles_def_parity(YCS line_parity, YVQ phis, uint32_t& N_angle
         FORMAT_ANGLES;
     fname_full = path_inputs_ + "/" + fname_res;
 
-    YMIX::print_log(env_, "Angles are read from the file:\n"s + fname_full);
+    YMIX::print_log( "Angles are read from the file:\n"s + fname_full);
     ff.open(fname_full.c_str());
     if(ff.is_open())
     {
@@ -283,10 +283,10 @@ void QSVT__::read_angles_def_parity(YCS line_parity, YVQ phis, uint32_t& N_angle
     ocs << "function parameter = " << f_par << ";   ";
     ocs << "eps = "            << eps << ";   ";
     ocs << "N of angles = "    << N_angles << ";\n";
-    YMIX::print_log(env_, "\n"s + ocs.str());
+    YMIX::print_log( "\n"s + ocs.str());
 
     // --- Save the angles to .hdf5 file ---
-    YMIX::print_log(env_, "\nWriting angles to .hdf5 file");
+    YMIX::print_log( "\nWriting angles to .hdf5 file");
     hfo_.open_w();
     hfo_.add_vector(phis, line_parity + "-angles", "basic");
     hfo_.close();
@@ -295,7 +295,7 @@ void QSVT__::read_angles_def_parity(YCS line_parity, YVQ phis, uint32_t& N_angle
 
 void QSVT__::read_block_encoding_oracle()
 {
-    YMIX::print_log(env_, "Reading the block-encoding oracle...");
+    YMIX::print_log( "Reading the block-encoding oracle...");
     OracleTool__* oo = new OracleTool__(env_, project_name_, path_inputs_);
     u_ = oo->get_circuit();
     delete oo;
@@ -317,7 +317,7 @@ void QSVT__::create_circuit()
     }
 
     // --- create an empty circuit ---
-    YMIX::print_log(env_, "Initialize the framework circuit...");
+    YMIX::print_log( "Initialize the framework circuit...");
     oc_ = make_unique<QCircuit>(
         type_, env_, path_inputs_, nq_,
         map<string, qreal>(),
@@ -363,7 +363,7 @@ void QSVT__::create_circuit_component_def_parity(
 
     string str1 = "-> Circuit component: " + line_parity;
     if(flag_imaginary) str1 += ", imaginary.";
-    YMIX::print_log(env_, str1);
+    YMIX::print_log( str1);
 
     circ = make_shared<QCircuit>(
         "C-" + line_parity, env_, path_inputs_, nq_,
@@ -375,7 +375,7 @@ void QSVT__::create_circuit_component_def_parity(
     circ->save_regs();
 
     // --- Structure the circuit component ---
-    timer.StartPrint(env_, "creating... ");
+    timer.StartPrint("creating... ");
 
     // vector<qreal> phis = vector<qreal>(phis_in);
     // reverse(phis.begin(), phis.end());
@@ -427,7 +427,7 @@ void QSVT__::create_circuit_component_def_parity(
     //     circ->x(a_ancs[ii], YVIv {q});
 
     circ->h(q);
-    timer.StopPrint(env_);
+    timer.StopPrint();
 
     circ->print_gates();
 }
@@ -451,9 +451,9 @@ void QSVT__::set_init_vector()
     // -------------------------------------------------------------------------
     if(!flag_restart_ && sel_init_ == SEL_INIT_STATE_PREP::use_init_oracle)
     {
-        YMIX::print_log(env_, "----------------------------------------------------");
-        YMIX::print_log(env_, "Reading oracle for the circuit initialization...");
-        YMIX::print_log(env_, "----------------------------------------------------");
+        YMIX::print_log( "----------------------------------------------------");
+        YMIX::print_log( "Reading oracle for the circuit initialization...");
+        YMIX::print_log( "----------------------------------------------------");
         OracleTool__* oo = new OracleTool__(env_, project_name_ + "_init", path_inputs_);
         oc_init_ = oo->get_circuit();
         delete oo;
@@ -473,9 +473,9 @@ void QSVT__::set_init_vector()
     // -------------------------------------------------------------------------
     if(!flag_restart_ && sel_init_ == SEL_INIT_STATE_PREP::use_init_vector)
     {
-        YMIX::print_log(env_, "----------------------------------------------------");
-        YMIX::print_log(env_, "Circuit initialization via a pre-calculated vector...");
-        YMIX::print_log(env_, "----------------------------------------------------");
+        YMIX::print_log( "----------------------------------------------------");
+        YMIX::print_log( "Circuit initialization via a pre-calculated vector...");
+        YMIX::print_log( "----------------------------------------------------");
 
         // int N;
         vector<qreal> ampl_vec_real;
@@ -554,9 +554,9 @@ void QSVT__::set_init_vector()
     // -------------------------------------------------------------------------
     if(flag_restart_)
     {
-        YMIX::print_log(env_, "----------------------------------------------------");
-        YMIX::print_log(env_, "Initial state is read from the restart file...");
-        YMIX::print_log(env_, "----------------------------------------------------");
+        YMIX::print_log( "----------------------------------------------------");
+        YMIX::print_log( "Initial state is read from the restart file...");
+        YMIX::print_log( "----------------------------------------------------");
 
         vector<qreal> ampl_vec_real;
         vector<qreal> ampl_vec_imag;
@@ -576,7 +576,7 @@ void QSVT__::set_init_vector()
     // -------------------------------------------------------------------------
     YMIX::StateVectorOut outF;
     oc_->get_state(outF);
-    YMIX::print_log(env_, "Initial state: \n"s + outF.str_wv);
+    YMIX::print_log( "Initial state: \n"s + outF.str_wv);
     hfo_.open_w();
     hfo_.add_scalar(coef_time_norm_, "normalization-coef", "basic");
     hfo_.add_vector(outF.ampls, "initial-amplitudes", "states");
@@ -590,7 +590,7 @@ void QSVT__::launch()
     string line = "\n\n-------------------\n";
     line           += "--- Computation ---\n";
     line           += "-------------------\n";
-    YMIX::print_log(env_, line);
+    YMIX::print_log( line);
 
     simulation();
     save_restart_data();
@@ -599,7 +599,7 @@ void QSVT__::launch()
 
 void QSVT__::save_restart_data()
 {
-    YMIX::print_log(env_, "Rewrite the restart .hdf5 file...");
+    YMIX::print_log( "Rewrite the restart .hdf5 file...");
     rf_.create(""); 
 
     rf_.add_group("parameters");

@@ -28,7 +28,7 @@ CircuitTool__::CircuitTool__(
 
 CircuitTool__::~CircuitTool__()
 {
-    YMIX::print_log(env_, "*** Destruction of the circuit tool is done. ***");
+    YMIX::print_log( "*** Destruction of the circuit tool is done. ***");
 }
 
 
@@ -53,7 +53,6 @@ CircuitTool__::~CircuitTool__()
                 flag_circuit_, flag_tex_, flag_layers_
             );
         YMIX::print_log(
-            env_, 
             "Circuit [" + circuit_name + "] with " + to_string(nq) + " qubits is created."
         );
     }
@@ -81,7 +80,7 @@ CircuitTool__::~CircuitTool__()
             if(flag_anc) line_log+= "an ancilla "s;
             else line_log += "a "s;
             line_log += "register [" + reg_name + "] with " + to_string(nq_in_reg) + " qubits;";
-            YMIX::print_log(env_, line_log);
+            YMIX::print_log( line_log);
             oc_to_launch_->add_register(reg_name, nq_in_reg, flag_anc);
         }
         oc_to_launch_->save_regs();
@@ -197,7 +196,6 @@ void CircuitTool__::create_random_circuit()
                     flag_circuit_, flag_tex_, flag_layers_
                 );
         YMIX::print_log(
-                env_, 
                 "Circuit [" + circuit_name + "] with " + to_string(nq) + " qubits is created."
             );
         oc_to_launch_->add_register("r", nq, false);
@@ -308,13 +306,13 @@ void CircuitTool__::launch()
         }
 
         // --- Calculate the output state ---
-        YMIX::print_log(env_, "\n--- Calculating the output state... ---");
+        YMIX::print_log("\n--- Calculating the output state... ---");
         timer.Start();
         oc_to_launch_->generate();
         oc_to_launch_->get_state(outF);
         timer.Stop();
-        YMIX::print_log(env_, "Done: duration: " + timer.get_dur_str_s());
-        if(flag_print_output_) YMIX::print_log(env_, "Output state:\n" + outF.str_wv);
+        YMIX::print_log("Done: duration: " + timer.get_dur_str_s());
+        if(flag_print_output_) YMIX::print_log("Output state:\n" + outF.str_wv);
 
         // --- Store the output state ---
         if(flag_hdf5_)

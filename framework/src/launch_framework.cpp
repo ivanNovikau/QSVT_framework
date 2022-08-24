@@ -49,9 +49,9 @@ int main(int argc, char *argv[])
     // --- write an initial information about the project ---
     string str_date_time;
     YMIX::get_current_date_time(str_date_time);
-    YMIX::print_log(env, str_date_time);
-    YMIX::print_log(env, "Number of ranks: " + to_string(env.numRanks));
-    YMIX::print_log(env, "Case to simulate: " + case_to_sim);
+    YMIX::print_log( str_date_time);
+    YMIX::print_log( "Number of ranks: " + to_string(env.numRanks));
+    YMIX::print_log( "Case to simulate: " + case_to_sim);
 
 
     // --------------------------------------------------------------------------------

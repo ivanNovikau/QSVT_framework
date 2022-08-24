@@ -11,7 +11,7 @@ In particular, one needs the `qiskit` and `h5py` modules:
 Remark: the code does not support multi-GPU parallelization.
 
 ## Compilation
-The framework uses the QuEST code (https://github.com/quest-kit/QuEST) as a submodule. Therefore, while cloning, use the flag `--recurse-submodules`.
+The framework uses the QuEST code (https://github.com/quest-kit/QuEST, Ref. [2]) as a submodule. Therefore, while cloning, use the flag `--recurse-submodules`.
 Since the code also needs the HDF5 library, in the `./framework/external/QuEST/CMakeLists.txt` file, add the line `find_package(HDF5 REQUIRED COMPONENTS CXX HL)` and replace the line `target_link_libraries(${OUTPUT_EXE} QuEST m)` by the line `target_link_libraries(${OUTPUT_EXE} QuEST m HDF5::HDF5)`.
 
 Correct the `-DGPU_COMPUTE_CAPABILITY` in the `tobuild` files according to your GPU device

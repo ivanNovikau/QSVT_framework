@@ -1,12 +1,20 @@
 
 // Launch from the current folder
-// ../../../framework/build_oracle/oracletool AA ./ -flag_circuit 1 -flag_tex 1 -flag_compute_output 1 -flag_print_output  0  -tex_CL  10  
-// ../../../framework/build_oracle/oracletool AA ./ -flag_compute_output 1 -flag_print_output  1  
+// ../../../framework/build_oracle/oracletool AA ./  
 
 
 CONSTANTS
 nq 24
 END_CONSTANTS
+
+
+OPTIONS
+    sel_compute_output all
+	sel_print_output   zero-ancillae  // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     0
+	tex_CL  10 
+END_OPTIONS
 
 
 
