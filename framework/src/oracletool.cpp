@@ -18,6 +18,9 @@ OracleTool__::OracleTool__(
     sel_compute_output_   = "zero-ancillae";
     sel_print_output_     = "none";
     flag_init_state_file_ = false;
+
+    flag_prob_ = false;
+
     read_data();
 }
 
@@ -146,6 +149,16 @@ void OracleTool__::read_options(YISS istr)
             if(YMIX::compare_strings(word, "tex_CL"))
             {
                 istr >> YGV::tex_circuit_length;
+                continue;
+            }
+
+            if(YMIX::compare_strings(word, "compute_prob"))
+            {
+                istr >> flag_prob_;
+                if(flag_prob_)
+                {
+                    oc_to_launch_->read_reg_int(istr, focus_qubits_);
+                }
                 continue;
             }
         }
@@ -595,36 +608,33 @@ void OracleTool__::launch()
     shared_ptr<QCircuit> u_work = oc_to_launch_;
 
     // ---- store basic data:
-    if(flag_hdf5_)
+    hfo_.open_w();
+
+    // number of qubits
+    hfo_.add_scalar(u_work->get_n_qubits(), "nq", "basic");
+    hfo_.add_scalar(u_work->get_na(), "na", "basic");
+
+    // register names
+    string res_lin = "";
+    for(auto const& reg_name: u_work->get_reg_names())
+        res_lin += reg_name + ", ";
+    res_lin.pop_back(); res_lin.pop_back();
+    hfo_.add_scalar(res_lin, "register-names", "basic");
+
+    // number of qubits in every register:
+    hfo_.add_vector(u_work->get_standart_output_format(), "register-nq", "basic");
+
+    // number of initial states:
+    uint32_t n_init_states = flag_init_state_file_ ? 1: init_states_.size();
+    hfo_.add_scalar(n_init_states, "n-init-states", "states");
+
+    // constants:
+    for(auto const& [key, val] : constants_)
     {
-        hfo_.open_w();
-
-        // number of qubits
-        hfo_.add_scalar(u_work->get_n_qubits(), "nq", "basic");
-        hfo_.add_scalar(u_work->get_na(), "na", "basic");
-
-        // register names
-        string res_lin = "";
-        for(auto const& reg_name: u_work->get_reg_names())
-            res_lin += reg_name + ", ";
-        res_lin.pop_back(); res_lin.pop_back();
-        hfo_.add_scalar(res_lin, "register-names", "basic");
-
-        // number of qubits in every register:
-        hfo_.add_vector(u_work->get_standart_output_format(), "register-nq", "basic");
-
-        // number of initial states:
-        uint32_t n_init_states = flag_init_state_file_ ? 1: init_states_.size();
-        hfo_.add_scalar(n_init_states, "n-init-states", "states");
-
-        // constants:
-        for(auto const& [key, val] : constants_)
-        {
-            hfo_.add_scalar(val, key, "constants");
-        }
-
-        hfo_.close();
+        hfo_.add_scalar(val, key, "constants");
     }
+
+    hfo_.close();
 
     // --- Analyse and Store if necessary initial and output states of the circuit ---
     int count_init_state = 0;
@@ -671,13 +681,10 @@ void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX
         );
     
         // --- Store the initial state ---
-        if(flag_hdf5_)
-        {
-            hfo_.open_w();
-            hfo_.add_vector(outF.ampls,  "initial-amplitudes-"s + to_string(count_init_state), "states");
-            hfo_.add_matrix(outF.states, "initial-states-"s + to_string(count_init_state),     "states");
-            hfo_.close(); 
-        }
+        hfo_.open_w();
+        hfo_.add_vector(outF.ampls,  "initial-amplitudes-"s + to_string(count_init_state), "states");
+        hfo_.add_matrix(outF.states, "initial-states-"s + to_string(count_init_state),     "states");
+        hfo_.close(); 
     }
 
     // --- Print output states ---
@@ -711,39 +718,51 @@ void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX
         }
 
         // --- Store the output state at the very end of the circuit ---
-        if(flag_hdf5_)
+        hfo_.open_w();
+        if(YMIX::compare_strings(sel_compute_output_, "all"))
         {
-            hfo_.open_w();
-            if(YMIX::compare_strings(sel_compute_output_, "all"))
+            hfo_.add_vector(
+                outF.ampls,  
+                "output-all-amplitudes-"s + to_string(count_init_state), 
+                "states"
+            );
+            hfo_.add_matrix(
+                outF.states, 
+                "output-all-states-"s + to_string(count_init_state),     
+                "states"
+            );
+        }
+        if(YMIX::compare_strings(sel_compute_output_, YVSv{"zero-ancillae", "all"}))
+            if(outZ.ampls.size() > 0)
             {
                 hfo_.add_vector(
-                    outF.ampls,  
-                    "output-all-amplitudes-"s + to_string(count_init_state), 
+                    outZ.ampls,  
+                    "output-zero-anc-amplitudes-"s + to_string(count_init_state), 
                     "states"
                 );
                 hfo_.add_matrix(
-                    outF.states, 
-                    "output-all-states-"s + to_string(count_init_state),     
+                    outZ.states, 
+                    "output-zero-anc-states-"s + to_string(count_init_state),     
                     "states"
                 );
             }
-            
-            if(YMIX::compare_strings(sel_compute_output_, YVSv{"zero-ancillae", "all"}))
-                if(outZ.ampls.size() > 0)
-                {
-                    hfo_.add_vector(
-                        outZ.ampls,  
-                        "output-zero-anc-amplitudes-"s + to_string(count_init_state), 
-                        "states"
-                    );
-                    hfo_.add_matrix(
-                        outZ.states, 
-                        "output-zero-anc-states-"s + to_string(count_init_state),     
-                        "states"
-                    );
-                }
 
-            hfo_.close(); 
+        // --- calculate state probabilities on the indicated qubits ---
+        if(flag_prob_)
+        {
+            vector<qreal> outProbs(1<<focus_qubits_.size());
+            calcProbOfAllOutcomes(
+                &outProbs[0], 
+                oc_to_launch_->get_qureg(), 
+                &focus_qubits_[0],
+                focus_qubits_.size()
+            );
+
+            hfo_.add_group("probabilities");
+            hfo_.add_vector(focus_qubits_,  "qubits"s, "probabilities");
+            hfo_.add_vector(outProbs,  "probs", "probabilities");
         }
+
+        hfo_.close(); 
     }
 }

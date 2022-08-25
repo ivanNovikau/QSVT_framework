@@ -68,6 +68,13 @@ private:
     std::string sel_print_output_; 
 
 
+    /**
+     * To calculate probabilities of all states for the given qubits, \p focus_qubits_.
+     */
+    bool flag_prob_;
+    std::vector<int> focus_qubits_;
+
+
 };
 #endif
 

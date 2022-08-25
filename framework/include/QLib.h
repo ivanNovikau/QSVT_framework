@@ -2,7 +2,8 @@
 #define QLIB_H
 
 
-#include "QuEST.h"
+#include "../external/QuEST/QuEST/include/QuEST.h"
+// #include "QuEST.h"
 
 #include <sstream>
 #include <iostream>
@@ -710,6 +711,14 @@ namespace YMIX{
                 hsize_t dims[] = {v.size()};
                 H5::DataSpace dspace(1, dims);
                 auto dtype = H5::PredType::NATIVE_UINT;
+                H5::DataSet dataset = grp.createDataSet(dname, dtype, dspace);
+                dataset.write(&v[0], dtype);
+            }
+            inline void write(YCVI v, YCS dname, H5::Group& grp)
+            {
+                hsize_t dims[] = {v.size()};
+                H5::DataSpace dspace(1, dims);
+                auto dtype = H5::PredType::NATIVE_INT;
                 H5::DataSet dataset = grp.createDataSet(dname, dtype, dspace);
                 dataset.write(&v[0], dtype);
             }

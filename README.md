@@ -33,29 +33,9 @@ If necessary, `oracletool` builds the `.circuit` and `.tex` representation of th
 
 To run the oracle-tool, use the following command:
 
-`[path_to_QSVT_framework]/framework/build_oracle/oracletool [oracle-name] [work-directory] [optional-parameters]`
+`[path_to_QSVT_framework]/framework/build_oracle/oracletool [oracle-name] [work-directory]`
 
 The `oracletool` searches for the file `[oracle-name].oracle` in the folder `[work-directory]`.
-
-The optional parameters, `[optional-parameters]`, include : 
-
-`-flag_compute_output`: if `-flag_compute_output 1`, then `oracletool` calculates output states for the specified input states from the `.oracle` file.
-By default, `-flag_compute_output 1`.
-
-`-flag_print_output`: to print output states on screen.
-By default, `-flag_print_output = 1`.
-
-`-flag_circuit`: to write the `.circuit` files. 
-By default, `-flag_circuit 1`.
-
-`-flag_tex`: to write the `.tex` files. 
-By default, `-flag_tex 1`.
-
-`-tex_CL`: length of each row in the circuit, when it is printed to the `.tex` file.
-By default, `-tex_CL 10`.
-
-`-flag_print_zero_anc`: print only states, where all ancillae are in the zero state
-(assuming that all ancilla qubit are the high-priority qubits).
 
 To understand the format of the `.oracle` file, see the wiki page:<br> 
 https://github.com/ivanNovikau/QSVT_framework/wiki
