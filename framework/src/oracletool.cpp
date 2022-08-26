@@ -178,10 +178,21 @@ void OracleTool__::read_options(YISS istr)
         YMIX::print_log( "\n--- Initial OPTIONS ---");
         if(!YMIX::compare_strings(sel_compute_output_, "none"))
             YMIX::print_log("-> do not compute output states.");
-        if(!YMIX::compare_strings(sel_compute_output_, "all"))
+        if(YMIX::compare_strings(sel_compute_output_, "all"))
             YMIX::print_log("-> compute all output states.");
-        if(!YMIX::compare_strings(sel_compute_output_, "zero-ancillae are in the zero state."))
-            YMIX::print_log("-> compute only output states, where all ancillae are .");
+        if(YMIX::compare_strings(sel_compute_output_, "zero-ancillae are in the zero state."))
+            YMIX::print_log("-> compute only output states, where all ancillae are in the zero state.");
+        if(flag_prob_)
+        {
+            stringstream sstr;
+            copy(
+                focus_qubits_.begin(), 
+                focus_qubits_.end(), 
+                std::ostream_iterator<int>(sstr, " ")
+            );
+            YMIX::print_log("-> compute probabilites of the states on the following qubits: " + sstr.str());
+        }
+            
 
         if(!flag_circuit_)        YMIX::print_log("-> do not write the " + FORMAT_CIRCUIT + " files.");
         if(!flag_tex_)            YMIX::print_log("-> do not write the " + FORMAT_TEX + " file.");
@@ -746,11 +757,26 @@ void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX
                     "states"
                 );
             }
+        hfo_.close(); 
+    }
 
-        // --- calculate state probabilities on the indicated qubits ---
+    // --- calculate state probabilities on the indicated qubits ---
+    {
+        if(YMIX::compare_strings(sel_compute_output_, "none"))
+        {
+            timer_comp.Start();
+            YMIX::print_log( "Calculating the circuit... ", 0, false, false);
+            u_work->generate();
+            timer_comp.Stop();
+            YMIX::print_log( "duration: " + timer_comp.get_dur_str_s());
+        }// otherwise, the circuit has been already generated;
+
+
+        hfo_.open_w();
         if(flag_prob_)
         {
             vector<qreal> outProbs(1<<focus_qubits_.size());
+            YMIX::print_log( "Calculating the probabilities... \n", 0, false, false);
             calcProbOfAllOutcomes(
                 &outProbs[0], 
                 oc_to_launch_->get_qureg(), 
@@ -762,7 +788,6 @@ void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX
             hfo_.add_vector(focus_qubits_,  "qubits"s, "probabilities");
             hfo_.add_vector(outProbs,  "probs", "probabilities");
         }
-
         hfo_.close(); 
     }
 }

@@ -759,8 +759,20 @@ def save_dat_plot_1d_file(full_fname, x, y):
         for i in range(N):
             str_to_write = "{:0.10e}   {:0.10e}".format(x[i], y[i]) + "\n"
             f.write(str_to_write)
-
     return
+
+
+def save_dat_plot_1d_file(full_fname, x, y, y_error):
+    print(f"write data to a file: {full_fname}")
+    N = len(x)
+    with open(full_fname, 'w') as f:
+        f.write("X    Y    Y_ERROR\n")
+
+        for i in range(N):
+            str_to_write = "{:0.10e}   {:0.10e}   {:0.10e}".format(x[i], y[i], y_error[i]) + "\n"
+            f.write(str_to_write)
+    return
+
 
 def save_dat_plot_2d_file(full_fname, dd):
     import os 

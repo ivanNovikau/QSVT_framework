@@ -978,6 +978,9 @@ class MeasOracle__:
     output_all_states_ = None
     output_zero_anc_states_ = None
 
+    probs_ = None
+    qubits_probs_ = None
+
 
     def __init__(self):
         self.dd_ = {}
@@ -1021,7 +1024,7 @@ class MeasOracle__:
             for field in f["constants"]:
                 self.constants_[field] = f["constants"][field][()]
 
-            # --- initial states ---
+            # --- initial and output states ---
             st = f["states"]
             self.n_init_states_ = st["n-init-states"][()]
             self.init_states_            = [{}] * self.n_init_states_
@@ -1030,13 +1033,23 @@ class MeasOracle__:
             for ii in range(self.n_init_states_):
                 self.init_states_[ii]["state"] = np.transpose(np.array(st["initial-states-{:d}".format(ii)])) 
                 self.init_states_[ii]["ampls"] = np.array(st["initial-amplitudes-{:d}".format(ii)])
-                self.output_all_states_[ii]["state"] = np.transpose(np.array(st["output-all-states-{:d}".format(ii)])) 
-                self.output_all_states_[ii]["ampls"] = np.array(st["output-all-amplitudes-{:d}".format(ii)])
+
+                line_state = "output-zero-anc-states-{:d}".format(ii)
+                if line_state in st:
+                    self.output_all_states_[ii]["state"] = np.transpose(np.array(st["output-all-states-{:d}".format(ii)])) 
+                    self.output_all_states_[ii]["ampls"] = np.array(st["output-all-amplitudes-{:d}".format(ii)])
 
                 line_state = "output-zero-anc-states-{:d}".format(ii)
                 if line_state in st:
                     self.output_zero_anc_states_[ii]["state"] = np.transpose(np.array(st[line_state])) 
                     self.output_zero_anc_states_[ii]["ampls"] = np.array(st["output-zero-anc-amplitudes-{:d}".format(ii)])
+
+            # --- probabilities ---
+            line_group = "probabilities"
+            if line_group in f:
+                pr = f[line_group]
+                self.probs_        = np.array(pr["probs"])
+                self.qubits_probs_ = np.array(pr["qubits"])
 
         print("Name of the simulation is", self.dd_["project-name"])
         print("Simulation has been performed ", self.dd_["date-of-sim"])
