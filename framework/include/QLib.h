@@ -113,7 +113,8 @@
 #define FORMAT_TEX        ".tex"s
 #define FORMAT_ANGLES     ".angles"s
 #define FORMAT_LOG        ".log"s
-#define FORMAT_QSP        ".qsp"s
+#define FORMAT_QSP        ".qsvt"s
+#define FORMAR_HDF5       ".hdf5"
 // #define FORMAT_INIT       ".init_state"s
 #define FORMAT_INIT       "_INIT_STATE.hdf5"s
 #define FORMAT_RANDOM     ".random"s
@@ -125,6 +126,25 @@
 
 
 enum SEL_INIT_STATE_PREP {use_init_vector, use_init_oracle};
+
+
+// ------------------------------------------
+// --- Structure with QSVT parameters --- 
+// ------------------------------------------
+struct QSVT_pars
+{
+    std::string filename_angles;
+
+    std::string type;
+
+    YVQv angles_phis_even;
+    YVQv angles_phis_odd;
+
+    qreal eps_qsvt;
+    qreal f_par;
+
+    uint32_t nt;
+};
 
 
 

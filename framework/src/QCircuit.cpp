@@ -925,6 +925,9 @@ void QCircuit::read_reg_int(YISS istr, YVI ids_target, YCS word_start)
             throw "wrong format of the number of qubits in the register " + reg_name + ": " + e;
         }
     }
+
+    // sort the final array:
+    sort(ids_target.begin(), ids_target.end());
 }
 
 
@@ -1148,11 +1151,59 @@ void QCircuit::read_structure_gate_phase_estimation(YISS istr, YCS path_in, std:
     YSQ oc_A = ocs[name_A];
     YSQ oc_INIT = ocs[name_INIT];
 
-
     // --- add the phase estimation circuit ---
     x(ids_x);
     phase_estimation(ids_ta, oc_A, oc_INIT, ids_ty, ids_cs, flag_inv);
+    x(ids_x); 
+}
+
+
+void QCircuit::read_structure_gate_qsvt(
+    YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv, QSVT_pars& data
+){
+    string name_circuit;
+    string be_name;
+    YVIv ids_a_qsvt, ids_be;
+    YVVIv ids_control_it, ids_x_it;
+    YVIv ids_cs, ids_x;
+
+    // --- read QSVT parameters ---
+    istr >> name_circuit;
+    qsvt_read_parameters(name_circuit, data);
+
+    // --- read QSVT ancilla ---
+    read_reg_int(istr, ids_a_qsvt);
+    if(YMIX::compare_strings(data.type, "matrix-inversion"))
+        if(ids_a_qsvt.size() != 1)
+            throw "QSVT circuit of type ["s + data.type + "] must have only a single ancilla specific qubit."s;
+    if(YMIX::compare_strings(data.type, "hamiltonian-sim"))
+        if(ids_a_qsvt.size() != 2)
+            throw "QSVT circuit of type ["s + data.type + "] must have two ancilla specific qubits."s; 
+
+    // --- read the name of the block-encoding oracle ---
+    istr >> be_name;
+    if(ocs.find(be_name) == ocs.end())
+        throw string("QSVT definition: a circuit with the name ["s + be_name + "] is not found."s);
+    YSQ oc_be = make_shared<QCircuit>(ocs[be_name]);
+
+    // --- read qubits where the BE oracle must be placed ---
+    read_reg_int(istr, ids_be);
+    if(oc_be->get_n_qubits() != ids_be.size())
+    {
+        stringstream temp_sstr;
+        temp_sstr << "QSVT definition: Number of qubits in the oracle is " << oc_be->get_n_qubits() << ", ";
+        temp_sstr << "but it is indicated that the oracle is placed on " << ids_be.size() << " qubits.\n";
+        throw string(temp_sstr.str());
+    }
+
+    // --- read the end of the gate structure ---
+    read_end_gate(istr, ids_cs, ids_x, ids_control_it, ids_x_it);
+
+    // --- add the phase estimation circuit ---
     x(ids_x);
+    if(YMIX::compare_strings(data.type, "matrix-inversion"))
+        qsvt_matrix_inversion(data, ids_a_qsvt, ids_be, oc_be, ids_cs, flag_inv);
+    x(ids_x); 
 }
 
 
@@ -1410,7 +1461,7 @@ YQCP QCircuit::phase_estimation(
         pe_name_tex += "^\\dagger";
     }
 
-    // --- copy PE env. circuit to the current circuit ---
+    // --- copy the PE env. circuit to the current circuit ---
     auto circ_qubits = YVIv({ta});
     circ_qubits.insert(circ_qubits.end(), ty.begin(), ty.end());
 
@@ -1424,6 +1475,138 @@ YQCP QCircuit::phase_estimation(
         box, 
         false,
         cs        // add the control on the cs qubits;
+    );
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::qsvt_matrix_inversion(
+    QSVT_pars& data,
+    YCVI a_qsvt,
+    YCVI qs_be, 
+    const std::shared_ptr<const QCircuit> BE,
+    YCVI cs, 
+    YCB flag_inv,
+    YCB flag_box
+){
+    string qsvt_name_tex = "QSVT";
+    auto n_be = BE->get_n_qubits();
+    auto n_be_anc = BE->get_na();
+
+    // --- pre-initialize the BE oracle ---
+    auto oc_be = make_shared<QCircuit>(
+        "BE", env_, path_to_output_, n_be
+    );
+    auto be_qubits  = oc_be->add_register("qs-be", n_be);
+    oc_be->copy_gates_from(
+        BE, 
+        be_qubits,
+        make_shared<Box__>("U", be_qubits, YVIv {})
+    );
+
+    // --- create the complex-conjugated block-encoding oracle ---
+    auto oc_be_inv = make_shared<QCircuit>(oc_be);
+    oc_be_inv->conjugate_transpose();
+
+    // --- initialize the envelop circuit for the QSVT procedure ---
+    auto oc_qsvt = make_shared<QCircuit>(
+        "QSVT", env_, path_to_output_, n_be + 1
+    );
+    auto loc_a_qsvt = oc_qsvt->add_register("a-qsvt", 1);
+    auto loc_a_be   = oc_qsvt->add_register("a-be", n_be_anc); // ancillae of the BE oracle;
+    auto loc_in     = oc_qsvt->add_register("in", n_be - n_be_anc); // input (main) qubits of the BE oracle;
+
+    int q = loc_a_qsvt[0];
+    
+    // cout << "\nloc_a_be:\n";
+    // for(int ii = 0; ii < loc_a_be.size(); ii++)
+    //     cout << loc_a_be[ii] << " ";
+    
+    // cout << "\nloc_in:\n";
+    // for(int ii = 0; ii < loc_in.size(); ii++)
+    //     cout << loc_in[ii] << " ";
+
+    // cout << "\nbe_qubits:\n";
+    // for(int ii = 0; ii < be_qubits.size(); ii++)
+    //     cout << be_qubits[ii] << " ";
+
+    // cout << "\n q: " << q << "\n";
+
+    // cout << "a_qsvt:\n";
+    // for(int ii = 0; ii < a_qsvt.size(); ii++)
+    //     cout << a_qsvt[ii] << " ";
+
+    // cout << "\nqs_be:\n";
+    // for(int ii = 0; ii < qs_be.size(); ii++)
+    //     cout << qs_be[ii] << " ";
+    // cout << "\n";
+
+    // --- form the QSVT circuit for the odd polynomial (even number of angles) ---
+    YMIX::YTimer timer;
+    qreal aa;
+    auto phis = data.angles_phis_odd;
+    auto N_angles = phis.size();
+
+    // N_angles = 4;
+
+    timer.StartPrint("Creating the QSVT circuit for the matrix inversion... ");
+
+    oc_qsvt->h(q);
+
+    aa = 2*phis[0];
+    oc_qsvt->x(loc_a_be);
+    oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
+    oc_qsvt->x(loc_a_be);
+    for(uint32_t count_angle = 1; count_angle < N_angles; ++count_angle)
+    {
+        oc_qsvt->insert_gates_from(
+            oc_be.get(), 
+            make_shared<Box__>("U", be_qubits, YVIv {})
+        );
+        if(count_angle == (N_angles - 1)) // set the Z-gate only if N_angles is even (odd polynomial)
+            oc_qsvt->z(q);
+        aa = 2*phis[count_angle];
+        oc_qsvt->x(loc_a_be);
+        oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
+        oc_qsvt->x(loc_a_be);
+        
+        count_angle += 1;
+        if(count_angle < N_angles)
+        {
+            oc_qsvt->insert_gates_from(
+                oc_be_inv.get(), 
+                make_shared<Box__>("iU", be_qubits, YVIv {})
+            );
+            aa = 2*phis[count_angle];
+            oc_qsvt->x(loc_a_be);
+            oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
+            oc_qsvt->x(loc_a_be);
+        }
+    }
+    oc_qsvt->h(q);
+    timer.StopPrint();
+
+    // --- invert the QSVT circuit if necessary ---
+    if(flag_inv)
+    {
+        oc_qsvt->conjugate_transpose();
+        qsvt_name_tex += "^\\dagger";
+    }
+
+    // --- copy the QSVT env. circuit to the current circuit ---
+    auto circ_qubits = YVIv(qs_be);
+    circ_qubits.insert(circ_qubits.end(), a_qsvt.begin(), a_qsvt.end());
+
+    auto box = YSB(nullptr);
+    if(flag_box)
+        box = YMBo("QSVT", circ_qubits, YVIv{}, qsvt_name_tex);
+
+    copy_gates_from(
+        oc_qsvt,
+        circ_qubits,
+        box, 
+        false,
+        cs  
     );
     return get_the_circuit();
 }
@@ -1447,4 +1630,87 @@ qreal QCircuit::get_value_from_word(YCS word)
     if(constants_.find(const_name) == constants_.end())
         throw "A constant with the name "s + const_name + " is not found."s;
     return constants_[const_name];
+}
+
+
+void  QCircuit::qsvt_read_parameters(YCS filename_init, QSVT_pars& data)
+{
+    string filename = filename_init + FORMAT_QSP;
+    ifstream ff_qsvt(filename);
+    if(!ff_qsvt.is_open()) throw "Error: there is not the file: "s + filename;
+
+    string line, key_name;
+    while (getline(ff_qsvt, line))
+    {
+        key_name = "";
+        line = YMIX::remove_comment(line);
+        if(line.find_first_not_of(' ') == string::npos)
+            continue;
+
+        istringstream iss(line);
+        iss >> key_name;
+
+        if(YMIX::compare_strings(key_name, "filename_angles"))
+        {
+            iss >> data.filename_angles;
+            continue;
+        }
+    }
+    ff_qsvt.close();
+
+    if(data.filename_angles.empty())
+    {
+        throw "Name of the file with QSVT angles is not indicated in "s + filename;
+        exit(-1);
+    }
+        
+    // --- read the .hdf5 file with angles ---
+    string temp = data.filename_angles;
+    if(!YMIX::compare_strings(
+        temp.substr(
+            temp.size()-string(FORMAR_HDF5).size(),string(FORMAR_HDF5).size()
+        ), FORMAR_HDF5)
+    ) temp += FORMAR_HDF5;
+    data.filename_angles = temp;
+
+    YMIX::print_log("\nRead angles from the file: "s + data.filename_angles);
+
+    YMIX::H5File ff;
+    ff.set_name(data.filename_angles);
+    ff.open_r();
+    ff.read_scalar(data.type, "polynomial_type", "basic");
+    ff.read_scalar(data.eps_qsvt, "eps", "basic");
+    ff.read_scalar(data.f_par,    "par", "basic");
+
+    if(YMIX::compare_strings(data.type, "matrix-inversion"))
+    {
+        ff.read_vector(data.angles_phis_odd, "odd", "angles");
+    }
+    if(YMIX::compare_strings(data.type, "hamiltonian-sim"))
+    {
+        ff.read_scalar(data.nt,                 "nt", "basic");
+        ff.read_vector(data.angles_phis_odd,   "odd", "angles");
+        ff.read_vector(data.angles_phis_even, "even", "angles");
+    }
+    ff.close();
+
+    // --- print resulting parameters ---
+    stringstream istr;
+    istr << "   QSVT type:  " << data.type     << ";\n";
+    istr << "   QSVT error: " << data.eps_qsvt << ";\n";
+    if(YMIX::compare_strings(data.type, "matrix-inversion"))
+    {
+        istr << "   Polynomial parity: "  << "odd" << ";\n";
+        istr << "   number of angles: " << data.angles_phis_odd.size() << ";\n";
+        istr << "   kappa: " << data.f_par << ";\n";
+    }
+    if(YMIX::compare_strings(data.type, "hamiltonian-sim"))
+    {
+        istr << "   Polynomial parity: "  << "no definite parity" << ";\n";
+        istr << "   number of angles: " << 
+            data.angles_phis_odd.size() + data.angles_phis_even.size() << ";\n";
+        istr << "   single time interval: " << data.f_par << ";\n";
+        istr << "   number of the time intervals: " << data.nt << ";\n";
+    }
+    YMIX::print_log(istr.str());
 }

@@ -23,10 +23,15 @@ BaseTool__::BaseTool__(
     flag_layers_(flag_layers),
     flag_hdf5_(flag_hdf5)
 {
+    string current_path = filesystem::current_path();
+    YMIX::print_log("Current path: " + current_path);
+
     if(flag_hdf5_)
     {
-        YMIX::print_log( "Creating the output .hdf5 file...");
-        hfo_.create(path_inputs_ + "/" + pname_ + "_circuit"s + ENDING_FORMAT_OUTPUT);
+        string filename_out = path_inputs_ + "/" + pname_ + ENDING_FORMAT_OUTPUT;
+
+        YMIX::print_log("Creating the output .hdf5 file:\n\t "s + filename_out);
+        hfo_.create(filename_out);
         hfo_.add_group("basic"); 
         hfo_.add_group("states"); 
         hfo_.add_group("constants"); 
@@ -53,10 +58,8 @@ BaseTool__::~BaseTool__(){}
 void BaseTool__::read_data()
 {
     ifname_ = path_inputs_ + "/" + pname_ + format_file_;
-
-    string current_path = filesystem::current_path();
-    YMIX::print_log( "Current path: " + current_path);
-    YMIX::print_log( "Start reading the input file: " + ifname_);
+    YMIX::print_log("\n----------------------------------------------");
+    YMIX::print_log("Start reading the input file: " + ifname_);
 
     try
     {

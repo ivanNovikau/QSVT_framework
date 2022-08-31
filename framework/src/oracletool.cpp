@@ -27,7 +27,7 @@ OracleTool__::OracleTool__(
 
 OracleTool__::~OracleTool__()
 {
-    YMIX::print_log( "*** Destruction of the oracle tool is done. ***");
+    YMIX::print_log( "*** The oracletool has been desctructed. ***");
 }
 
 
@@ -55,7 +55,8 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
             read_input_states(istr);
     }
 
-    YMIX::print_log( "Finish reading file\n");
+    YMIX::print_log("Finish reading the .oracle file");
+    YMIX::print_log("----------------------------------------------\n\n");
 
     // check if the circuit to launch is defined:
     if(!oc_to_launch_)
@@ -418,6 +419,10 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
         {
             oc->read_structure_gate_phase_estimation(istr, path_inputs_, ocs_, flag_inv);
         }
+        if(YMIX::compare_strings(gate_name, "QSVT"))
+        {
+            oc->read_structure_gate_qsvt(istr, path_inputs_, ocs_, flag_inv, qsvt_data_);
+        }
 
     }
     catch(YCS e)
@@ -513,7 +518,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
         oc->copy_gates_from(oc_sub, ids_q, YSB(nullptr), flag_inv);
 
         // read flag whether it is necessary to show output after the subcircuit:
-        int flag_output = 1;
+        int flag_output = 0;
         istr >> word;
         if(YMIX::compare_strings(word, "end_circuit"))
             flag_end_circuit = true;
@@ -634,6 +639,31 @@ void OracleTool__::launch()
 
     // number of qubits in every register:
     hfo_.add_vector(u_work->get_standart_output_format(), "register-nq", "basic");
+
+    // if QSVT, store its parameters:
+    if(!qsvt_data_.type.empty())
+    {
+        YMIX::print_log("Saving QSVT parameters...");
+        
+        hfo_.add_group("qsvt");
+
+        hfo_.add_scalar(qsvt_data_.type,    "type", "qsvt");
+        hfo_.add_scalar(qsvt_data_.eps_qsvt, "eps", "qsvt");
+        if(YMIX::compare_strings(qsvt_data_.type, "matrix-inversion"))
+        {
+            hfo_.add_scalar("odd", "parity", "qsvt");
+            hfo_.add_scalar(qsvt_data_.f_par, "kappa", "qsvt");
+            hfo_.add_scalar(qsvt_data_.angles_phis_odd, "angles-odd", "qsvt");
+        }
+        if(YMIX::compare_strings(qsvt_data_.type, "hamiltonian-sim"))
+        {
+            hfo_.add_scalar("undefined", "parity", "qsvt");
+            hfo_.add_scalar(qsvt_data_.f_par, "dt", "qsvt");
+            hfo_.add_scalar(qsvt_data_.nt, "nt", "qsvt");
+            hfo_.add_scalar(qsvt_data_.angles_phis_odd, "angles-odd", "qsvt");
+            hfo_.add_scalar(qsvt_data_.angles_phis_even, "angles-even", "qsvt");
+        }
+    }
 
     // number of initial states:
     uint32_t n_init_states = flag_init_state_file_ ? 1: init_states_.size();

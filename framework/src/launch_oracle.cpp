@@ -32,6 +32,7 @@ int main(int argc, char *argv[])
     YMIX::LogFile::name_global_ = path_input + "/" + pname + ".clog";
     YMIX::LogFile cf(true);
 
+    cout << "\n\n";
     cout << "Project name: "        << pname << endl;
     cout << "Path to input files: " << path_input << "/" << endl;
 

@@ -11,7 +11,6 @@ QMI__::QMI__(const QuESTEnv& env, YCS project_name, YCS path_inputs)
 }
 
 
-
 bool QMI__::read_special_parameters(std::istringstream& iss, std::string& key_name)
 {
     // read the condition number:
@@ -38,6 +37,7 @@ bool QMI__::read_special_parameters(std::istringstream& iss, std::string& key_na
     }
     return false;
 }
+
 
 void QMI__::read_angles()
 {

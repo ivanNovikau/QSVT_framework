@@ -39,7 +39,7 @@ private:
     void read_state(YISS istr);
     void read_state_init_file();
     qreal get_value_from_word(YCS word);
-    void calc(std::shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX::YTimer& timer_comp);
+    void  calc(std::shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX::YTimer& timer_comp);
 
 private:
     // dictionary with constants to create the oracle:
@@ -67,12 +67,14 @@ private:
     std::string sel_compute_output_; 
     std::string sel_print_output_; 
 
-
     /**
      * To calculate probabilities of all states for the given qubits, \p focus_qubits_.
      */
     bool flag_prob_;
     std::vector<int> focus_qubits_;
+
+    // QSVT data
+    QSVT_pars qsvt_data_;
 
 
 };

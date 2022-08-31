@@ -111,10 +111,12 @@ class QCircuit{
      * @brief Add a register. 
      * The first added register is placed at the top of the circuit 
      * (is the most significant register).
+     * Within the register, the 0-th elementin
      * @param[in] name name of the register;
      * @param[in] n_qubits number of qubits in the register;
      * @param[in] flag_ancilla if true, it is an ancilla register;
-     * @return qubits where the register is placed.
+     * @return qubits of the register. 
+     * The 0-th element in the returned vector corresponds to the least significant qubit.
      */
     YVIv add_register(YCS name, YCU n_qubits, YCB flag_ancilla=false);
 
@@ -226,6 +228,9 @@ class QCircuit{
     void read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_phase_estimation(
         YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv
+    );
+    void read_structure_gate_qsvt(
+        YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv, QSVT_pars& data
     );
 
     /**
@@ -538,14 +543,30 @@ class QCircuit{
      *         which sits on the qubits \p ta.
      *         The eigenstate of the circuit is prepared by the operator \p INIT.
      *         The final estimation is written to the qubits \p ty.
-     *         The whole PE operator can be controlled by qubits \p cs. 
-     * @param flag_box if true, draw teh operator as a box, not as a circuit;
+     *         The whole PE operator can be controlled by the qubits \p cs. 
+     * @param flag_box if true, draw the operator as a box, not as a circuit;
      */ 
     YQCP phase_estimation(
         YCVI ta, 
         const std::shared_ptr<const QCircuit>& A, 
         const std::shared_ptr<const QCircuit>& INIT,
         YCVI ty, 
+        YCVI cs, 
+        YCB flag_inv = false,
+        YCB flag_box = false
+    );
+
+
+    /** @brief QSVT inversion of the matrix encoded by the oracle \p BE, which sits on qubits \p qs_be.
+     * The QSVT single rotations are placed at the qubit \p a_qsvt[0].
+     * The whole QSVT circuit is controlled by the qubits \p cs.
+     * @param flag_box if true, draw the operator as a box, not as a circuit;
+     */
+    YQCP qsvt_matrix_inversion(
+        QSVT_pars& data,
+        YCVI a_qsvt,
+        YCVI qs_be, 
+        const std::shared_ptr<const QCircuit> BE,
         YCVI cs, 
         YCB flag_inv = false,
         YCB flag_box = false
@@ -594,8 +615,7 @@ class QCircuit{
 
 private:
     qreal get_value_from_word(YCS word);
-
-
+    void  qsvt_read_parameters(YCS filename, QSVT_pars& data);
 
 
 
