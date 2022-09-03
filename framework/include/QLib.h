@@ -143,6 +143,8 @@ struct QSVT_pars
     qreal eps_qsvt;
     qreal f_par;
 
+    int parity;
+
     uint32_t nt;
 };
 
@@ -376,7 +378,7 @@ namespace YMIX{
 
                 std::ostringstream oss;
                 oss << std::scientific << std::setprecision(3) 
-                    << get_dur_s() << " s\n";
+                    << get_dur_s() << " s" << std::endl;
                 print_log_flush(oss.str());
             }
             double get_dur(){

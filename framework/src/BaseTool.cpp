@@ -96,6 +96,6 @@ void BaseTool__::read_input_file(YS data, YCS file_name)
             continue;
         data_clr += line + "\n";
     }
-    std::transform(data_clr.begin(), data_clr.end(), data_clr.begin(), ::tolower);
+    // std::transform(data_clr.begin(), data_clr.end(), data_clr.begin(), ::tolower);
     data = data_clr;
 }

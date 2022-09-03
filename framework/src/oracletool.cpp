@@ -51,8 +51,8 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
         if(YMIX::compare_strings(word, "CIRCUIT_STRUCTURE"))
             read_circuit_structure(istr);
 
-        if(YMIX::compare_strings(word, "INPUT_STATES"))
-            read_input_states(istr);
+        if(YMIX::compare_strings(word, "MAIN_CIRCUIT"))
+            read_main_circuit(istr);
     }
 
     YMIX::print_log("Finish reading the .oracle file");
@@ -60,7 +60,7 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
 
     // check if the circuit to launch is defined:
     if(!oc_to_launch_)
-        throw "Error: The circuit to launch is not defined (there is not a section INPUT_STATES)."s;
+        throw "Error: The circuit to launch is not defined (there is not a section MAIN_CIRCUIT)."s;
 
     // write circuits to corresponding files:
     for(auto const& it: ocs_)
@@ -152,16 +152,6 @@ void OracleTool__::read_options(YISS istr)
                 istr >> YGV::tex_circuit_length;
                 continue;
             }
-
-            if(YMIX::compare_strings(word, "compute_prob"))
-            {
-                istr >> flag_prob_;
-                if(flag_prob_)
-                {
-                    oc_to_launch_->read_reg_int(istr, focus_qubits_);
-                }
-                continue;
-            }
         }
 
         // correct the printing options:
@@ -183,18 +173,6 @@ void OracleTool__::read_options(YISS istr)
             YMIX::print_log("-> compute all output states.");
         if(YMIX::compare_strings(sel_compute_output_, "zero-ancillae are in the zero state."))
             YMIX::print_log("-> compute only output states, where all ancillae are in the zero state.");
-        if(flag_prob_)
-        {
-            stringstream sstr;
-            copy(
-                focus_qubits_.begin(), 
-                focus_qubits_.end(), 
-                std::ostream_iterator<int>(sstr, " ")
-            );
-            YMIX::print_log("-> compute probabilites of the states on the following qubits: " + sstr.str());
-        }
-            
-
         if(!flag_circuit_)        YMIX::print_log("-> do not write the " + FORMAT_CIRCUIT + " files.");
         if(!flag_tex_)            YMIX::print_log("-> do not write the " + FORMAT_TEX + " file.");
         if(flag_tex_) 
@@ -226,7 +204,7 @@ qreal OracleTool__::get_value_from_word(YCS word)
     string const_name = word.substr(first+1,last-first-1);
 
     if(constants_.find(const_name) == constants_.end())
-        throw "A constant with a name "s + const_name + " is not found."s;
+        throw "A constant with the name ["s + const_name + "] is not found."s;
 
     return constants_[const_name];
 }
@@ -289,11 +267,15 @@ void OracleTool__::read_circuit_declaration(YISS istr)
                 YMIX::print_log( inf.str());          
             }
             else
+            {
+                // cout << "HERE 2: circuit [" << circ_name << "]: " << flag_tex_ << endl;
                 ocs_[circ_name] = make_shared<QCircuit>(
                     circ_name, env_, path_inputs_, nq_circ, 
                     constants_,
                     flag_circuit_, flag_tex_, flag_layers_
                 );
+            }
+                
             YSQ oc = ocs_[circ_name];
 
             // add the registers to the chosen circuit
@@ -415,6 +397,10 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
         {
             oc->read_structure_gate_fourier(istr, path_inputs_, flag_inv);
         }
+        if(YMIX::compare_strings(gate_name, "sin"))
+        {
+            oc->read_structure_sin(istr, path_inputs_, flag_inv);
+        }
         if(YMIX::compare_strings(gate_name, "PE"))
         {
             oc->read_structure_gate_phase_estimation(istr, path_inputs_, ocs_, flag_inv);
@@ -423,7 +409,6 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
         {
             oc->read_structure_gate_qsvt(istr, path_inputs_, ocs_, flag_inv, qsvt_data_);
         }
-
     }
     catch(YCS e)
     {
@@ -505,7 +490,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
         else
         {
             ids_q = YVIv {};
-            oc->read_reg_int(istr, ids_q, word);
+            oc->read_reg_int(istr, ids_q, true, word);
             if(ids_q.size() != nq_sub)
             {
                 string err_line;
@@ -549,10 +534,11 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
 }
 
 
-void OracleTool__::read_input_states(YISS istr)
+void OracleTool__::read_main_circuit(YISS istr)
 {
-    YMIX::print_log( "Reading input states...");
+    YMIX::print_log( "Reading MAIN_CIRCUIT section...");
     string word, name_of_main_circuit;
+    bool flag_init_file = false;
 
     // define a circuit to launch:
     istr >> name_of_main_circuit;
@@ -560,7 +546,7 @@ void OracleTool__::read_input_states(YISS istr)
         throw "Error: The circuit with a name \"" + name_of_main_circuit + "\" is not found.\n" + 
             "This circuit cannot be set as a circuit to launch.";
     oc_to_launch_ = ocs_[name_of_main_circuit];
-    
+
     try
     {
         // to read the initial state directly from the .oracle file
@@ -570,15 +556,37 @@ void OracleTool__::read_input_states(YISS istr)
             if(YMIX::compare_strings(word, "INIT_FILE"))
             {
                 read_state_init_file();
-                break;
+                flag_init_file = true;
+                continue;
             }
                 
-            if(YMIX::compare_strings(word, "STATE"))
-                read_state(istr);
+            if(YMIX::compare_strings(word, "INPUT_STATE"))
+            {
+                if(!flag_init_file)
+                    read_state(istr);
+            }
+                
+            if(YMIX::compare_strings(word, "compute_prob"))
+            {
+                istr >> flag_prob_;
+                oc_to_launch_->read_reg_int(istr, focus_qubits_);
+                stringstream sstr;
+                copy(
+                    focus_qubits_.begin(), 
+                    focus_qubits_.end(), 
+                    std::ostream_iterator<int>(sstr, " ")
+                );
+                YMIX::print_log("-> compute probabilites of the states on the following qubits: " + sstr.str());
+                continue;
+            }
 
-            if(YMIX::compare_strings(word, "END_INPUT_STATES"))
+            if(YMIX::compare_strings(word, "END_MAIN_CIRCUIT"))
                 break;
         }
+
+        if(!flag_init_file && init_states_.size() == 0)
+            YMIX::print_log("\n<<<WARNING: there are not input states.>>>\n");
+
     }
     catch(YCS e)
     {
@@ -615,7 +623,7 @@ void OracleTool__::read_state_init_file()
 
 void OracleTool__::launch()
 {
-    YMIX::YTimer timer_comp;
+    
     YMIX::print_log( 
         "--- Analysis of the circuit [" + oc_to_launch_->get_name() + "] ---"
     );
@@ -649,15 +657,19 @@ void OracleTool__::launch()
 
         hfo_.add_scalar(qsvt_data_.type,    "type", "qsvt");
         hfo_.add_scalar(qsvt_data_.eps_qsvt, "eps", "qsvt");
+        hfo_.add_scalar(qsvt_data_.parity, "parity", "qsvt");
         if(YMIX::compare_strings(qsvt_data_.type, "matrix-inversion"))
         {
-            hfo_.add_scalar("odd", "parity", "qsvt");
             hfo_.add_scalar(qsvt_data_.f_par, "kappa", "qsvt");
             hfo_.add_scalar(qsvt_data_.angles_phis_odd, "angles-odd", "qsvt");
         }
+        if(YMIX::compare_strings(qsvt_data_.type, "gaussian-arcsin"))
+        {
+            hfo_.add_scalar(qsvt_data_.f_par, "mu", "qsvt");
+            hfo_.add_scalar(qsvt_data_.angles_phis_even, "angles-even", "qsvt");
+        }
         if(YMIX::compare_strings(qsvt_data_.type, "hamiltonian-sim"))
         {
-            hfo_.add_scalar("undefined", "parity", "qsvt");
             hfo_.add_scalar(qsvt_data_.f_par, "dt", "qsvt");
             hfo_.add_scalar(qsvt_data_.nt, "nt", "qsvt");
             hfo_.add_scalar(qsvt_data_.angles_phis_odd, "angles-odd", "qsvt");
@@ -686,7 +698,7 @@ void OracleTool__::launch()
 
         cout << "size of the initial vector is " << init_ampl_vec_real_.size() << endl;
         u_work->set_init_vector(init_ampl_vec_real_, init_ampl_vec_imag_);
-        calc(u_work, count_init_state, timer_comp);
+        calc(u_work, count_init_state);
     }
     else
     {
@@ -704,15 +716,16 @@ void OracleTool__::launch()
             u_work->set_init_binary_state();
 
             // print input and output states:
-            calc(u_work, count_init_state, timer_comp);
+            calc(u_work, count_init_state);
             ++count_init_state;
         }
     }
 }
 
 
-void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX::YTimer& timer_comp)
+void OracleTool__::calc(shared_ptr<QCircuit>& u_work, YCI count_init_state)
 {
+    YMIX::YTimer timer_comp;
     // --- Print the initial state ---
     {
         YMIX::StateVectorOut outF;

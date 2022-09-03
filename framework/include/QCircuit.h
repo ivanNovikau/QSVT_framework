@@ -226,6 +226,7 @@ class QCircuit{
     void read_structure_gate_adder(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_swap(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_sin(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_phase_estimation(
         YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv
     );
@@ -237,7 +238,7 @@ class QCircuit{
      * @brief store qubit indices to the output vector \p ids_target.
      * The qubits start from the less singificant one.
      */ 
-    void read_reg_int(YISS istr, YVI ids_target, YCS word_start=std::string());
+    void read_reg_int(YISS istr, YVI ids_target, YCB flag_sort = true, YCS word_start=std::string());
     void read_end_gate(YISS istr, YVI ids_control, YVI ids_x, YVVI ids_control_it, YVVI ids_x_it);
 
     template<class TGate>
@@ -538,6 +539,23 @@ class QCircuit{
      */
     YQCP quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv = false, YCB flag_box = false);
 
+    /** @brief Create sin(x), where x_j = alpha_0 + j*dx, j = [0, Nx-1], Nx = 2^size(\p conds),
+     * dx = 2*alpha / Nx.
+     * The sin(x) is created by Ry gates sitting on the ancilla \p anc[0] and controlled by qubits \p conds.
+     * For the given integer j encoded as a bitstring in the qubits \p conds, 
+     * the gate returns sin(x_j) as the amplitude of the state, 
+     * where the ancilla \p anc[0] is in the zero state.
+     */
+    YQCP gate_sin(
+        YCVI anc, 
+        YCVI conds, 
+        YCQR alpha_0, 
+        YCQR alpha, 
+        YCVI cs, 
+        YCB flag_inv = false, 
+        YCB flag_box = false
+    );
+
 
     /** @brief Phase estimation (PE) operator to find an eigenphase of the operator \p A, 
      *         which sits on the qubits \p ta.
@@ -562,8 +580,8 @@ class QCircuit{
      * The whole QSVT circuit is controlled by the qubits \p cs.
      * @param flag_box if true, draw the operator as a box, not as a circuit;
      */
-    YQCP qsvt_matrix_inversion(
-        QSVT_pars& data,
+    YQCP qsvt_def_parity(
+        YCVQ phis,
         YCVI a_qsvt,
         YCVI qs_be, 
         const std::shared_ptr<const QCircuit> BE,

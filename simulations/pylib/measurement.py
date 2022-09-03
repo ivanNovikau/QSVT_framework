@@ -56,6 +56,15 @@ def get_str_state(q, format_q):
     return ll
 
 
+def get_complex(ampls):
+    N = len(ampls)
+    ampls_complex = np.zeros(N, dtype=np.complex)
+    for i_state in range(N):
+        one_ampl = ampls[i_state]
+        ampls_complex[i_state] = np.complex(one_ampl["real"], one_ampl["imag"])
+    return ampls_complex
+
+
 # -------------------------------------------------------------------------------
 # --- Read output data from oracle ---
 # -------------------------------------------------------------------------------
@@ -165,6 +174,12 @@ class MeasOracle__:
         self.work_ampls_  = self.output_zero_anc_states_[id_input_state]["ampls"]
         return
 
+    
+    def set_work_states(self, id_input_state = 0):
+        self.work_states_ = self.output_all_states_[id_input_state]["state"]
+        self.work_ampls_  = self.output_all_states_[id_input_state]["ampls"]
+        return
+
 
     def print_full_states(self):
         print("Number of initial states: {:d}".format(self.n_init_states_))
@@ -234,6 +249,8 @@ class MeasOracle__:
             self.dd_["qsvt"]["eps"] = gr["eps"][()]
             if self.dd_["qsvt"]["type"] == "matrix-inversion":
                 self.read_qsvt_matrix_inversion(gr)
+            if self.dd_["qsvt"]["type"] == "gaussian-arcsin":
+                self.read_qsvt_gaussian_arcsin(gr)
             if self.dd_["qsvt"]["type"] == "hamiltonian-sim":
                 self.read_qsvt_hamiltonian_sim(gr)   
         return
@@ -242,6 +259,12 @@ class MeasOracle__:
     def read_qsvt_matrix_inversion(self, gr):
         self.dd_["qsvt"]["kappa"] = gr["kappa"][()]
         print("kappa: {:0.3f}".format(self.dd_["qsvt"]["kappa"]))
+        return
+
+
+    def read_qsvt_gaussian_arcsin(self, gr):
+        self.dd_["qsvt"]["mu"] = gr["mu"][()]
+        print("mu: {:0.3f}".format(self.dd_["qsvt"]["mu"]))
         return
 
 

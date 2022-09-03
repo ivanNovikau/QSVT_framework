@@ -135,29 +135,30 @@ void QCircuit::create_circ_file()
 void QCircuit::create_tex_file()
 {
     if(!flag_tex_)
+    {
+        // cout << "HERE: circuit [" << name_ << "]: no tex" << endl;
         return;
+    }
+        
 
     texname_ = path_to_output_ + "/" + name_ + FORMAT_TEX;
-    if(env_.rank == 0)
-    {
-        YMIX::File cf(texname_, true);
+    YMIX::File cf(texname_, true);
 
-        cf << "\\documentclass{article}\n";
-        // cf << "\\usepackage[utf8]{inputenc}\n";
-        cf << "\\usepackage[dvipsnames]{xcolor}\n";
-        cf << "\\usepackage{amsmath}\n";
-        cf << "\\usepackage{amsfonts,amssymb}\n";
-        cf << "\\usepackage{tikz}\n";
-        cf << "\\usetikzlibrary{quantikz}\n";
-        cf << "\n";
-        cf << "\\newcommand{\\yi}{\\mathrm{i}}\n";
-        cf << "\n";
-        cf << "\\begin{document}\n";
-        cf << "\n\n";
-        cf << "\\begin{figure}[t!]\n";
-        cf << "\\centering\n";
-        cf << TEX_BEGIN_CIRCUIT;   
-    } 
+    cf << "\\documentclass{article}\n";
+    // cf << "\\usepackage[utf8]{inputenc}\n";
+    cf << "\\usepackage[dvipsnames]{xcolor}\n";
+    cf << "\\usepackage{amsmath}\n";
+    cf << "\\usepackage{amsfonts,amssymb}\n";
+    cf << "\\usepackage{tikz}\n";
+    cf << "\\usetikzlibrary{quantikz}\n";
+    cf << "\n";
+    cf << "\\newcommand{\\yi}{\\mathrm{i}}\n";
+    cf << "\n";
+    cf << "\\begin{document}\n";
+    cf << "\n\n";
+    cf << "\\begin{figure}[t!]\n";
+    cf << "\\centering\n";
+    cf << TEX_BEGIN_CIRCUIT;   
 }
 
 
@@ -871,7 +872,7 @@ void QCircuit::read_end_gate(YISS istr, YVI ids_control, YVI ids_x, YVVI ids_con
 }
 
 
-void QCircuit::read_reg_int(YISS istr, YVI ids_target, YCS word_start)
+void QCircuit::read_reg_int(YISS istr, YVI ids_target, YCB flag_sort, YCS word_start)
 {
     string reg_name, word;
     bool flag_read_reg_name = false;
@@ -927,7 +928,8 @@ void QCircuit::read_reg_int(YISS istr, YVI ids_target, YCS word_start)
     }
 
     // sort the final array:
-    sort(ids_target.begin(), ids_target.end());
+    if(flag_sort)
+        sort(ids_target.begin(), ids_target.end());
 }
 
 
@@ -1116,6 +1118,36 @@ void QCircuit::read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv)
 }
 
 
+void QCircuit::read_structure_sin(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_a, ids_main, ids_control, ids_x;
+    qreal alpha_0, alpha;
+    YVVIv ids_control_it, ids_x_it;
+    string word;
+
+    // --- read an ancilla qubit to put rotations there ---
+    read_reg_int(istr, ids_a);
+
+    // --- read angles ---
+    istr >> word;
+    alpha_0 = get_value_from_word(word);
+
+    istr >> word;
+    alpha = get_value_from_word(word);
+
+    // --- read the condition qubits ---
+    read_reg_int(istr, ids_main);
+
+    // --- read end of gate structure ---
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // add the quantum Fourier circuit:
+    x(ids_x);
+    gate_sin(ids_a, ids_main, alpha_0, alpha, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
 void QCircuit::read_structure_gate_phase_estimation(YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv)
 {
     YVIv ids_ta; // target qubits of the operator A, whose eigenphase we seek for;
@@ -1173,7 +1205,9 @@ void QCircuit::read_structure_gate_qsvt(
 
     // --- read QSVT ancilla ---
     read_reg_int(istr, ids_a_qsvt);
-    if(YMIX::compare_strings(data.type, "matrix-inversion"))
+    if(YMIX::compare_strings(
+        data.type, YVSv{"matrix-inversion", "gaussian-arcsin"}
+    ))
         if(ids_a_qsvt.size() != 1)
             throw "QSVT circuit of type ["s + data.type + "] must have only a single ancilla specific qubit."s;
     if(YMIX::compare_strings(data.type, "hamiltonian-sim"))
@@ -1201,8 +1235,10 @@ void QCircuit::read_structure_gate_qsvt(
 
     // --- add the phase estimation circuit ---
     x(ids_x);
-    if(YMIX::compare_strings(data.type, "matrix-inversion"))
-        qsvt_matrix_inversion(data, ids_a_qsvt, ids_be, oc_be, ids_cs, flag_inv);
+    if(data.parity == 0)
+        qsvt_def_parity(data.angles_phis_even, ids_a_qsvt, ids_be, oc_be, ids_cs, flag_inv);
+    if(data.parity == 1)
+        qsvt_def_parity(data.angles_phis_odd, ids_a_qsvt, ids_be, oc_be, ids_cs, flag_inv);
     x(ids_x); 
 }
 
@@ -1386,6 +1422,71 @@ YQCP QCircuit::quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv, YCB flag_box)
 }
 
 
+YQCP QCircuit::gate_sin(
+        YCVI anc, 
+        YCVI conds, 
+        YCQR alpha_0, 
+        YCQR alpha, 
+        YCVI cs, 
+        YCB flag_inv, 
+        YCB flag_box
+){
+    auto na = 1;
+    auto n_cond = conds.size();
+    auto n_tot = n_cond + na;
+    string name_tex = "SIN";
+
+    // --- all target qubits ---
+    vector<int> qubits_tot = YVIv(conds);
+    qubits_tot.insert(qubits_tot.end(), anc.begin(), anc.end());
+
+    // --- create an envelop circuit for the sin gate ---
+    auto oc_sin = make_shared<QCircuit>(
+        "SIN", env_, path_to_output_, n_tot
+    );
+    auto a_loc    = oc_sin->add_register("a", na)[0];
+    auto cond_loc = oc_sin->add_register("cond", n_cond);
+
+    // cout << "\n qubits_tot:\n";
+    // for(int ii = 0; ii < qubits_tot.size(); ii++)
+    //     cout << qubits_tot[ii] << " ";
+
+    // cout << "\n cond_loc:\n";
+    // for(int ii = 0; ii < cond_loc.size(); ii++)
+    //     cout << cond_loc[ii] << " ";
+
+    // cout << "\n a_loc: " << a_loc << "\n";
+
+    oc_sin->ry(a_loc, 2*alpha_0);
+    for(auto ii = 0; ii < n_cond; ii++)
+    {
+        qreal aa = 2*alpha / pow(2., n_cond - 1 - ii);
+        oc_sin->ry(a_loc, aa, YVIv{cond_loc[ii]});
+    }
+    oc_sin->x(a_loc);
+
+    // --- invert the circuit if necessary ---
+    if(flag_inv)
+    {
+        oc_sin->conjugate_transpose();
+        name_tex += "^\\dagger";
+    }
+
+    // --- copy the env. circuit to the current circuit ---
+    auto box = YSB(nullptr);
+    if(flag_box)
+        box = YMBo("SIN", qubits_tot, YVIv{}, name_tex);
+    copy_gates_from(
+        oc_sin,
+        qubits_tot,
+        box, 
+        false,    
+        cs        
+    );
+    return get_the_circuit();
+}
+
+
 YQCP QCircuit::phase_estimation(
     YCVI ta, 
     const std::shared_ptr<const QCircuit>& A, 
@@ -1480,8 +1581,8 @@ YQCP QCircuit::phase_estimation(
 }
 
 
-YQCP QCircuit::qsvt_matrix_inversion(
-    QSVT_pars& data,
+YQCP QCircuit::qsvt_def_parity(
+    YCVQ phis,
     YCVI a_qsvt,
     YCVI qs_be, 
     const std::shared_ptr<const QCircuit> BE,
@@ -1544,13 +1645,11 @@ YQCP QCircuit::qsvt_matrix_inversion(
     // --- form the QSVT circuit for the odd polynomial (even number of angles) ---
     YMIX::YTimer timer;
     qreal aa;
-    auto phis = data.angles_phis_odd;
     auto N_angles = phis.size();
 
     // N_angles = 4;
 
-    timer.StartPrint("Creating the QSVT circuit for the matrix inversion... ");
-
+    timer.StartPrint("Creating the QSVT circuit... ");
     oc_qsvt->h(q);
 
     aa = 2*phis[0];
@@ -1585,15 +1684,19 @@ YQCP QCircuit::qsvt_matrix_inversion(
     }
     oc_qsvt->h(q);
     timer.StopPrint();
-
+    
     // --- invert the QSVT circuit if necessary ---
     if(flag_inv)
     {
+        timer.StartPrint("Inversion of the QSVT circuit... ");
+        YMIX::print_log("inversion of the QSVT circuit");
         oc_qsvt->conjugate_transpose();
         qsvt_name_tex += "^\\dagger";
+        timer.StopPrint();
     }
 
     // --- copy the QSVT env. circuit to the current circuit ---
+    timer.StartPrint("Transferring the QSVT circuit to the the circuit ["s + name_ + "]... ");
     auto circ_qubits = YVIv(qs_be);
     circ_qubits.insert(circ_qubits.end(), a_qsvt.begin(), a_qsvt.end());
 
@@ -1608,6 +1711,8 @@ YQCP QCircuit::qsvt_matrix_inversion(
         false,
         cs  
     );
+    timer.StopPrint();
+
     return get_the_circuit();
 }
 
@@ -1685,12 +1790,19 @@ void  QCircuit::qsvt_read_parameters(YCS filename_init, QSVT_pars& data)
     if(YMIX::compare_strings(data.type, "matrix-inversion"))
     {
         ff.read_vector(data.angles_phis_odd, "odd", "angles");
+        data.parity = 1;
+    }
+    if(YMIX::compare_strings(data.type, "gaussian-arcsin"))
+    {
+        ff.read_vector(data.angles_phis_even, "even", "angles");
+        data.parity = 0;
     }
     if(YMIX::compare_strings(data.type, "hamiltonian-sim"))
     {
         ff.read_scalar(data.nt,                 "nt", "basic");
         ff.read_vector(data.angles_phis_odd,   "odd", "angles");
         ff.read_vector(data.angles_phis_even, "even", "angles");
+        data.parity = -1;
     }
     ff.close();
 
@@ -1698,15 +1810,19 @@ void  QCircuit::qsvt_read_parameters(YCS filename_init, QSVT_pars& data)
     stringstream istr;
     istr << "   QSVT type:  " << data.type     << ";\n";
     istr << "   QSVT error: " << data.eps_qsvt << ";\n";
+    istr << "   Polynomial parity: "  << data.parity << ";\n";
     if(YMIX::compare_strings(data.type, "matrix-inversion"))
     {
-        istr << "   Polynomial parity: "  << "odd" << ";\n";
         istr << "   number of angles: " << data.angles_phis_odd.size() << ";\n";
         istr << "   kappa: " << data.f_par << ";\n";
     }
+    if(YMIX::compare_strings(data.type, "gaussian-arcsin"))
+    {
+        istr << "   number of angles: " << data.angles_phis_even.size() << ";\n";
+        istr << "   mu: " << data.f_par << ";\n";
+    }
     if(YMIX::compare_strings(data.type, "hamiltonian-sim"))
     {
-        istr << "   Polynomial parity: "  << "no definite parity" << ";\n";
         istr << "   number of angles: " << 
             data.angles_phis_odd.size() + data.angles_phis_even.size() << ";\n";
         istr << "   single time interval: " << data.f_par << ";\n";

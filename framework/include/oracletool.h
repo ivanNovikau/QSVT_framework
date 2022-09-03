@@ -33,13 +33,13 @@ private:
     void read_options(YISS str);
     void read_circuit_declaration(YISS istr);
     void read_circuit_structure(YISS istr);
-    void read_input_states(YISS istr);
+    void read_main_circuit(YISS istr);
     void read_gate(YISS istr, YPQC oc, YCB flag_inv=false);
     void read_subcircuit(YISS istr, YPQC oc, YCB flag_inv=false);
     void read_state(YISS istr);
     void read_state_init_file();
     qreal get_value_from_word(YCS word);
-    void  calc(std::shared_ptr<QCircuit>& u_work, YCI count_init_state, YMIX::YTimer& timer_comp);
+    void  calc(std::shared_ptr<QCircuit>& u_work, YCI count_init_state);
 
 private:
     // dictionary with constants to create the oracle:

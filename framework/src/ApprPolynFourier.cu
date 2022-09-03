@@ -25,17 +25,20 @@ using namespace std;
 
 struct FUNC_
 {
-    string sel;
+    string  sel;
     int32_t parity; // 0 - even, 1 - odd;
+    double  coef_norm;
 };
 
 const vector<FUNC_> avail_functions_ = {
-   {"inversion", 1}
+   {"inversion", 1, 0.125},
+   {"gaussian",  0, 0.98},
+   {"gaussian-arcsin",  0, 0.98},
 };
 
 struct FUNC_DATA_
 {
-    int32_t id;
+    int32_t id;      // ID of the function: specifies the function type: inversion, gaussian, exponential etc.
     int32_t parity;
     double param;
     double coef_norm;
@@ -52,18 +55,22 @@ void construct_polynomial(
     double*& x, double*& pol, double*& orig_func, double& err_res
 );
 void save_coefs(
+    const FUNC_& pars_func,
     const double& param, 
     const double& err_res, 
     const uint32_t& N_coefs, 
     double* coefs_real, 
     double* coefs_imag,
-    const double& coef_norm,
     const uint32_t& Nx_half, 
     const double* x, const double* pol, const double* orig_func
 );
 
 __global__ 
 void calc_coefs_odd(
+    uint32_t Nd, uint32_t N_coefs_device, double *coefs_real, double *coefs_imag
+);
+__global__ 
+void calc_coefs_even(
     uint32_t Nd, uint32_t N_coefs_device, double *coefs_real, double *coefs_imag
 );
 
@@ -120,9 +127,9 @@ int main(int argc, char *argv[])
         cout << "Error: the function with ID = {" << sel_function << "} is not defined." << endl;
         return -1;
     }
-    function_h.parity = avail_functions_[function_h.id].parity;
-    function_h.param = param;
-    function_h.coef_norm = 0.125;
+    function_h.parity    = avail_functions_[function_h.id].parity;
+    function_h.param     = param;
+    function_h.coef_norm = avail_functions_[function_h.id].coef_norm;
 
     cudaGetDeviceCount(&nDevices);
     if(nDevices == 0)
@@ -134,13 +141,14 @@ int main(int argc, char *argv[])
     cout << "Function to approximate: " << avail_functions_[function_h.id].sel << "\n";
     cout << "Its parity: \t" << function_h.parity << "\n";
     cout << "Parameter: \t" << param << "\n";
+    cout << "Rescaling parameter: \t" << function_h.coef_norm << "\n";
     cout << "Nd: \t" << Nd << "\n";
     cout << "N of avail. GPU devices: " << nDevices << endl;
 
     // assume that all devices have the same properties:
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
-    double coef_mem = 0.8;
+    double coef_mem = 0.9;
     uint32_t N_coefs_avail = coef_mem * prop.totalGlobalMem / (2*sizeof(double));
     cout << "Avail. GPU mem for coefs. (MB): " << 
         coef_mem * prop.totalGlobalMem / (1024 * 1024.) << "\n";
@@ -166,9 +174,13 @@ int main(int argc, char *argv[])
     construct_polynomial(coefs_real, N_coefs, function_h, Nx_half, x, pol, orig_fun, err_res);
   
     // --- Save the coefficients to the .hdf5 file ---
-    save_coefs(param, err_res, N_coefs, coefs_real, coefs_imag, function_h.coef_norm, Nx_half, x, pol, orig_fun);
-    
-
+    save_coefs(
+        avail_functions_[function_h.id],
+        param, err_res, N_coefs, 
+        coefs_real, coefs_imag, 
+        Nx_half, x, 
+        pol, orig_fun
+    );
     return 0;
 }
 
@@ -182,6 +194,18 @@ double F_CALC(const double& x) // if modified, change also F_CALC_HOST.
         double kappa = function_d_.param;
         return (function_d_.coef_norm/kappa) * (1. - exp(-pow(5*kappa*x, 2))) / x;
     }
+    // Gaussian(x):
+    if(function_d_.id == 1)
+    {
+        double mu = function_d_.param;
+        return function_d_.coef_norm * exp(-x*x/(2*mu*mu));
+    }
+    // Gaussian(arcsin(x)):
+    if(function_d_.id == 2)
+    {
+        double mu = function_d_.param;
+        return function_d_.coef_norm * exp(-asin(x)*asin(x)/(2*mu*mu));
+    }
     return 0; // function is missing;
 }
 
@@ -193,6 +217,18 @@ double F_CALC_HOST(const double& x, const FUNC_DATA_& function_h) // if modified
         double kappa = function_h.param;
         return (function_h.coef_norm/kappa) * (1. - exp(-pow(5*kappa*x, 2))) / x;
     }
+    // Gaussian(x):
+    if(function_h.id == 1)
+    {
+        double mu = function_h.param;
+        return function_h.coef_norm * exp(-x*x/(2*mu*mu));
+    }
+    // Gaussian(arcsin(x)):
+    if(function_h.id == 2)
+    {
+        double mu = function_h.param;
+        return function_h.coef_norm * exp(-asin(x)*asin(x)/(2*mu*mu));
+    }
     return 0; // function is missing;
 }
 
@@ -203,8 +239,9 @@ void calculate_coefficients(
 ){
     N_coefs = int(Nd/2.);
 
-    // ATTENTION: the case whether the number of coefficients > number of coefficients that can be stored
-    //  on a single GPU is not debugged:
+    // ATTENTION: the case where 
+    //  (the number of polynomial coefficients) > (number of coefficients that can be stored on a single GPU) 
+    // is not debugged:
     uint32_t N_coefs_device = (N_coefs > N_coefs_avail) ? N_coefs_avail: N_coefs;
     uint32_t N_iter         = int(N_coefs/N_coefs_avail) + 1;
     double* coefs_real_d;
@@ -241,9 +278,14 @@ void calculate_coefficients(
         cout << "\tN-blocks: "  << N_cuda_block        << "\n";
         cout << "\tN-threads: " << N_threads_per_block << "\n";
 
-        // CALCULATE the polynomial coefficients for the odd function:
+        // CALCULATE the polynomial coefficients for the ODD function:
         if(function_h.parity == 1)
             calc_coefs_odd<<<N_cuda_block, N_threads_per_block>>>(
+                Nd, N_coefs_device, coefs_real_d, coefs_imag_d
+            );
+        // CALCULATE the polynomial coefficients for the EVEN function:
+        if(function_h.parity == 0)
+            calc_coefs_even<<<N_cuda_block, N_threads_per_block>>>(
                 Nd, N_coefs_device, coefs_real_d, coefs_imag_d
             );
 
@@ -279,12 +321,27 @@ void construct_polynomial(
     orig_func = new double[2*Nx_half];
 
     // x-grid:
-    double inv_param = 1./function_h.param;
-    double dx = (1 - inv_param) / (Nx_half - 1);
-    for(auto ii = 0; ii < Nx_half; ii++)
-        x[ii] = -1 + dx * ii;
-    for(auto ii = 0; ii < Nx_half; ii++)
-        x[Nx_half + ii] = inv_param + dx * ii;
+    if(function_h.id == 0) // for the inversion function
+    {
+        double inv_param = 1./function_h.param;
+        double dx = (1. - inv_param) / (Nx_half - 1.);
+        for(auto ii = 0; ii < Nx_half; ii++)
+            x[ii] = -1 + dx * ii;
+        for(auto ii = 0; ii < Nx_half; ii++)
+            x[Nx_half + ii] = inv_param + dx * ii;
+    }
+    if(function_h.id == 1 || function_h.id == 2) // for the Gaussian
+    {
+        double dx = 2. / (2*Nx_half-1);
+        for(auto ii = 0; ii < (2*Nx_half); ii++)
+            x[ii] = -1 + dx * ii;
+
+        if(function_h.id == 2)
+        {
+            for(auto ii = 0; ii < (2*Nx_half); ii++)
+                x[ii] = sin(x[ii]);
+        }
+    }
 
     // Construct the polynomial (using only real coefficients) for the ODD function:
     if(function_h.parity == 1)
@@ -294,6 +351,17 @@ void construct_polynomial(
             double x_one = x[id_x];
             for(auto id_coef = 1; id_coef < N_coefs+1; id_coef++)
                 pol_one += coefs_real[id_coef - 1] * cos((2*id_coef-1)*acos(x_one));
+            pol[id_x] = pol_one;
+        }
+
+    // Construct the polynomial (using only real coefficients) for the EVEN function:
+    if(function_h.parity == 0)
+        for(auto id_x = 0; id_x < (2*Nx_half); id_x++)
+        {
+            double pol_one = 0;
+            double x_one = x[id_x];
+            for(auto id_coef = 0; id_coef < N_coefs; id_coef++)
+                pol_one += coefs_real[id_coef] * cos((2*id_coef)*acos(x_one));
             pol[id_x] = pol_one;
         }
 
@@ -318,7 +386,7 @@ __global__ void calc_coefs_odd(
 ){
     // printf("id-thread = %u, parity = %d\n", threadIdx.x, function_d_.parity);
     auto idx = blockIdx.x * blockDim.x + threadIdx.x;
-    uint32_t N_quad = 2 * Nd; // or try 1, 4, 8, 16
+    uint32_t N_quad = 2 * Nd; 
 
     if(idx < N_coefs_device)
     {
@@ -341,18 +409,52 @@ __global__ void calc_coefs_odd(
 }
 
 
+__global__ void calc_coefs_even(
+    uint32_t Nd, uint32_t N_coefs_device, double *coefs_real, double *coefs_imag 
+){
+    // printf("id-thread = %u, parity = %d\n", threadIdx.x, function_d_.parity);
+    auto idx = blockIdx.x * blockDim.x + threadIdx.x;
+    uint32_t N_quad = 2 * Nd; 
+
+    if(idx < N_coefs_device)
+    {
+        uint32_t ii = 2 * idx;
+        double coef_in_front = pow(-1, ii) / N_quad;
+        if(ii == 0) coef_in_front = coef_in_front/2.;
+        double sum_temp_real = 0;
+        double sum_temp_imag = 0;
+        double temp;
+        double th;
+        for(uint32_t kk = 0; kk < 2*N_quad; kk++)
+        {
+            th = M_PI * kk / N_quad;
+            temp = F_CALC(-cos(th));
+            sum_temp_real += temp * cos(ii * th);
+            sum_temp_imag += temp * sin(ii * th);
+        }
+        coefs_real[idx] = coef_in_front * sum_temp_real;
+        coefs_imag[idx] = coef_in_front * sum_temp_imag;
+    }
+}
+
+
 void save_coefs(
+    const FUNC_& pars_func,
     const double& param, 
     const double& err_res, 
     const uint32_t& N_coefs, 
     double* coefs_real, 
     double* coefs_imag,
-    const double& coef_norm,
     const uint32_t& Nx_half, 
     const double* x, const double* pol, const double* orig_func
 ){
     std::stringstream sstr;
-    sstr << "./coef_xodd_" << int(param) << "_" << round(-log10(err_res)) << ".hdf5";
+    // if(pars_func.sel == "inversion")
+    //     sstr << "./coef_xodd_" << int(param) << "_" << round(-log10(err_res)) << ".hdf5";
+    // if(pars_func.parity == 0)
+    //     sstr << "./coef_xeven_" << to_string(param) << "_" << round(-log10(err_res)) << ".hdf5";
+
+    sstr << pars_func.sel << "_" << to_string(param) << "_" << round(-log10(err_res)) << ".hdf5";
 
     string filename_hdf5 = sstr.str(); 
     H5::H5File* f_ = new H5::H5File(filename_hdf5, H5F_ACC_TRUNC);
@@ -361,7 +463,7 @@ void save_coefs(
     H5::Group grp_functions(f_->createGroup("functions"));
 
     // description of the data:
-    string descr = "coefs. for the inversion function";
+    string descr = pars_func.sel;
     H5::StrType dtype_descr(H5::PredType::C_S1, descr.size()+1);
     H5::DataSet dataset_descr = grp_basic.createDataSet(
         "descr", 
@@ -398,13 +500,13 @@ void save_coefs(
     );
     dataset_err.write((int*) &err_res, H5::PredType::NATIVE_DOUBLE);
 
-    // save the function normalization factor:
+    // save the rescaling factor of the function:
     H5::DataSet dataset_factor_norm = grp_basic.createDataSet(
         "coef_norm", 
         H5::PredType::NATIVE_DOUBLE, 
         H5::DataSpace(H5S_SCALAR)
     );
-    dataset_factor_norm.write((int*) &coef_norm, H5::PredType::NATIVE_DOUBLE);
+    dataset_factor_norm.write((int*) &(pars_func.coef_norm), H5::PredType::NATIVE_DOUBLE);
 
     // save the coefficients:
     hsize_t dims_coefs[] = {N_coefs};
