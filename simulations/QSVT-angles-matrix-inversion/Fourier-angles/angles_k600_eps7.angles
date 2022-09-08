@@ -1,5 +1,5 @@
 600
-1.000e-07
+1.443e-07
 20000
       1.57079632730e+00
       1.57079632629e+00
@@ -20009,6 +20009,6 @@
 - Parity: 		odd
 - Degree: 		19999
 - Iteration times: 	9
-- CPU time: 	9237.1 s
+- CPU time: 	9653.5 s
 - Approximation error is bounded to 	1.000e-07
 - Linf approximation error: 	1.44e-07

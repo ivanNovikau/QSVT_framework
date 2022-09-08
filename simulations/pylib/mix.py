@@ -741,7 +741,7 @@ def write_profile_condR(name_var, var_to_write, path_root):
 
 def write_init_state(name_var, path_root, init_real, init_imag):
     fname = path_root + "/" + name_var + "_INIT_STATE.hdf5"
-    print("writing the initial state oto the file:\n" + fname)
+    print("writing the initial state to the file:\n" + fname)
     with h5py.File(fname, "w") as f:
         grp = f.create_group("init_state")
         grp.create_dataset('real', data=init_real)

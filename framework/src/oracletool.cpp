@@ -167,11 +167,11 @@ void OracleTool__::read_options(YISS istr)
 
         // output some options:
         YMIX::print_log( "\n--- Initial OPTIONS ---");
-        if(!YMIX::compare_strings(sel_compute_output_, "none"))
+        if(YMIX::compare_strings(sel_compute_output_, "none"))
             YMIX::print_log("-> do not compute output states.");
         if(YMIX::compare_strings(sel_compute_output_, "all"))
             YMIX::print_log("-> compute all output states.");
-        if(YMIX::compare_strings(sel_compute_output_, "zero-ancillae are in the zero state."))
+        if(YMIX::compare_strings(sel_compute_output_, "zero-ancillae"))
             YMIX::print_log("-> compute only output states, where all ancillae are in the zero state.");
         if(!flag_circuit_)        YMIX::print_log("-> do not write the " + FORMAT_CIRCUIT + " files.");
         if(!flag_tex_)            YMIX::print_log("-> do not write the " + FORMAT_TEX + " file.");
@@ -373,9 +373,14 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
             oc->read_structure_gate_condR_split(istr, path_inputs_, flag_inv);
             return;
         }
-        if(YMIX::compare_strings(gate_name, "adder1"))
+        if(YMIX::compare_strings(gate_name, YVSv{"incrementor", "adder1"}))
         {
             oc->read_structure_gate_adder1(istr, path_inputs_, flag_inv);
+            return;
+        }
+        if(YMIX::compare_strings(gate_name, YVSv{"decrementor", "subtractor1"}))
+        {
+            oc->read_structure_gate_subtractor1(istr, path_inputs_, flag_inv);
             return;
         }
         if(YMIX::compare_strings(gate_name, "adder"))
@@ -383,9 +388,24 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
             oc->read_structure_gate_adder(istr, path_inputs_, flag_inv);
             return;
         }
-        if(YMIX::compare_strings(gate_name, "subtractor1"))
+        if(YMIX::compare_strings(gate_name, "subtractor"))
         {
-            oc->read_structure_gate_subtractor1(istr, path_inputs_, flag_inv);
+            oc->read_structure_gate_subtractor(istr, path_inputs_, flag_inv);
+            return;
+        }
+        if(YMIX::compare_strings(gate_name, "AdderFixed"))
+        {
+            oc->read_structure_gate_adder_fixed(istr, path_inputs_, flag_inv);
+            return;
+        }
+        if(YMIX::compare_strings(gate_name, "SubtractorFixed"))
+        {
+            oc->read_structure_gate_subtractor_fixed(istr, path_inputs_, flag_inv);
+            return;
+        }
+        if(YMIX::compare_strings(gate_name, "ComparatorFixed"))
+        {
+            oc->read_structure_gate_comparator_fixed(istr, path_inputs_, flag_inv);
             return;
         }
         if(YMIX::compare_strings(gate_name, "swap"))

@@ -276,6 +276,15 @@ class MeasOracle__:
         return
 
 
+    def read_qsvt_angles(self, str_parity):
+        # str_parity: "odd" or "even"
+        with h5py.File(self.dd_["fname"], "r") as f:
+            gr = f["qsvt"]
+            self.dd_["qsvt"]["angles-{:s}".format(str_parity)] = \
+                np.array(gr["angles-{:s}".format(str_parity)])
+        return
+
+
     def get_x_grid(self, reg_x):
         reg_nq = self.dd_["regs"][reg_x]
         N = 2**reg_nq

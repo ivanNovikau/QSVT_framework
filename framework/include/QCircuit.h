@@ -111,7 +111,6 @@ class QCircuit{
      * @brief Add a register. 
      * The first added register is placed at the top of the circuit 
      * (is the most significant register).
-     * Within the register, the 0-th elementin
      * @param[in] name name of the register;
      * @param[in] n_qubits number of qubits in the register;
      * @param[in] flag_ancilla if true, it is an ancilla register;
@@ -224,6 +223,10 @@ class QCircuit{
     void read_structure_gate_adder1(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_subtractor1(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_adder(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_subtractor(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_adder_fixed(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_subtractor_fixed(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_comparator_fixed(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_swap(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_sin(YISS istr, YCS path_in, YCB flag_inv=false);
@@ -516,10 +519,10 @@ class QCircuit{
     inline YQCP cnot(YCI c, YCI t){ return x(t, YVIv {c}); }
 
     /** @brief integer encoded to \p ts is incremented */
-    YQCP adder_by_one(YCVI ts, YCVI cs, YCB flag_inv);
+    YQCP adder_by_one(YCVI ts, YCVI cs= {}, YCB flag_inv= false);
 
     /** @brief integer encoded to \p ts is decremented */
-    YQCP subtractor_by_one(YCVI ts, YCVI cs, YCB flag_inv);
+    YQCP subtractor_by_one(YCVI ts, YCVI cs = {}, YCB flag_inv= false);
 
     /** @brief addition of two variables (v1 and v2) encoded to the registers \p ts1 and \p ts2;
      * the three registers must be of the same size;
@@ -528,7 +531,62 @@ class QCircuit{
      * The qubits ts3[1:] are used to store carry bits and are returned in the zero state.
      * @param flag_box if true, draw the operator as a box, not as a circuit;
      */
-    YQCP adder(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv = false, YCB flag_box = false);
+    YQCP adder(
+        YCVI ts1, YCVI ts2, YCVI ts3, 
+        YCVI cs = {}, YCB flag_inv = false, YCB flag_box = false
+    );
+
+
+    /** @brief Subtraction of two variables (v1 and v2) encoded to the registers \p ts1 and \p ts2;
+     * The three registers must be of the same size.
+     * The output (v1 - v2) is written to the qubits [ts2[:], ts3[0]], where \p ts3[0] is the sign bit,
+     * and |1>|00...0> corresponds to -1.
+     * The register ts3 must be initialized to the zero state.
+     * The qubits ts3[1:] are used to store carry bits and are returned in the zero state.
+     */
+    YQCP subtractor(
+        YCVI ts1, YCVI ts2, YCVI ts3, 
+        YCVI cs = {}, YCB flag_inv = false
+    );
+
+
+    /** @brief addition of the unsigned integer \p int_sub to the unisgned integer encoded
+     * into the qubits \p ids_target.
+     * Results are stored back to \p ids_target.
+     * The carry bit is written to the qubit \p id_carry.
+     * The carry bit must be more significant than the qubits \p ids_target.
+     */
+    YQCP adder_fixed(
+        YCVI ids_target, YCI id_carry, YCU int_sub, 
+        YCVI cs = {}, YCB flag_inv = false, YCB flag_box = false
+    );
+
+
+    /** @brief Integer, encoded within \p ids_target, - int_sub.
+     * The results is written back to \p ids_target.
+     * The sign bit is written to the qubit \p id_carry.
+     * The carry bit must be more significant than the qubits \p ids_target.
+     * Result |1>|00...0> means -1;
+     * |1>|00...1>  -> -2 etc.
+     */
+    YQCP subtractor_fixed(
+        YCVI ids_target, YCI id_carry, YCU int_sub, 
+        YCVI cs = {}, YCB flag_inv = false
+    );
+
+
+    /** @brief Compare unsigned integer \p int_sub with the unsigned integer encoded
+     * within \p ids_target, call it uint_ref here.
+     * If (\p int_sub > uint_ref), then the bit \p ids_carry[1] is inverted.
+     * \p ids_carry must include two qubits, where \p ids_carry[1] is the most significant one.
+     * The qubits \p ids_carry must be more significant than \p ids_target.
+     * The states of the qubits \p ids_target and \p ids_carry[0] are remained untouched.
+     */
+    YQCP comparator_fixed(
+        YCVI ids_target, YCVI ids_carry, YCU int_sub, 
+        YCVI cs = {}, YCB flag_inv = false
+    );
+
 
     /** @brief Add a swap operator between qubits \p t1 and \p t2. */
     YQCP swap(YCI t1, YCI t2, YVIv cs = {});
@@ -537,7 +595,7 @@ class QCircuit{
      *         controlled by the qubits \p cs;
      * @param flag_box if true, draw the operator as a box, not as a circuit;
      */
-    YQCP quantum_fourier(YCVI ts, YCVI cs, YCB flag_inv = false, YCB flag_box = false);
+    YQCP quantum_fourier(YCVI ts, YCVI cs = {}, YCB flag_inv = false, YCB flag_box = false);
 
     /** @brief Create sin(x), where x_j = alpha_0 + j*dx, j = [0, Nx-1], Nx = 2^size(\p conds),
      * dx = 2*alpha / Nx.
@@ -551,7 +609,7 @@ class QCircuit{
         YCVI conds, 
         YCQR alpha_0, 
         YCQR alpha, 
-        YCVI cs, 
+        YCVI cs = {}, 
         YCB flag_inv = false, 
         YCB flag_box = false
     );
@@ -569,7 +627,7 @@ class QCircuit{
         const std::shared_ptr<const QCircuit>& A, 
         const std::shared_ptr<const QCircuit>& INIT,
         YCVI ty, 
-        YCVI cs, 
+        YCVI cs = {}, 
         YCB flag_inv = false,
         YCB flag_box = false
     );
@@ -585,7 +643,7 @@ class QCircuit{
         YCVI a_qsvt,
         YCVI qs_be, 
         const std::shared_ptr<const QCircuit> BE,
-        YCVI cs, 
+        YCVI cs = {}, 
         YCB flag_inv = false,
         YCB flag_box = false
     );

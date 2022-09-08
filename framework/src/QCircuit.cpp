@@ -1078,6 +1078,113 @@ void QCircuit::read_structure_gate_adder(YISS istr, YCS path_in, YCB flag_inv)
 }
 
 
+void QCircuit::read_structure_gate_subtractor(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target_1, ids_target_2, ids_target_3, ids_control, ids_x;
+    long long nt;
+
+    // --- read target qubits ---
+    read_reg_int(istr, ids_target_1);
+    read_reg_int(istr, ids_target_2);
+    read_reg_int(istr, ids_target_3);
+
+    if(ids_target_1.size() != ids_target_2.size())
+        throw string("target registers must have the same size");
+    if(ids_target_1.size() != ids_target_3.size())
+        throw string("target registers must have the same size");
+    if(ids_target_2.size() != ids_target_3.size())
+        throw string("target registers must have the same size");
+
+    // --- read the end of the gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // --- adder of two variables ---
+    x(ids_x); 
+    subtractor(ids_target_1, ids_target_2, ids_target_3, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
+void QCircuit::read_structure_gate_adder_fixed(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target, ids_carry_temp, ids_control, ids_x;
+    int  id_carry;
+    uint32_t int_sub;
+    string word;
+
+    // --- read the gate parameters ---
+    read_reg_int(istr, ids_target);
+    
+    istr >> word;
+    int_sub = get_value_from_word(word);
+
+    read_reg_int(istr, ids_carry_temp);
+    id_carry = ids_carry_temp[0];
+
+    // --- read the end of the gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // --- adder of two variables ---
+    x(ids_x); 
+    adder_fixed(ids_target, id_carry, int_sub, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
+void QCircuit::read_structure_gate_subtractor_fixed(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target, ids_carry_temp, ids_control, ids_x;
+    int  id_carry;
+    uint32_t int_sub;
+    string word;
+
+    // --- read the gate parameters ---
+    read_reg_int(istr, ids_target);
+    
+    istr >> word;
+    int_sub = get_value_from_word(word);
+
+    read_reg_int(istr, ids_carry_temp);
+    id_carry = ids_carry_temp[0];
+
+    // --- read the end of the gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // --- adder of two variables ---
+    x(ids_x); 
+    subtractor_fixed(ids_target, id_carry, int_sub, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
+void QCircuit::read_structure_gate_comparator_fixed(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target, ids_carry, ids_control, ids_x;
+    uint32_t int_sub;
+    string word;
+
+    // --- read the gate parameters ---
+    read_reg_int(istr, ids_target);
+    
+    istr >> word;
+    int_sub = get_value_from_word(word);
+
+    read_reg_int(istr, ids_carry);
+
+    // --- read the end of the gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // --- adder of two variables ---
+    x(ids_x); 
+    comparator_fixed(ids_target, ids_carry, int_sub, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
 void QCircuit::read_structure_gate_swap(YISS istr, YCS path_in, YCB flag_inv)
 {
     YVIv ids_target_1, ids_target_2, ids_control, ids_x;
@@ -1113,7 +1220,7 @@ void QCircuit::read_structure_gate_fourier(YISS istr, YCS path_in, YCB flag_inv)
 
     // add the quantum Fourier circuit:
     x(ids_x);
-    quantum_fourier(ids_target, ids_control, flag_inv);
+    quantum_fourier(ids_target, ids_control, flag_inv, true);
     x(ids_x);
 }
 
@@ -1364,6 +1471,126 @@ YQCP QCircuit::adder(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv, YCB fl
 }
 
 
+YQCP QCircuit::subtractor(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv)
+{
+    if(flag_inv) x(ts2, cs);
+    else         x(ts1, cs);
+    adder(ts1, ts2, ts3, cs, flag_inv);
+    if(flag_inv) x(ts1, cs);
+    else         x(ts2, cs);
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::adder_fixed(
+        YCVI ids_target, YCI id_carry, YCU int_sub, 
+        YCVI cs, YCB flag_inv, YCB flag_box
+){
+    int nv       = ids_target.size();
+    int nt_total = nv + 1;
+    string oracle_name_tex = "ADDFIXED";
+
+    // --- represent the unisgned integer as a bitstring ---
+    YVshv bitstring_int(nt_total);
+    YMATH::intToBinary(int_sub, bitstring_int);
+
+    // cout << "bitstring: ";
+    // for(int i = 0; i < bitstring_int.size(); i++)
+    //     cout << bitstring_int[i] << " ";
+    // cout << endl;
+
+    // --- create an envelop circuit for the adder operator ---
+    auto oc_adder = make_shared<QCircuit>(
+        "ADD-FIXED", env_, path_to_output_, nt_total
+    );
+    auto r_all = oc_adder->add_register("r", nt_total);
+
+    oc_adder->quantum_fourier(r_all);
+
+    // starting from the most significant qubit (which is the carry bit):
+    int n_phase_gates_per_qubit = 0;
+    for(int i_qubit = nt_total-1; i_qubit >= 0; i_qubit--)
+    {
+        n_phase_gates_per_qubit++;
+        for(int j_ph_gate = 0; j_ph_gate < n_phase_gates_per_qubit; j_ph_gate++)
+            if(bitstring_int[nt_total - j_ph_gate - 1] == 1)
+            {
+                double phase_curr = 2*M_PI / (1<<(n_phase_gates_per_qubit - j_ph_gate));
+                oc_adder->phase(i_qubit, phase_curr);
+            }
+    }
+    oc_adder->quantum_fourier(r_all, YVIv{}, true);
+
+    // --- invert the circuit if necessary ---
+    if(flag_inv)
+    {
+        oc_adder->conjugate_transpose();
+        oracle_name_tex += "^\\dagger";
+    }
+
+    // --- copy the adder circuit to the current circuit ---
+    auto ts_total = YVIv(ids_target);
+    ts_total.push_back(id_carry);
+
+    auto box = YSB(nullptr);
+    if(flag_box)
+        box = YMBo("ADDFIXED", ts_total, YVIv{}, oracle_name_tex);
+    copy_gates_from(
+        oc_adder,
+        ts_total,
+        box, 
+        false,    
+        cs 
+    );
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::subtractor_fixed(
+        YCVI ids_target, YCI id_carry, YCU int_sub, 
+        YCVI cs, YCB flag_inv
+){
+    auto ts_total = YVIv(ids_target);
+    ts_total.push_back(id_carry);
+
+    auto cs_total_for_x = YVIv(cs);
+    cs_total_for_x.push_back(id_carry);
+
+    if(flag_inv) 
+        for(int ii = 0; ii < ids_target.size(); ii++)
+            x(ids_target[ii], cs_total_for_x);
+            
+    x(ts_total, cs);
+    adder_fixed(ids_target, id_carry, int_sub, cs, flag_inv);
+    x(ts_total, cs);
+
+    if(!flag_inv) 
+        for(int ii = 0; ii < ids_target.size(); ii++)
+            x(ids_target[ii], cs_total_for_x);
+
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::comparator_fixed(
+        YCVI ids_target, YCVI ids_carry, YCU int_sub, 
+        YCVI cs, YCB flag_inv
+){
+    bool flag_inv_inv = !flag_inv;
+
+    if(flag_inv_inv)
+        cout << "comparator: here" << endl;
+
+    auto cs_total_for_x = YVIv(cs);
+    cs_total_for_x.push_back(ids_carry[0]);
+
+    subtractor_fixed(ids_target, ids_carry[0], int_sub, cs);
+    x(ids_carry[1], cs_total_for_x);
+    subtractor_fixed(ids_target, ids_carry[0], int_sub, cs, true);
+    return get_the_circuit();
+}
+
+
 YQCP QCircuit::swap(YCI t1, YCI t2, YVIv cs)
 { 
     YVIv ids_cs_1 = {t1};
@@ -1537,7 +1764,11 @@ YQCP QCircuit::phase_estimation(
     );
     auto qy = oc_pe->add_register("y", ny);
     auto qa = oc_pe->add_register("a", nq_A);
-    oc_pe->copy_gates_from(INIT, qa, YMBo("INIT", qa, YVIv{}));
+    oc_pe->copy_gates_from(
+        INIT, qa, 
+        YMBo("INIT", qa, YVIv{})
+        // YSB(nullptr)
+    );
     oc_pe->h(qy);
     for(auto& one_sequ: sequs_A)
     {
@@ -1617,6 +1848,9 @@ YQCP QCircuit::qsvt_def_parity(
     auto loc_a_be   = oc_qsvt->add_register("a-be", n_be_anc); // ancillae of the BE oracle;
     auto loc_in     = oc_qsvt->add_register("in", n_be - n_be_anc); // input (main) qubits of the BE oracle;
 
+    auto loc_all_be = YVIv(loc_in);
+    loc_all_be.insert(loc_all_be.end(), loc_a_be.begin(), loc_a_be.end());
+
     int q = loc_a_qsvt[0];
     
     // cout << "\nloc_a_be:\n";
@@ -1658,10 +1892,18 @@ YQCP QCircuit::qsvt_def_parity(
     oc_qsvt->x(loc_a_be);
     for(uint32_t count_angle = 1; count_angle < N_angles; ++count_angle)
     {
-        oc_qsvt->insert_gates_from(
-            oc_be.get(), 
-            make_shared<Box__>("U", be_qubits, YVIv {})
-        );
+        if(flag_inv)
+            oc_qsvt->copy_gates_from(
+                oc_be, 
+                loc_all_be,
+                make_shared<Box__>("U", be_qubits, YVIv {})
+            );
+        else
+            oc_qsvt->insert_gates_from(
+                oc_be.get(), 
+                make_shared<Box__>("U", be_qubits, YVIv {})
+            );
+        
         if(count_angle == (N_angles - 1)) // set the Z-gate only if N_angles is even (odd polynomial)
             oc_qsvt->z(q);
         aa = 2*phis[count_angle];
@@ -1672,10 +1914,17 @@ YQCP QCircuit::qsvt_def_parity(
         count_angle += 1;
         if(count_angle < N_angles)
         {
-            oc_qsvt->insert_gates_from(
-                oc_be_inv.get(), 
-                make_shared<Box__>("iU", be_qubits, YVIv {})
-            );
+            if(flag_inv)
+                oc_qsvt->copy_gates_from(
+                    oc_be_inv,
+                    loc_all_be, 
+                    make_shared<Box__>("iU", be_qubits, YVIv {})
+                );
+            else
+                oc_qsvt->insert_gates_from(
+                    oc_be_inv.get(), 
+                    make_shared<Box__>("iU", be_qubits, YVIv {})
+                );
             aa = 2*phis[count_angle];
             oc_qsvt->x(loc_a_be);
             oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
@@ -1703,6 +1952,8 @@ YQCP QCircuit::qsvt_def_parity(
     auto box = YSB(nullptr);
     if(flag_box)
         box = YMBo("QSVT", circ_qubits, YVIv{}, qsvt_name_tex);
+        if(flag_inv)
+            box = YMBo("QSVTcc", circ_qubits, YVIv{}, qsvt_name_tex);
 
     copy_gates_from(
         oc_qsvt,

@@ -193,7 +193,7 @@ namespace YMATH{
     * 6 -> {1, 1, 0} etc.
     * @param[out] binaryNum resulting array of bits. Its size must have been initialized.
     */
-    void intToBinary(int x, std::vector<short>& binaryNum);
+    void intToBinary(int x, YVsh binaryNum);
 
     /**
      * @brief Convert an array of bits to a corresponding integer.
