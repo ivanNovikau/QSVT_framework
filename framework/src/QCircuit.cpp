@@ -1473,11 +1473,24 @@ YQCP QCircuit::adder(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv, YCB fl
 
 YQCP QCircuit::subtractor(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv)
 {
-    if(flag_inv) x(ts2, cs);
-    else         x(ts1, cs);
+    // if(flag_inv) x(ts2, cs);
+    // else         x(ts1, cs);
+    // adder(ts1, ts2, ts3, cs, flag_inv);
+    // if(flag_inv) x(ts1, cs);
+    // else         x(ts2, cs);
+
+    if(flag_inv) 
+        for(int ii = 0; ii < ts2.size(); ii++)
+            x(ts2[ii], YVIv{ts3[0]});
+
+    x(ts2, cs);
     adder(ts1, ts2, ts3, cs, flag_inv);
-    if(flag_inv) x(ts1, cs);
-    else         x(ts2, cs);
+    x(ts2, cs);
+
+    if(!flag_inv) 
+        for(int ii = 0; ii < ts2.size(); ii++)
+            x(ts2[ii], YVIv{ts3[0]});
+
     return get_the_circuit();
 }
 
