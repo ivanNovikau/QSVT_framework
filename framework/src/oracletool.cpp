@@ -60,7 +60,7 @@ void OracleTool__::read_circuit_structure_from_file(YCS data)
 
     // check if the circuit to launch is defined:
     if(!oc_to_launch_)
-        throw "Error: The circuit to launch is not defined (there is not a section MAIN_CIRCUIT)."s;
+        throw "Error: The circuit to launch is not defined (the section MAIN_CIRCUIT is absent)."s;
 
     // write circuits to corresponding files:
     for(auto const& it: ocs_)
@@ -669,31 +669,42 @@ void OracleTool__::launch()
     hfo_.add_vector(u_work->get_standart_output_format(), "register-nq", "basic");
 
     // if QSVT, store its parameters:
-    if(!qsvt_data_.type.empty())
+    if(!qsvt_data_.empty())
     {
         YMIX::print_log("Saving QSVT parameters...");
-        
         hfo_.add_group("qsvt");
+        hfo_.add_scalar(qsvt_data_.size(), "n-qsvt-circuits", "qsvt");
 
-        hfo_.add_scalar(qsvt_data_.type,    "type", "qsvt");
-        hfo_.add_scalar(qsvt_data_.eps_qsvt, "eps", "qsvt");
-        hfo_.add_scalar(qsvt_data_.parity, "parity", "qsvt");
-        if(YMIX::compare_strings(qsvt_data_.type, "matrix-inversion"))
+        int counter_qsvt = -1;
+        for(auto const& [name_qsvt_gate, qsvt_data_one] : qsvt_data_)
         {
-            hfo_.add_scalar(qsvt_data_.f_par, "kappa", "qsvt");
-            hfo_.add_scalar(qsvt_data_.angles_phis_odd, "angles-odd", "qsvt");
-        }
-        if(YMIX::compare_strings(qsvt_data_.type, "gaussian-arcsin"))
-        {
-            hfo_.add_scalar(qsvt_data_.f_par, "mu", "qsvt");
-            hfo_.add_scalar(qsvt_data_.angles_phis_even, "angles-even", "qsvt");
-        }
-        if(YMIX::compare_strings(qsvt_data_.type, "hamiltonian-sim"))
-        {
-            hfo_.add_scalar(qsvt_data_.f_par, "dt", "qsvt");
-            hfo_.add_scalar(qsvt_data_.nt, "nt", "qsvt");
-            hfo_.add_scalar(qsvt_data_.angles_phis_odd, "angles-odd", "qsvt");
-            hfo_.add_scalar(qsvt_data_.angles_phis_even, "angles-even", "qsvt");
+            ++counter_qsvt;
+            string name_gr = "qsvt-"s + name_qsvt_gate;
+
+            hfo_.add_scalar(name_gr, "name-"s + to_string(counter_qsvt), "qsvt");
+
+            hfo_.add_group(name_gr);
+            hfo_.add_scalar(name_qsvt_gate,         "name",   name_gr);
+            hfo_.add_scalar(qsvt_data_one.type,     "type",   name_gr);
+            hfo_.add_scalar(qsvt_data_one.eps_qsvt, "eps",    name_gr);
+            hfo_.add_scalar(qsvt_data_one.parity,   "parity", name_gr);
+            if(YMIX::compare_strings(qsvt_data_one.type, "matrix-inversion"))
+            {
+                hfo_.add_scalar(qsvt_data_one.f_par, "kappa", name_gr);
+                hfo_.add_scalar(qsvt_data_one.angles_phis_odd, "angles-odd", name_gr);
+            }
+            if(YMIX::compare_strings(qsvt_data_one.type, "gaussian-arcsin"))
+            {
+                hfo_.add_scalar(qsvt_data_one.f_par, "mu", name_gr);
+                hfo_.add_scalar(qsvt_data_one.angles_phis_even, "angles-even", name_gr);
+            }
+            if(YMIX::compare_strings(qsvt_data_one.type, "hamiltonian-sim"))
+            {
+                hfo_.add_scalar(qsvt_data_one.f_par, "dt", name_gr);
+                hfo_.add_scalar(qsvt_data_one.nt, "nt", name_gr);
+                hfo_.add_scalar(qsvt_data_one.angles_phis_odd, "angles-odd", name_gr);
+                hfo_.add_scalar(qsvt_data_one.angles_phis_even, "angles-even", name_gr);
+            }
         }
     }
 

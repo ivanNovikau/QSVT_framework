@@ -242,46 +242,74 @@ class MeasOracle__:
 
     def read_qsvt(self):
         with h5py.File(self.dd_["fname"], "r") as f:
-            gr = f["qsvt"]
+            gr_qsvt = f["qsvt"]
 
-            self.dd_["qsvt"] = {}
-            self.dd_["qsvt"]["type"] = gr["type"][()].decode("utf-8")
-            self.dd_["qsvt"]["eps"] = gr["eps"][()]
-            if self.dd_["qsvt"]["type"] == "matrix-inversion":
-                self.read_qsvt_matrix_inversion(gr)
-            if self.dd_["qsvt"]["type"] == "gaussian-arcsin":
-                self.read_qsvt_gaussian_arcsin(gr)
-            if self.dd_["qsvt"]["type"] == "hamiltonian-sim":
-                self.read_qsvt_hamiltonian_sim(gr)   
+            temp_str = "n-qsvt-circuits"
+            if temp_str not in gr_qsvt:
+                n_qsvt = 1
+            else:
+                n_qsvt = int(gr_qsvt[temp_str][()])
+
+            self.dd_["qsvt-names"] = [None]*n_qsvt
+            for ii in range(n_qsvt):
+                temp_str = "name-{:d}".format(ii)
+                if temp_str not in gr_qsvt:
+                    name_qsvt = "qsvt"
+                else:
+                    name_qsvt = gr_qsvt[temp_str][()].decode("utf-8")
+                self.dd_["qsvt-names"][ii] = name_qsvt
+
+            for ii in range(n_qsvt):
+                name_qsvt = self.dd_["qsvt-names"][ii]
+                gr_one = f[name_qsvt]
+
+                self.dd_[name_qsvt] = {}
+                self.dd_[name_qsvt]["type"] = gr_one["type"][()].decode("utf-8")
+                self.dd_[name_qsvt]["eps"] = gr_one["eps"][()]
+                if self.dd_[name_qsvt]["type"] == "matrix-inversion":
+                    self.read_qsvt_matrix_inversion(name_qsvt, gr_one)
+                if self.dd_[name_qsvt]["type"] == "gaussian-arcsin":
+                    self.read_qsvt_gaussian_arcsin(name_qsvt, gr_one)
+                if self.dd_[name_qsvt]["type"] == "hamiltonian-sim":
+                    self.read_qsvt_hamiltonian_sim(name_qsvt, gr_one)   
         return
 
 
-    def read_qsvt_matrix_inversion(self, gr):
-        self.dd_["qsvt"]["kappa"] = gr["kappa"][()]
-        print("kappa: {:0.3f}".format(self.dd_["qsvt"]["kappa"]))
+    def read_qsvt_matrix_inversion(self, name_qsvt, gr):
+        self.dd_[name_qsvt]["kappa"] = gr["kappa"][()]
+
+        print("\n--- QSVT: {:s}".format(name_qsvt))
+        print("kappa: {:0.3f}".format(self.dd_[name_qsvt]["kappa"]))
         return
 
 
-    def read_qsvt_gaussian_arcsin(self, gr):
-        self.dd_["qsvt"]["mu"] = gr["mu"][()]
-        print("mu: {:0.3f}".format(self.dd_["qsvt"]["mu"]))
+    def read_qsvt_gaussian_arcsin(self, name_qsvt, gr):
+        self.dd_[name_qsvt]["mu"] = gr["mu"][()]
+
+        print("\n--- QSVT: {:s}".format(name_qsvt))
+        print("mu: {:0.3f}".format(self.dd_[name_qsvt]["mu"]))
         return
 
 
-    def read_qsvt_hamiltonian_sim(self, gr):
-        self.dd_["qsvt"]["dt"] = gr["dt"][()]
-        self.dd_["qsvt"]["nt"] = gr["nt"][()]
-        print("dt: {:0.3f}".format(self.dd_["qsvt"]["dt"]))
-        print("nt: {:0.3f}".format(self.dd_["qsvt"]["nt"]))
+    def read_qsvt_hamiltonian_sim(self, name_qsvt, gr):
+        self.dd_[name_qsvt]["dt"] = gr["dt"][()]
+        self.dd_[name_qsvt]["nt"] = gr["nt"][()]
+
+        print("\n--- QSVT: {:s}".format(name_qsvt))
+        print("dt: {:0.3f}".format(self.dd_[name_qsvt]["dt"]))
+        print("nt: {:0.3f}".format(self.dd_[name_qsvt]["nt"]))
         return
 
 
     def read_qsvt_angles(self, str_parity):
         # str_parity: "odd" or "even"
+
         with h5py.File(self.dd_["fname"], "r") as f:
-            gr = f["qsvt"]
-            self.dd_["qsvt"]["angles-{:s}".format(str_parity)] = \
-                np.array(gr["angles-{:s}".format(str_parity)])
+            for ii in range(len(self.dd_["qsvt-names"])):
+                name_qsvt = self.dd_["qsvt-names"][ii]
+                gr = f[name_qsvt]
+                self.dd_[name_qsvt]["angles-{:s}".format(str_parity)] = \
+                    np.array(gr["angles-{:s}".format(str_parity)])
         return
 
 

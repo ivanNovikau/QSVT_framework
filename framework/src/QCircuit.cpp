@@ -83,6 +83,7 @@ QCircuit::QCircuit(YCCQ oc, YCS cname)
     ib_state_       = vector<short>(oc->ib_state_);
     id_start_       = oc->id_start_;
     standart_output_format_ = oc->standart_output_format_;
+    unique_gates_names_ = YVSv(oc->unique_gates_names_);
 
     flag_circuit_ = oc->flag_circuit_;
     flag_tex_     = oc->flag_tex_;
@@ -426,10 +427,16 @@ void QCircuit::copy_gates_from(YCCQ c, YCVI regs_new, YCCB box, YCB flag_inv, YC
         if(flag_layers_) oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
+
+    unique_gates_names_.insert(
+        unique_gates_names_.end(), 
+        c->unique_gates_names_.begin(), 
+        c->unique_gates_names_.end()
+    );
 }
 
 
-void QCircuit::insert_gates_from(const QCircuit* of, YCCB box)
+void QCircuit::insert_gates_from(const QCircuit* c, YCCB box)
 {
     if(box)
     {
@@ -438,7 +445,7 @@ void QCircuit::insert_gates_from(const QCircuit* of, YCCB box)
         gates_.push_back(oo);
     }
 
-    for(const auto& gate: of->gates_)
+    for(const auto& gate: c->gates_)
     {
         // !!! here, do not add the inserted gates to the layers !!!
         gates_.push_back(gate);
@@ -451,6 +458,12 @@ void QCircuit::insert_gates_from(const QCircuit* of, YCCB box)
         if(flag_layers_) oo_layers_->add_gate(oo);
         gates_.push_back(oo);
     }
+
+    unique_gates_names_.insert(
+        unique_gates_names_.end(), 
+        c->unique_gates_names_.begin(), 
+        c->unique_gates_names_.end()
+    );
 }
 
 
@@ -551,13 +564,27 @@ void QCircuit::save_regs()
         {
             auto reg_qs = regs_[reg_name];
             auto reg_nq = reg_qs.size();
+
+            string reg_name_part1, reg_name_part2;
+            std::size_t pos = reg_name.find("_");
+            if(pos != std::string::npos)
+            {
+                reg_name_part1 = reg_name.substr(0, pos);
+                reg_name_part2 = reg_name.substr(pos+1) + ", ";
+            }
+            else
+            {
+                reg_name_part1 = string(reg_name);
+                reg_name_part2 = "";
+            }
+
             for(auto i = 0; i < reg_nq; i++)
             {
                 counter_q++;
 
                 // register name and qubit id within the register:
                 tex_lines_[counter_q].push_back(
-                    "\\lstick{$" + reg_name + "_{" + to_string(reg_nq - i - 1) + "}$}"
+                    "\\lstick{$" + reg_name_part1 + "_{" + reg_name_part2 + to_string(reg_nq - i - 1) + "}$}"
                 );
 
                 // first layer:
@@ -596,6 +623,7 @@ void QCircuit::reset()
         if(!ib_state_.empty())
             set_init_binary_state();
     }
+    unique_gates_names_.clear();
 }
 void QCircuit::reset_qureg()
 {
@@ -1298,7 +1326,11 @@ void QCircuit::read_structure_gate_phase_estimation(YISS istr, YCS path_in, std:
 
 
 void QCircuit::read_structure_gate_qsvt(
-    YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv, QSVT_pars& data
+    YISS istr, 
+    YCS path_in, 
+    std::map<std::string, YSQ>& ocs, 
+    YCB flag_inv, 
+    std::map<std::string, QSVT_pars>& map_qsvt_data
 ){
     string name_circuit;
     string be_name;
@@ -1306,8 +1338,13 @@ void QCircuit::read_structure_gate_qsvt(
     YVVIv ids_control_it, ids_x_it;
     YVIv ids_cs, ids_x;
 
+    QSVT_pars data;
+
     // --- read QSVT parameters ---
     istr >> name_circuit;
+    if(YMIX::compare_strings(name_circuit, unique_gates_names_))
+        throw string("QSVT gate: the name ["s + name_circuit + "] has alredy been used for another gate."s);
+
     qsvt_read_parameters(name_circuit, data);
 
     // --- read QSVT ancilla ---
@@ -1340,13 +1377,16 @@ void QCircuit::read_structure_gate_qsvt(
     // --- read the end of the gate structure ---
     read_end_gate(istr, ids_cs, ids_x, ids_control_it, ids_x_it);
 
-    // --- add the phase estimation circuit ---
+    // --- add the QSVT circuit ---
     x(ids_x);
     if(data.parity == 0)
-        qsvt_def_parity(data.angles_phis_even, ids_a_qsvt, ids_be, oc_be, ids_cs, flag_inv);
+        qsvt_def_parity(data.angles_phis_even, ids_a_qsvt[0], ids_be, oc_be, ids_cs, flag_inv);
     if(data.parity == 1)
-        qsvt_def_parity(data.angles_phis_odd, ids_a_qsvt, ids_be, oc_be, ids_cs, flag_inv);
+        qsvt_def_parity(data.angles_phis_odd, ids_a_qsvt[0], ids_be, oc_be, ids_cs, flag_inv);
     x(ids_x); 
+
+    // store the QSVT data:
+    map_qsvt_data[name_circuit] = data;
 }
 
 
@@ -1473,15 +1513,12 @@ YQCP QCircuit::adder(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv, YCB fl
 
 YQCP QCircuit::subtractor(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv)
 {
-    // if(flag_inv) x(ts2, cs);
-    // else         x(ts1, cs);
-    // adder(ts1, ts2, ts3, cs, flag_inv);
-    // if(flag_inv) x(ts1, cs);
-    // else         x(ts2, cs);
+    auto cs_total_for_x = YVIv(cs);
+    cs_total_for_x.push_back(ts3[0]);
 
     if(flag_inv) 
         for(int ii = 0; ii < ts2.size(); ii++)
-            x(ts2[ii], YVIv{ts3[0]});
+            x(ts2[ii], cs_total_for_x);
 
     x(ts2, cs);
     adder(ts1, ts2, ts3, cs, flag_inv);
@@ -1489,7 +1526,7 @@ YQCP QCircuit::subtractor(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv)
 
     if(!flag_inv) 
         for(int ii = 0; ii < ts2.size(); ii++)
-            x(ts2[ii], YVIv{ts3[0]});
+            x(ts2[ii], cs_total_for_x);
 
     return get_the_circuit();
 }
@@ -1825,162 +1862,6 @@ YQCP QCircuit::phase_estimation(
 }
 
 
-YQCP QCircuit::qsvt_def_parity(
-    YCVQ phis,
-    YCVI a_qsvt,
-    YCVI qs_be, 
-    const std::shared_ptr<const QCircuit> BE,
-    YCVI cs, 
-    YCB flag_inv,
-    YCB flag_box
-){
-    string qsvt_name_tex = "QSVT";
-    auto n_be = BE->get_n_qubits();
-    auto n_be_anc = BE->get_na();
-
-    // --- pre-initialize the BE oracle ---
-    auto oc_be = make_shared<QCircuit>(
-        "BE", env_, path_to_output_, n_be
-    );
-    auto be_qubits  = oc_be->add_register("qs-be", n_be);
-    oc_be->copy_gates_from(
-        BE, 
-        be_qubits,
-        make_shared<Box__>("U", be_qubits, YVIv {})
-    );
-
-    // --- create the complex-conjugated block-encoding oracle ---
-    auto oc_be_inv = make_shared<QCircuit>(oc_be);
-    oc_be_inv->conjugate_transpose();
-
-    // --- initialize the envelop circuit for the QSVT procedure ---
-    auto oc_qsvt = make_shared<QCircuit>(
-        "QSVT", env_, path_to_output_, n_be + 1
-    );
-    auto loc_a_qsvt = oc_qsvt->add_register("a-qsvt", 1);
-    auto loc_a_be   = oc_qsvt->add_register("a-be", n_be_anc); // ancillae of the BE oracle;
-    auto loc_in     = oc_qsvt->add_register("in", n_be - n_be_anc); // input (main) qubits of the BE oracle;
-
-    auto loc_all_be = YVIv(loc_in);
-    loc_all_be.insert(loc_all_be.end(), loc_a_be.begin(), loc_a_be.end());
-
-    int q = loc_a_qsvt[0];
-    
-    // cout << "\nloc_a_be:\n";
-    // for(int ii = 0; ii < loc_a_be.size(); ii++)
-    //     cout << loc_a_be[ii] << " ";
-    
-    // cout << "\nloc_in:\n";
-    // for(int ii = 0; ii < loc_in.size(); ii++)
-    //     cout << loc_in[ii] << " ";
-
-    // cout << "\nbe_qubits:\n";
-    // for(int ii = 0; ii < be_qubits.size(); ii++)
-    //     cout << be_qubits[ii] << " ";
-
-    // cout << "\n q: " << q << "\n";
-
-    // cout << "a_qsvt:\n";
-    // for(int ii = 0; ii < a_qsvt.size(); ii++)
-    //     cout << a_qsvt[ii] << " ";
-
-    // cout << "\nqs_be:\n";
-    // for(int ii = 0; ii < qs_be.size(); ii++)
-    //     cout << qs_be[ii] << " ";
-    // cout << "\n";
-
-    // --- form the QSVT circuit for the odd polynomial (even number of angles) ---
-    YMIX::YTimer timer;
-    qreal aa;
-    auto N_angles = phis.size();
-
-    // N_angles = 4;
-
-    timer.StartPrint("Creating the QSVT circuit... ");
-    oc_qsvt->h(q);
-
-    aa = 2*phis[0];
-    oc_qsvt->x(loc_a_be);
-    oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
-    oc_qsvt->x(loc_a_be);
-    for(uint32_t count_angle = 1; count_angle < N_angles; ++count_angle)
-    {
-        if(flag_inv)
-            oc_qsvt->copy_gates_from(
-                oc_be, 
-                loc_all_be,
-                make_shared<Box__>("U", be_qubits, YVIv {})
-            );
-        else
-            oc_qsvt->insert_gates_from(
-                oc_be.get(), 
-                make_shared<Box__>("U", be_qubits, YVIv {})
-            );
-        
-        if(count_angle == (N_angles - 1)) // set the Z-gate only if N_angles is even (odd polynomial)
-            oc_qsvt->z(q);
-        aa = 2*phis[count_angle];
-        oc_qsvt->x(loc_a_be);
-        oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
-        oc_qsvt->x(loc_a_be);
-        
-        count_angle += 1;
-        if(count_angle < N_angles)
-        {
-            if(flag_inv)
-                oc_qsvt->copy_gates_from(
-                    oc_be_inv,
-                    loc_all_be, 
-                    make_shared<Box__>("iU", be_qubits, YVIv {})
-                );
-            else
-                oc_qsvt->insert_gates_from(
-                    oc_be_inv.get(), 
-                    make_shared<Box__>("iU", be_qubits, YVIv {})
-                );
-            aa = 2*phis[count_angle];
-            oc_qsvt->x(loc_a_be);
-            oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
-            oc_qsvt->x(loc_a_be);
-        }
-    }
-    oc_qsvt->h(q);
-    timer.StopPrint();
-    
-    // --- invert the QSVT circuit if necessary ---
-    if(flag_inv)
-    {
-        timer.StartPrint("Inversion of the QSVT circuit... ");
-        YMIX::print_log("inversion of the QSVT circuit");
-        oc_qsvt->conjugate_transpose();
-        qsvt_name_tex += "^\\dagger";
-        timer.StopPrint();
-    }
-
-    // --- copy the QSVT env. circuit to the current circuit ---
-    timer.StartPrint("Transferring the QSVT circuit to the the circuit ["s + name_ + "]... ");
-    auto circ_qubits = YVIv(qs_be);
-    circ_qubits.insert(circ_qubits.end(), a_qsvt.begin(), a_qsvt.end());
-
-    auto box = YSB(nullptr);
-    if(flag_box)
-        box = YMBo("QSVT", circ_qubits, YVIv{}, qsvt_name_tex);
-        if(flag_inv)
-            box = YMBo("QSVTcc", circ_qubits, YVIv{}, qsvt_name_tex);
-
-    copy_gates_from(
-        oc_qsvt,
-        circ_qubits,
-        box, 
-        false,
-        cs  
-    );
-    timer.StopPrint();
-
-    return get_the_circuit();
-}
-
-
 qreal QCircuit::get_value_from_word(YCS word)
 {
     if(word.find("<") == string::npos)
@@ -2002,9 +1883,9 @@ qreal QCircuit::get_value_from_word(YCS word)
 }
 
 
-void  QCircuit::qsvt_read_parameters(YCS filename_init, QSVT_pars& data)
+void  QCircuit::qsvt_read_parameters(YCS gate_name, QSVT_pars& data)
 {
-    string filename = filename_init + FORMAT_QSP;
+    string filename = gate_name + FORMAT_QSP;
     ifstream ff_qsvt(filename);
     if(!ff_qsvt.is_open()) throw "Error: there is not the file: "s + filename;
 
@@ -2072,6 +1953,7 @@ void  QCircuit::qsvt_read_parameters(YCS filename_init, QSVT_pars& data)
 
     // --- print resulting parameters ---
     stringstream istr;
+    istr << "--- QSVT gate with the name: " << gate_name << " ---\n";
     istr << "   QSVT type:  " << data.type     << ";\n";
     istr << "   QSVT error: " << data.eps_qsvt << ";\n";
     istr << "   Polynomial parity: "  << data.parity << ";\n";
@@ -2094,3 +1976,274 @@ void  QCircuit::qsvt_read_parameters(YCS filename_init, QSVT_pars& data)
     }
     YMIX::print_log(istr.str());
 }
+
+
+
+YQCP QCircuit::qsvt_def_parity(
+    YCVQ phis_in,
+    YCI a_qsvt,
+    YCVI qs_be_in, 
+    const std::shared_ptr<const QCircuit> BE,
+    YCVI cs, 
+    YCB flag_inv,
+    YCB flag_box
+){
+    YMIX::YTimer timer;
+    auto phis = YVQv(phis_in);
+    auto N_angles = phis.size();
+    auto n_be     = BE->get_n_qubits();
+    auto n_be_anc = BE->get_na();
+    auto cs_total = YVIv(cs);
+
+    string qsvt_name_tex = "QSVT";
+    string be_box_name = "BE";
+    string be_box_name_tex;
+    string be_box_cc_name_tex;
+
+    // N_angles = 4; /// for testing;
+
+    // --- separate BE ancillae and input qubits ---
+    auto qs_be     = YVIv(qs_be_in);
+    vector<int> be_input(qs_be.begin(),                   qs_be.begin() + n_be - n_be_anc);
+    vector<int>   be_anc(qs_be.begin() + n_be - n_be_anc, qs_be.end()                    );
+
+    // --- pre-initialize the BE oracle ---
+    // of the same size as the whole current circuit:
+    auto oc_be = make_shared<QCircuit>(be_box_name, env_, path_to_output_, nq_);
+    oc_be->add_register("r", nq_);
+    oc_be->copy_gates_from(BE, qs_be, YSB(nullptr), flag_inv, cs);
+
+    // --- create the complex-conjugated block-encoding oracle ---
+    auto oc_be_inv = make_shared<QCircuit>(oc_be);
+    oc_be_inv->conjugate_transpose();
+
+    // --- QSVT circuit ---
+    be_box_name_tex    = be_box_name;
+    be_box_cc_name_tex = be_box_name + "^\\dagger"s;
+    if(flag_inv)
+    {
+        reverse(phis.begin(), phis.end());
+        be_box_name_tex    = be_box_cc_name_tex;
+        be_box_cc_name_tex = be_box_name;
+    }
+    cs_total.insert(cs_total.end(), be_anc.begin(), be_anc.end());
+    sort(cs_total.begin(), cs_total.end());
+
+    timer.StartPrint("Creating the QSVT circuit... ");
+    h(a_qsvt, cs);
+    x(be_anc, cs);
+    x(a_qsvt, cs_total)->rz(a_qsvt, 2*phis[0], cs, flag_inv)->x(a_qsvt, cs_total);
+    x(be_anc, cs);
+    for(uint32_t count_angle = 1; count_angle < N_angles; ++count_angle)
+    {
+        insert_gates_from(
+            oc_be.get(), 
+            make_shared<Box__>(be_box_name, qs_be, cs, be_box_name_tex)
+            // YSB(nullptr)
+        );
+
+        if((N_angles % 2) == 0)
+        {
+            if(!flag_inv)
+            {
+                if(count_angle == (N_angles - 1)) 
+                    z(a_qsvt, cs);
+            }
+            else
+            {
+                if(count_angle == 1) 
+                    z(a_qsvt, cs);
+            }
+        }
+        x(be_anc, cs);
+        x(a_qsvt, cs_total)->rz(a_qsvt, 2*phis[count_angle], cs, flag_inv)->x(a_qsvt, cs_total);
+        x(be_anc, cs);
+        
+        count_angle += 1;
+        if(count_angle < N_angles)
+        {
+            insert_gates_from(
+                oc_be_inv.get(), 
+                make_shared<Box__>(be_box_name, qs_be, cs, be_box_cc_name_tex)
+                // YSB(nullptr)
+            );
+            x(be_anc, cs);
+            x(a_qsvt, cs_total)->rz(a_qsvt, 2*phis[count_angle], cs, flag_inv)->x(a_qsvt, cs_total);
+            x(be_anc, cs);
+        }
+    }
+    h(a_qsvt, cs);
+    timer.StopPrint();
+    
+    return get_the_circuit();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// YQCP QCircuit::qsvt_def_parity(
+//     YCVQ phis,
+//     YCVI a_qsvt,
+//     YCVI qs_be, 
+//     const std::shared_ptr<const QCircuit> BE,
+//     YCVI cs, 
+//     YCB flag_inv,
+//     YCB flag_box
+// ){
+//     string qsvt_name_tex = "QSVT";
+//     auto n_be = BE->get_n_qubits();
+//     auto n_be_anc = BE->get_na();
+
+//     // --- pre-initialize the BE oracle ---
+//     auto oc_be = make_shared<QCircuit>(
+//         "BE", env_, path_to_output_, n_be
+//     );
+//     auto be_qubits  = oc_be->add_register("qs-be", n_be);
+//     oc_be->copy_gates_from(
+//         BE, 
+//         be_qubits,
+//         make_shared<Box__>("U", be_qubits, YVIv {})
+//     );
+
+//     // --- create the complex-conjugated block-encoding oracle ---
+//     auto oc_be_inv = make_shared<QCircuit>(oc_be);
+//     oc_be_inv->conjugate_transpose();
+
+//     // --- initialize the envelop circuit for the QSVT procedure ---
+//     auto oc_qsvt = make_shared<QCircuit>(
+//         "QSVT", env_, path_to_output_, n_be + 1
+//     );
+//     auto loc_a_qsvt = oc_qsvt->add_register("a-qsvt", 1);
+//     auto loc_a_be   = oc_qsvt->add_register("a-be", n_be_anc); // ancillae of the BE oracle;
+//     auto loc_in     = oc_qsvt->add_register("in", n_be - n_be_anc); // input (main) qubits of the BE oracle;
+
+//     auto loc_all_be = YVIv(loc_in);
+//     loc_all_be.insert(loc_all_be.end(), loc_a_be.begin(), loc_a_be.end());
+
+//     int q = loc_a_qsvt[0];
+    
+//     // cout << "\nloc_a_be:\n";
+//     // for(int ii = 0; ii < loc_a_be.size(); ii++)
+//     //     cout << loc_a_be[ii] << " ";
+    
+//     // cout << "\nloc_in:\n";
+//     // for(int ii = 0; ii < loc_in.size(); ii++)
+//     //     cout << loc_in[ii] << " ";
+
+//     // cout << "\nbe_qubits:\n";
+//     // for(int ii = 0; ii < be_qubits.size(); ii++)
+//     //     cout << be_qubits[ii] << " ";
+
+//     // cout << "\n q: " << q << "\n";
+
+//     // cout << "a_qsvt:\n";
+//     // for(int ii = 0; ii < a_qsvt.size(); ii++)
+//     //     cout << a_qsvt[ii] << " ";
+
+//     // cout << "\nqs_be:\n";
+//     // for(int ii = 0; ii < qs_be.size(); ii++)
+//     //     cout << qs_be[ii] << " ";
+//     // cout << "\n";
+
+//     // --- form the QSVT circuit for the odd polynomial (even number of angles) ---
+//     YMIX::YTimer timer;
+//     qreal aa;
+//     auto N_angles = phis.size();
+
+//     // N_angles = 4;
+
+//     timer.StartPrint("Creating the QSVT circuit... ");
+//     oc_qsvt->h(q);
+
+//     aa = 2*phis[0];
+//     oc_qsvt->x(loc_a_be);
+//     oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
+//     oc_qsvt->x(loc_a_be);
+//     for(uint32_t count_angle = 1; count_angle < N_angles; ++count_angle)
+//     {
+//         if(flag_inv)
+//             oc_qsvt->copy_gates_from(
+//                 oc_be, 
+//                 loc_all_be,
+//                 make_shared<Box__>("U", be_qubits, YVIv {})
+//             );
+//         else
+//             oc_qsvt->insert_gates_from(
+//                 oc_be.get(), 
+//                 make_shared<Box__>("U", be_qubits, YVIv {})
+//             );
+        
+//         if(count_angle == (N_angles - 1)) // set the Z-gate only if N_angles is even (odd polynomial)
+//             oc_qsvt->z(q);
+//         aa = 2*phis[count_angle];
+//         oc_qsvt->x(loc_a_be);
+//         oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
+//         oc_qsvt->x(loc_a_be);
+        
+//         count_angle += 1;
+//         if(count_angle < N_angles)
+//         {
+//             if(flag_inv)
+//                 oc_qsvt->copy_gates_from(
+//                     oc_be_inv,
+//                     loc_all_be, 
+//                     make_shared<Box__>("iU", be_qubits, YVIv {})
+//                 );
+//             else
+//                 oc_qsvt->insert_gates_from(
+//                     oc_be_inv.get(), 
+//                     make_shared<Box__>("iU", be_qubits, YVIv {})
+//                 );
+//             aa = 2*phis[count_angle];
+//             oc_qsvt->x(loc_a_be);
+//             oc_qsvt->x(q, loc_a_be)->rz(q, aa)->x(q, loc_a_be);
+//             oc_qsvt->x(loc_a_be);
+//         }
+//     }
+//     oc_qsvt->h(q);
+//     timer.StopPrint();
+    
+//     // --- invert the QSVT circuit if necessary ---
+//     if(flag_inv)
+//     {
+//         timer.StartPrint("Inversion of the QSVT circuit... ");
+//         YMIX::print_log("inversion of the QSVT circuit");
+//         oc_qsvt->conjugate_transpose();
+//         qsvt_name_tex += "^\\dagger";
+//         timer.StopPrint();
+//     }
+
+//     // --- copy the QSVT env. circuit to the current circuit ---
+//     timer.StartPrint("Transferring the QSVT circuit to the the circuit ["s + name_ + "]... ");
+//     auto circ_qubits = YVIv(qs_be);
+//     circ_qubits.insert(circ_qubits.end(), a_qsvt.begin(), a_qsvt.end());
+
+//     auto box = YSB(nullptr);
+//     if(flag_box)
+//         box = YMBo("QSVT", circ_qubits, YVIv{}, qsvt_name_tex);
+//         if(flag_inv)
+//             box = YMBo("QSVTcc", circ_qubits, YVIv{}, qsvt_name_tex);
+
+//     copy_gates_from(
+//         oc_qsvt,
+//         circ_qubits,
+//         box, 
+//         false,
+//         cs  
+//     );
+//     timer.StopPrint();
+
+//     return get_the_circuit();
+// }

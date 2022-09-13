@@ -74,7 +74,7 @@ private:
     std::vector<int> focus_qubits_;
 
     // QSVT data
-    QSVT_pars qsvt_data_;
+    std::map<std::string, QSVT_pars> qsvt_data_;
 
 
 };

@@ -93,7 +93,9 @@ class QCircuit{
      * @param flag_inv if true, first get conjugate transpose gates from \p circ. 
      * @param cs control qubits that should control each gate from \p circ.
      */
-    void copy_gates_from(YCCQ circ, YCVI regs_new, 
+    void copy_gates_from(
+        YCCQ circ, 
+        YCVI regs_new, 
         YCCB box = std::shared_ptr<const Box__>(nullptr),
         YCB flag_inv = false,
         YCVI cs = YVIv {}
@@ -104,8 +106,10 @@ class QCircuit{
      * from the circuit \p of to the end of the current circuit.
      * @param of circuit from where new gates are taken;
      */
-    void insert_gates_from(const QCircuit* of, 
-        YCCB box = std::shared_ptr<const Box__>(nullptr));
+    void insert_gates_from(
+        const QCircuit* of, 
+        YCCB box = std::shared_ptr<const Box__>(nullptr)
+    );
 
     /**
      * @brief Add a register. 
@@ -234,7 +238,11 @@ class QCircuit{
         YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv
     );
     void read_structure_gate_qsvt(
-        YISS istr, YCS path_in, std::map<std::string, YSQ>& ocs, YCB flag_inv, QSVT_pars& data
+        YISS istr, YCS path_in, 
+        std::map<std::string, 
+        YSQ>& ocs, 
+        YCB flag_inv, 
+        std::map<std::string, QSVT_pars>& map_qsvt_data
     );
 
     /**
@@ -634,13 +642,13 @@ class QCircuit{
 
 
     /** @brief QSVT inversion of the matrix encoded by the oracle \p BE, which sits on qubits \p qs_be.
-     * The QSVT single rotations are placed at the qubit \p a_qsvt[0].
+     * The QSVT single rotations are placed at the qubit \p a_qsvt.
      * The whole QSVT circuit is controlled by the qubits \p cs.
      * @param flag_box if true, draw the operator as a box, not as a circuit;
      */
     YQCP qsvt_def_parity(
         YCVQ phis,
-        YCVI a_qsvt,
+        YCI a_qsvt,
         YCVI qs_be, 
         const std::shared_ptr<const QCircuit> BE,
         YCVI cs = {}, 
@@ -754,6 +762,9 @@ private:
 
     // to calculate or not the layers;
     bool flag_layers_; 
+
+    // names of unique gates:
+    std::vector<std::string> unique_gates_names_;
 };
 
 

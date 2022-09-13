@@ -190,7 +190,7 @@ class Gate__
             if(ts_.size() == 1)
                 l_nq_gate = "";
             else
-                l_nq_gate = "[" + std::to_string(ts_.size()) + "]";
+                l_nq_gate = "[" + std::to_string(abs(ts_.back() - ts_[0]+1)) + "]";
             return l_nq_gate;
         }
 
