@@ -393,6 +393,16 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
             oc->read_structure_gate_subtractor(istr, path_inputs_, flag_inv);
             return;
         }
+        if(YMIX::compare_strings(gate_name, "adder_qft"))
+        {
+            oc->read_structure_gate_adder_qft(istr, path_inputs_, flag_inv);
+            return;
+        }
+        if(YMIX::compare_strings(gate_name, "subtractor_qft"))
+        {
+            oc->read_structure_gate_subtractor_qft(istr, path_inputs_, flag_inv);
+            return;
+        }
         if(YMIX::compare_strings(gate_name, "AdderFixed"))
         {
             oc->read_structure_gate_adder_fixed(istr, path_inputs_, flag_inv);
@@ -429,6 +439,7 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
         {
             oc->read_structure_gate_qsvt(istr, path_inputs_, ocs_, flag_inv, qsvt_data_);
         }
+
     }
     catch(YCS e)
     {

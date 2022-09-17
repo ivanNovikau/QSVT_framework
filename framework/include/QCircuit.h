@@ -228,6 +228,8 @@ class QCircuit{
     void read_structure_gate_subtractor1(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_adder(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_subtractor(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_adder_qft(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_subtractor_qft(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_adder_fixed(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_subtractor_fixed(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_comparator_fixed(YISS istr, YCS path_in, YCB flag_inv=false);
@@ -533,10 +535,10 @@ class QCircuit{
     YQCP subtractor_by_one(YCVI ts, YCVI cs = {}, YCB flag_inv= false);
 
     /** @brief addition of two variables (v1 and v2) encoded to the registers \p ts1 and \p ts2;
-     * the three registers must be of the same size;
+     * the three registers, \p ts1, \p ts2 and \p ts3, must be of the same size;
      * the output sum (v1 + v2) is written to the qubits [ts2[:], ts3[0]].
-     * The register ts3 must be initialized to the zero state.
-     * The qubits ts3[1:] are used to store carry bits and are returned in the zero state.
+     * The register \p ts3 must be initialized to the zero state.
+     * The qubits \p ts3[1:] are used to store carry bits and are returned in the zero state.
      * @param flag_box if true, draw the operator as a box, not as a circuit;
      */
     YQCP adder(
@@ -546,15 +548,37 @@ class QCircuit{
 
 
     /** @brief Subtraction of two variables (v1 and v2) encoded to the registers \p ts1 and \p ts2;
-     * The three registers must be of the same size.
+     * The three registers, \p ts1, \p ts2 and \p ts3, must be of the same size.
      * The output (v1 - v2) is written to the qubits [ts2[:], ts3[0]], where \p ts3[0] is the sign bit,
      * and |1>|00...0> corresponds to -1.
-     * The register ts3 must be initialized to the zero state.
-     * The qubits ts3[1:] are used to store carry bits and are returned in the zero state.
+     * The register \p ts3 must be initialized to the zero state.
+     * The qubits \p ts3[1:] are used to store carry bits and are returned in the zero state.
      */
     YQCP subtractor(
         YCVI ts1, YCVI ts2, YCVI ts3, 
         YCVI cs = {}, YCB flag_inv = false
+    );
+
+
+    /** @brief addition of two variables (v1 and v2) encoded to the registers \p qs_v1 and \p qs_v2;
+     * the two registers must be of the same size;
+     * the output sum (v1 + v2) is written to the qubits [qs_v1[:], q_carry].
+     * The qubit \p q_carry stores the carry bit of the sum.
+     */
+    YQCP adder_qft(
+        YCVI qs_v1, YCVI qs_v2, YCI q_carry, 
+        YCVI cs = {}, YCB flag_inv = false, YCB flag_box = false
+    );
+
+
+    /** @brief subtraction of two variables (v1 and v2) encoded to the registers \p qs_v1 and \p qs_v2;
+     * the two registers must be of the same size;
+     * the output difference (v1 - v2) is written to the qubits [qs_v1[:], q_carry].
+     * The qubit \p q_sign is inverted if the difference is negative.
+     */
+    YQCP subtractor_qft(
+        YCVI qs_v1, YCVI qs_v2, YCI q_sign, 
+        YCVI cs = {}, YCB flag_inv = false, YCB flag_box = false
     );
 
 
