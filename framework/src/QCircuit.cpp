@@ -1569,17 +1569,17 @@ YQCP QCircuit::subtractor(YCVI ts1, YCVI ts2, YCVI ts3, YCVI cs, YCB flag_inv)
     auto cs_total_for_x = YVIv(cs);
     cs_total_for_x.push_back(ts3[0]);
 
-    if(flag_inv) 
-        for(int ii = 0; ii < ts2.size(); ii++)
-            x(ts2[ii], cs_total_for_x);
+    // if(flag_inv) 
+    //     for(int ii = 0; ii < ts2.size(); ii++)
+    //         x(ts2[ii], cs_total_for_x);
 
     x(ts2, cs);
     adder(ts1, ts2, ts3, cs, flag_inv);
     x(ts2, cs);
 
-    if(!flag_inv) 
-        for(int ii = 0; ii < ts2.size(); ii++)
-            x(ts2[ii], cs_total_for_x);
+    // if(!flag_inv) 
+    //     for(int ii = 0; ii < ts2.size(); ii++)
+    //         x(ts2[ii], cs_total_for_x);
 
     return get_the_circuit();
 }
@@ -1651,17 +1651,17 @@ YQCP QCircuit::subtractor_qft(YCVI qs_v1, YCVI qs_v2, YCI id_sign, YCVI cs, YCB 
     auto cs_total_for_x = YVIv(cs);
     cs_total_for_x.push_back(id_sign);
 
-    if(flag_inv) 
-        for(int ii = 0; ii < qs_v1.size(); ii++)
-            x(qs_v1[ii], cs_total_for_x);
+    // if(flag_inv) 
+    //     for(int ii = 0; ii < qs_v1.size(); ii++)
+    //         x(qs_v1[ii], cs_total_for_x);
 
     x(qs_v1, cs);
     adder_qft(qs_v1, qs_v2, id_sign, cs, flag_inv, flag_box);
     x(qs_v1, cs);
 
-    if(!flag_inv) 
-        for(int ii = 0; ii < qs_v1.size(); ii++)
-            x(qs_v1[ii], cs_total_for_x);
+    // if(!flag_inv) 
+    //     for(int ii = 0; ii < qs_v1.size(); ii++)
+    //         x(qs_v1[ii], cs_total_for_x);
 
     return get_the_circuit();
 }
@@ -1741,17 +1741,17 @@ YQCP QCircuit::subtractor_fixed(
     auto cs_total_for_x = YVIv(cs);
     cs_total_for_x.push_back(id_carry);
 
-    if(flag_inv) 
-        for(int ii = 0; ii < ids_target.size(); ii++)
-            x(ids_target[ii], cs_total_for_x);
+    // if(flag_inv) 
+    //     for(int ii = 0; ii < ids_target.size(); ii++)
+    //         x(ids_target[ii], cs_total_for_x);
             
     x(ts_total, cs);
     adder_fixed(ids_target, id_carry, int_sub, cs, flag_inv);
     x(ts_total, cs);
 
-    if(!flag_inv) 
-        for(int ii = 0; ii < ids_target.size(); ii++)
-            x(ids_target[ii], cs_total_for_x);
+    // if(!flag_inv) 
+    //     for(int ii = 0; ii < ids_target.size(); ii++)
+    //         x(ids_target[ii], cs_total_for_x);
 
     return get_the_circuit();
 }
@@ -2013,7 +2013,7 @@ qreal QCircuit::get_value_from_word(YCS word)
     string const_name = word.substr(first+1,last-first-1);
 
     if(constants_.find(const_name) == constants_.end())
-        throw "A constant with the name "s + const_name + " is not found."s;
+        throw "The constant with the name "s + const_name + " is not found."s;
     return constants_[const_name];
 }
 
@@ -2111,7 +2111,6 @@ void  QCircuit::qsvt_read_parameters(YCS gate_name, QSVT_pars& data)
     }
     YMIX::print_log(istr.str());
 }
-
 
 
 YQCP QCircuit::qsvt_def_parity(

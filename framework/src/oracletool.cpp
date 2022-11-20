@@ -204,7 +204,7 @@ qreal OracleTool__::get_value_from_word(YCS word)
     string const_name = word.substr(first+1,last-first-1);
 
     if(constants_.find(const_name) == constants_.end())
-        throw "A constant with the name ["s + const_name + "] is not found."s;
+        throw "The constant with the name ["s + const_name + "] is not found."s;
 
     return constants_[const_name];
 }
