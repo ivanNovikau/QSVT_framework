@@ -1,0 +1,72 @@
+
+// ../../../framework/build_oracle/oracletool AA ./ 
+
+CONSTANTS
+nq 3
+a2 	1.570796327e+00
+a4 	7.853981634e-01
+END_CONSTANTS
+
+
+OPTIONS
+    sel_compute_output all
+	sel_print_output   zero-ancillae  // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     0
+	tex_CL  10 
+END_OPTIONS
+
+
+
+CIRCUITS_DECLARATION
+A  1  r <nq> 0 
+END_CIRCUITS_DECLARATION
+
+INPUT_STATES   A        
+STATE 1    r 1     end_register  
+END_INPUT_STATES
+
+
+CIRCUIT_STRUCTURE A
+gate H r 4 end_gate
+gate Phase r 4 <a2> control r 2 end_gate
+gate Phase r 4 <a4> control r 1 end_gate
+gate H r 2 end_gate
+gate Phase r 2 <a2> control r 1 end_gate
+gate H r 1 end_gate
+gate Swap r 1 r 4 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

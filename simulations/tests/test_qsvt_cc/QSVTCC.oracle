@@ -1,0 +1,109 @@
+// ../../../framework/build_oracle/oracletool QSVTCC ./ 
+
+CONSTANTS
+	// // --- for the original matrix ---
+	// ang11_z 	-2.498091544797e+00
+	// ang11_y 	1.772154247585e+00
+
+	// ang12_z 	-9.272952180016e-01
+	// ang12_y 	2.214297435588e+00
+
+	// ang21_z 	-1.854590436003e+00
+	// ang21_y 	0.000000000000e+00
+
+	// ang22_z 	-4.899573262537e-01
+	// ang22_y 	1.202528433358e+00
+
+	// --- for the complex-conjugated (not transposed) matrix ---
+	ang11_z 	2.498091544797e+00
+	ang11_y 	1.772154247585e+00
+
+	ang12_z 	9.272952180016e-01
+	ang12_y 	2.214297435588e+00
+
+	ang21_z 	1.854590436003e+00
+	ang21_y 	0.000000000000e+00
+
+	ang22_z 	4.899573262537e-01
+	ang22_y 	1.202528433358e+00
+END_CONSTANTS
+
+
+OPTIONS
+    sel_compute_output all
+	sel_print_output   all // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     0
+	tex_CL  10 
+END_OPTIONS
+
+
+CIRCUITS_DECLARATION
+	O1    3             av 1 1 ac 1 1 r 1 0
+	O1cc  3             av 1 1 ac 1 1 r 1 0
+	U     4  a_qsvt 1 1 av 1 1 ac 1 1 r 1 0
+END_CIRCUITS_DECLARATION
+
+
+
+MAIN_CIRCUIT   
+	// O1cc 
+	// INPUT_STATE  r  0
+	// INPUT_STATE  r  1
+	U 
+	INPUT_STATE  r  0
+END_MAIN_CIRCUIT
+
+
+CIRCUIT_STRUCTURE O1
+	gate H ac 1 end_gate
+	gate Rc av 1 <ang11_z> <ang11_y>  ocontrol 2 ac 1 r 1         end_gate
+	gate Rc av 1 <ang12_z> <ang12_y>  control ac 1 ocontrol  r 1  end_gate
+	gate Rc av 1 <ang21_z> <ang21_y>  control  r 1 ocontrol ac 1  end_gate
+	gate Rc av 1 <ang22_z> <ang22_y>  control 2 ac 1 r 1          end_gate
+
+	gate swap r 1 ac 1  end_gate
+	gate H ac 1 end_gate
+END_CIRCUIT_STRUCTURE
+
+CIRCUIT_STRUCTURE O1cc
+	icircuit O1 -1 end_circuit
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE U
+    gate QSVT  MI a_qsvt 1  O1  3 av 1 ac 1 r 1  end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

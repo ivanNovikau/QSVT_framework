@@ -1,0 +1,100 @@
+
+// ../../../framework/build_oracle/oracletool AEMQ ./
+
+CONSTANTS
+	ny       10
+	th_pr_1  0.3
+	th_pr_2  0.6
+END_CONSTANTS
+
+
+OPTIONS
+    sel_compute_output all
+	sel_print_output   none  // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     0
+	tex_CL  10 
+END_OPTIONS
+
+
+CIRCUITS_DECLARATION
+	INIT  3               m 1  0  s 2 0  j 2 0
+	AA    3               m 1  0  s 2 0  j 2 0 
+	U     4   y <ny> 0    m 1  0  s 2 0  j 2 0 
+END_CIRCUITS_DECLARATION
+
+
+MAIN_CIRCUIT  
+	U   
+	INPUT_STATE  0
+	compute_prob    1   y -1
+END_MAIN_CIRCUIT
+
+
+CIRCUIT_STRUCTURE INIT
+	gate Ry j 1 <th_pr_1>   end_gate
+	gate Ry j 2 <th_pr_2>   end_gate
+	// gate X  m 1 control j 2 end_gate
+
+	// gate X m 1 							 end_gate
+	// gate X s 1 control j 1 ocontrol j 2  end_gate
+	// gate X s 2 control j 2 ocontrol j 1  end_gate
+	// gate X m 1             ocontrol s -1 end_gate
+
+	gate X m 1 				 end_gate
+	gate X s 1 control  j -1 end_gate
+	gate X s 2 ocontrol j -1 end_gate
+	gate X m 1 ocontrol s -1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE AA
+	// sign change of the good state (state |1>)
+	gate  Z m 1 end_gate     
+	//
+	icircuit INIT 3 j -1 m -1 s -1 end_circuit
+	// sign change of the zero state:
+	gate X m 1 ocontrol 2 j -1 s -1 end_gate
+	gate Z m 1 ocontrol 2 j -1 s -1 end_gate
+	gate X m 1 ocontrol 2 j -1 s -1 end_gate
+	// 
+	circuit INIT 3 j -1 s -1 m -1  end_circuit
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE  U
+	gate  PE   3 j -1 s -1 m -1   AA  INIT  y -1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

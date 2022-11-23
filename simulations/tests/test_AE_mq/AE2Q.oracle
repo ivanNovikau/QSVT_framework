@@ -1,0 +1,88 @@
+
+// ../../../framework/build_oracle/oracletool AE2Q ./
+
+CONSTANTS
+	ny       6
+	th_pr_1  0.3
+END_CONSTANTS
+
+
+OPTIONS
+    sel_compute_output all
+	sel_print_output   none  // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     1
+	tex_CL  10 
+END_OPTIONS
+
+
+CIRCUITS_DECLARATION
+	INIT  2               m 1  0  j 1 0
+	AA    2               m 1  0  j 1 0 
+	U     3   y <ny> 0    m 1  0  j 1 0 
+END_CIRCUITS_DECLARATION
+
+
+MAIN_CIRCUIT  
+	U    
+	INPUT_STATE  0
+	compute_prob    1   y -1
+END_MAIN_CIRCUIT
+
+
+CIRCUIT_STRUCTURE INIT
+	gate Ry j 1 <th_pr_1>   end_gate
+	gate X  m 1 control j 1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE AA
+	// sign change of the good state (state |1>)
+	gate  Z m 1 end_gate     
+	//
+	icircuit INIT 2 j -1 m  -1 end_circuit
+	// sign change of the "bad" state (zero state):
+	gate X m 1 ocontrol j 1 end_gate
+	gate Z m 1 ocontrol j 1 end_gate
+	gate X m 1 ocontrol j 1 end_gate
+	// 
+	circuit INIT 2 j -1 m -1 end_circuit
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE  U
+	gate  PE   2 j -1 m -1  AA  INIT  y -1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,84 @@
+// ../../../framework/build_oracle/oracletool Gauss ./ 
+
+CONSTANTS
+	nqx 	10
+	alpha_0 	-1.00000000000000e+00
+	alpha 		1.00097751710655e+00
+END_CONSTANTS
+
+
+OPTIONS
+    sel_compute_output zero-ancillae
+	sel_print_output   none  // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     0
+	tex_CL  10 
+END_OPTIONS
+
+
+CIRCUITS_DECLARATION
+	INIT   1                      j <nqx> 0
+	U_BE   2             a_be 1 1 j <nqx> 0  // block-encoding oracle;
+	U      3  a_qsvt 1 1 a_be 1 1 j <nqx> 0  // final circuit;
+END_CIRCUITS_DECLARATION
+
+
+INPUT_STATES   U        
+	STATE  j  0  end_register
+END_INPUT_STATES
+
+// --- Initialization ---
+CIRCUIT_STRUCTURE INIT
+	gate H   j -1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+// --- Block-Encoding oracle ---
+CIRCUIT_STRUCTURE U_BE
+	gate SIN a_be 1 <alpha_0> <alpha> j -1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+// --- Final circuit ---
+CIRCUIT_STRUCTURE U
+	circuit INIT   j -1          end_circuit
+    // circuit U_BE 2 j -1 a_be 1   end_circuit
+    gate QSVT  gauss  a_qsvt 1  U_BE 2 a_be 1 j -1   end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

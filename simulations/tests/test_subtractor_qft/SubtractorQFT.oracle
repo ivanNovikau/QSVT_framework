@@ -1,0 +1,97 @@
+// ../../../framework/build_oracle/oracletool SubtractorQFT ./ 
+
+CONSTANTS
+	nt 2
+END_CONSTANTS
+
+
+OPTIONS
+    sel_compute_output all
+	sel_print_output   all  // none, all, zero-ancillae
+	flag_circuit 1 
+	flag_tex     1 
+END_OPTIONS
+
+
+CIRCUITS_DECLARATION
+	U   4  cs 2 0  v2 <nt> 0 carry 1 0  v1 <nt> 0  // final circuit;
+END_CIRCUITS_DECLARATION
+
+
+MAIN_CIRCUIT   
+	U        
+	// INPUT_STATE 2 v2 0 v1 0
+	// INPUT_STATE 2 v2 0 v1 1
+	// INPUT_STATE 2 v2 1 v1 0
+	// INPUT_STATE 2 v2 1 v1 1
+
+	// INPUT_STATE 2 v2 0 v1 0
+	// INPUT_STATE 2 v2 0 v1 1
+	// INPUT_STATE 2 v2 0 v1 2
+	// INPUT_STATE 2 v2 0 v1 3
+	// INPUT_STATE 2 v2 1 v1 0
+	// INPUT_STATE 2 v2 1 v1 1
+	// INPUT_STATE 2 v2 1 v1 2
+	// INPUT_STATE 2 v2 1 v1 3
+	// INPUT_STATE 2 v2 2 v1 0
+	// INPUT_STATE 2 v2 2 v1 1
+	// INPUT_STATE 2 v2 2 v1 2
+	// INPUT_STATE 2 v2 2 v1 3
+	// INPUT_STATE 2 v2 3 v1 0
+	// INPUT_STATE 2 v2 3 v1 1
+	// INPUT_STATE 2 v2 3 v1 2
+	// INPUT_STATE 2 v2 3 v1 3
+
+	INPUT_STATE 3 cs 3 v2 3 v1 0
+	INPUT_STATE 3 cs 3 v2 3 v1 1
+	INPUT_STATE 3 cs 3 v2 3 v1 2
+	INPUT_STATE 3 cs 3 v2 3 v1 3
+END_MAIN_CIRCUIT
+
+
+CIRCUIT_STRUCTURE U
+	gate subtractor_qft v1 -1 v2 -1 carry 1  control cs 3   end_gate
+	// igate subtractor_qft v1 -1 v2 -1 carry 1  end_gate
+
+	// gate  adder_qft v1 -1 v2 -1 carry 1 control cs 3  end_gate
+	// gate adder_qft v1 -1 v2 -1 carry 1  end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

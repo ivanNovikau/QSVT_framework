@@ -1,0 +1,196 @@
+// ../../../framework/build_oracle/oracletool TEST ./ 
+
+CONSTANTS
+	// centered Gaussian:
+	alpha_0 	-1.00000000000000e+00
+	alpha 		1.01587301587302e+00
+
+	// --- single layer, k = 5 ---
+	nqx  	6
+	Nx_layer  	32
+
+	r_w  		-7.9385923556e-02
+	r_weps0  	-7.9385923556e-02
+	r_weps1  	-7.9385923556e-02
+	r_weps_el  	-1.1229816976e-01
+	r_w_er  	-1.1229816976e-01
+
+	r_2h  	5.0536051028e-01
+	r_m2h  	-5.0536051028e-01
+	r_2he 	-1.4993930859e-01
+	r_m2he 	1.4993930859e-01
+
+	r_wph  	7.3220643645e-01
+	a_wph  	-3.1483374545e-01
+
+	r_wmh  	1.0616839707e+00
+	a_wmh  	-5.9683515617e+00
+
+	r_pi   	-5.0536051028e-01
+	r_mpi  	5.0536051028e-01
+END_CONSTANTS
+
+
+OPTIONS
+    sel_compute_output zero-ancillae
+	sel_print_output   all // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     0
+	tex_CL  10 
+END_OPTIONS
+
+
+CIRCUITS_DECLARATION
+	INIT   2                                  d 1 0 j <nqx> 0 
+	OFH    4                    aj 1 1 ad 1 1 d 1 0 j <nqx> 0
+	OFNH   4                    aj 1 1 ad 1 1 d 1 0 j <nqx> 0
+	OH     5             av 1 1 aj 1 1 ad 1 1 d 1 0 j <nqx> 0 
+	OM     4                    aj 1 1 ad 1 1 d 1 0 j <nqx> 0
+	OFNHI  4                    aj 1 1 ad 1 1 d 1 0 j <nqx> 0
+	U_BE_MI   5          av 1 1 aj 1 1 ad 1 1 d 1 0 j <nqx> 0   
+	U_BE_GA   2   aj 1 1 j <nqx> 0 
+
+	U         7  a_qsvt_mi 1 1 a_qsvt_ga 1 1 av 1 1 aj 1 1 ad 1 1 d 1 0 j <nqx> 0  
+END_CIRCUITS_DECLARATION
+
+
+
+MAIN_CIRCUIT   
+	U        
+	INPUT_STATE  j  0  end_register 
+END_MAIN_CIRCUIT
+
+
+CIRCUIT_STRUCTURE OFH
+	// - create sublocks -
+	gate H  ad 1 	 	end_gate
+	gate H  aj 1  control ad 1  ocontrol  d 1 end_gate
+	gate H  aj 1  control  d 1  ocontrol ad 1 end_gate
+	// - collapse the second element in the first row of the upper-right subblock -
+	gate H  aj 1  control ad 1  ocontrol 2  d 1 j -1 end_gate
+	// - collapse the penultimate element in the last row of the bottom-left subblock -
+	gate H  aj 1  control 2 d 1 j -1  ocontrol ad 1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE OFNH
+	// - create two elements in the first row of the upper-left subblock -
+	gate H  aj 1 ocontrol 3 ad 1 d 1 j -1 end_gate
+	// - create two elements in the last row of the bottom-right subblock -
+	gate H  aj 1  control 3 ad 1 d 1 j -1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE OH
+	// iw:
+	gate Rx av 1 <r_weps0> ocontrol 3 ad 1 d 1 j <Nx_layer>         end_gate
+	gate Rx av 1 <r_weps1> ocontrol 2 ad 1 d 1 control j <Nx_layer> end_gate
+	gate Rx av 1 <r_w>      control 2 ad 1 d 1                      end_gate
+	// remove iw:
+	igate Rx av 1 <r_weps0> ocontrol 3 ad 1 d 1 j -2 end_gate
+	igate Rx av 1 <r_w>      control 3 ad 1 d 1 j -2 end_gate
+	// iw at the left an right edges:
+	gate Rx av 1 <r_weps_el> ocontrol 3 ad 1 d 1 j -2  control j 1 end_gate
+	gate Rx av 1 <r_w_er>     control 3 ad 1 d 1 j -2 ocontrol j 1 end_gate
+	// (iw + 1/h) and (iw - 1/h): upper left block:
+	gate Rc av 1 <a_wph> <r_wph> ocontrol 4 aj 1 ad 1 d 1 j -1 end_gate
+	gate Rc av 1 <a_wmh> <r_wmh>  control aj 1 ocontrol 3 ad 1 d 1 j -1 end_gate
+	// (iw + 1/h) and (iw - 1/h): bottom right block:
+	gate Rc av 1 <a_wph> <r_wph> ocontrol aj 1 control 3 ad 1 d 1 j -1 end_gate
+	gate Rc av 1 <a_wmh> <r_wmh>  control 4 aj 1 ad 1 d 1 j -1 end_gate
+	// +- 1/(2h): upper-right block:
+	gate Ry av 1 <r_2h>  control ad 1        ocontrol 2 aj 1 d 1 end_gate
+	gate Ry av 1 <r_m2h> control 2 aj 1 ad 1 ocontrol d 1        end_gate
+	gate Ry av 1 <r_2he> control 2 ad 1 j -1 ocontrol 2 aj 1 d 1 end_gate
+	// +- 1/(2h): bottom-left block:
+	gate Ry av 1 <r_2h>   control 2 aj 1 d 1 ocontrol ad 1 end_gate
+	gate Ry av 1 <r_m2h>  control d 1        ocontrol 2 aj 1 ad 1 end_gate
+	gate Ry av 1 <r_m2he> control d 1        ocontrol 3 aj 1 ad 1 j -1 end_gate
+	// zero some elements:
+	gate Ry av 1 <r_pi>  control ad 1       ocontrol 2 d 1 j -1 end_gate
+	gate Ry av 1 <r_mpi> control 2 d 1 j -1 ocontrol ad 1       end_gate
+	// |0> -> |1>
+	gate X av 1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE OM
+	gate adder1      j -1 control aj 1 ocontrol ad 1 end_gate
+	gate subtractor1 j -1 control 2 aj 1 ad 1 end_gate
+	gate swap        d -1 ad -1  end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE OFNHI
+	gate H  aj 1  control 3 ad 1 d 1 j -2 ocontrol j 1   end_gate
+	gate H  aj 1 ocontrol 3 ad 1 d 1 j -2  control j 1   end_gate
+END_CIRCUIT_STRUCTURE
+
+
+// --- Block-Encoding oracle ---
+CIRCUIT_STRUCTURE U_BE_MI
+	circuit  OFH   4 j -1 d -1 ad -1 aj -1      end_circuit
+	circuit  OFNH  4 j -1 d -1 ad -1 aj -1      end_circuit
+	circuit  OH    5 j -1 d -1 ad -1 aj -1 av 1 end_circuit
+	circuit  OM    4 j -1 d -1 ad -1 aj -1      end_circuit
+	circuit  OFNHI 4 j -1 d -1 ad -1 aj -1      end_circuit
+	icircuit OFH   4 j -1 d -1 ad -1 aj -1      end_circuit
+END_CIRCUIT_STRUCTURE
+
+CIRCUIT_STRUCTURE U_BE_GA
+	gate SIN aj 1 <alpha_0> <alpha> j -1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+// --- Initialization circuit ---
+CIRCUIT_STRUCTURE INIT
+	gate X 2 d -1 j -1  end_gate
+END_CIRCUIT_STRUCTURE
+
+
+// --- Final circuit ---
+CIRCUIT_STRUCTURE U
+	circuit INIT 2 j -1 d -1 end_circuit    
+    gate QSVT  matrix-inversion  a_qsvt_mi 1  U_BE_MI 5 av 1 aj 1 ad 1 d 1 j -1  end_gate
+	gate QSVT  gauss             a_qsvt_ga 1  U_BE_GA 2      aj 1          j -1  end_gate
+
+
+	// gate QSVT  gauss  a_qsvt_ga 1  U_BE_GA 2 asin 1 j -1 
+	// 						ocontrol  4  a_qsvt_mi -1 av -1  aj -1 ad -1  end_gate
+
+	// gate H j -1 end_gate
+	// gate QSVT  gauss             a_qsvt_ga 1  U_BE_GA 2      asin 1          j -1   end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+

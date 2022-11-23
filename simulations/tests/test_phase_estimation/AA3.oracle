@@ -1,0 +1,87 @@
+
+// Launch from the current folder
+// ../../../framework/build_oracle/oracletool AA3 ./   
+
+// estimation of an eigenphase of the three-qubit operator Rz(th3_) * Rz(th2_) * Rz(th1_);
+
+CONSTANTS
+na 3   // A is a 3-qubit operator;
+ny 6
+th1_ 			4.2
+th2_ 			3.2
+th3_ 			1.2
+sought_eigphase 	4.3
+END_CONSTANTS
+
+OPTIONS
+    sel_compute_output all
+	sel_print_output   zero-ancillae  // none, all, zero-ancillae
+	flag_circuit 0 
+	flag_tex     0
+	tex_CL  10 
+END_OPTIONS
+
+
+CIRCUITS_DECLARATION
+A3    1           a <na> 0  // operator whose eigenphase to find;
+INIT3 1           a <na> 0  // operator to create the eigenstate of the operator "A";
+U3    2  y <ny> 0 a <na> 0   // an envelop circuit to create the phase estimation operator;
+END_CIRCUITS_DECLARATION
+
+INPUT_STATES   U3        
+STATE     2   y 0 a 0     end_register  
+END_INPUT_STATES
+
+CIRCUIT_STRUCTURE A3 
+gate Rz a 1  <th1_> end_gate
+gate Rz a 2  <th2_> end_gate
+gate Rz a 4  <th3_> end_gate
+END_CIRCUIT_STRUCTURE
+
+CIRCUIT_STRUCTURE INIT3
+gate X     a 7     end_gate
+END_CIRCUIT_STRUCTURE
+
+
+CIRCUIT_STRUCTURE U3
+gate  PE  a -1  A3  INIT3  y -1 end_gate
+END_CIRCUIT_STRUCTURE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
