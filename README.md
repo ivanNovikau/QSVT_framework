@@ -1,6 +1,6 @@
 # QSVT_framework
 QSVT Hamiltonian simulations and matrix inversion.
-If one wants to check the code used in Ref. [1](https://github.com/ivanNovikau/QSVT_framework/wiki/References), go to the branch PRA22.
+To check the code used in Ref. [1](https://github.com/ivanNovikau/QSVT_framework/wiki/References), go to the branch PRA22.
 
 ## Prepare the code
 One needs `cmake` to compile the framework and `python` to analyse the simulations.
