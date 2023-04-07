@@ -26,7 +26,7 @@ simulations/tests/small_qsvt_sims.ipynb
 *.pylog
 *.clog
 *.circuit
-*.hdf5
+*_OUTPUT.hdf5
 *.pdf
 *.eps
 *.tgn
