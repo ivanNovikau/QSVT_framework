@@ -328,7 +328,6 @@ namespace YMATH{
             qreal** a_ = nullptr;
             std::shared_ptr<qreal[]> a_1d_ = nullptr;
             std::shared_ptr<qreal[]> a_1d_transposed_ = nullptr;
-
     };
 
     ComplexMatrix2 inv_matrix2(const ComplexMatrix2& a);
@@ -582,6 +581,7 @@ namespace YMIX{
     );
 
     void get_current_date_time(YS line_date_time);
+    
     struct H5File
     {
         /**
