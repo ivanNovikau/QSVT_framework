@@ -225,7 +225,11 @@ class QCircuit{
     
     void read_structure_gate_condR_split(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_adder1(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_adder2(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_adder3(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_subtractor1(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_subtractor2(YISS istr, YCS path_in, YCB flag_inv=false);
+    void read_structure_gate_subtractor3(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_adder(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_subtractor(YISS istr, YCS path_in, YCB flag_inv=false);
     void read_structure_gate_adder_qft(YISS istr, YCS path_in, YCB flag_inv=false);
@@ -529,10 +533,22 @@ class QCircuit{
     inline YQCP cnot(YCI c, YCI t){ return x(t, YVIv {c}); }
 
     /** @brief integer encoded to \p ts is incremented */
-    YQCP adder_by_one(YCVI ts, YCVI cs= {}, YCB flag_inv= false);
+    YQCP adder_1(YCVI ts, YCVI cs= {}, YCB flag_inv= false);
+
+    /** @brief integer encoded to \p ts + 2 */
+    YQCP adder_2(YCVI ts, YCVI cs= {}, YCB flag_inv= false);
+
+    /** @brief integer encoded to \p ts + 3 */
+    YQCP adder_3(YCVI ts, YCVI cs= {}, YCB flag_inv= false);
 
     /** @brief integer encoded to \p ts is decremented */
-    YQCP subtractor_by_one(YCVI ts, YCVI cs = {}, YCB flag_inv= false);
+    YQCP subtractor_1(YCVI ts, YCVI cs = {}, YCB flag_inv= false);
+
+    /** @brief integer encoded to \p ts -2 */
+    YQCP subtractor_2(YCVI ts, YCVI cs= {}, YCB flag_inv= false);
+
+    /** @brief integer encoded to \p ts -3 */
+    YQCP subtractor_3(YCVI ts, YCVI cs= {}, YCB flag_inv= false);
 
     /** @brief addition of two variables (v1 and v2) encoded to the registers \p ts1 and \p ts2;
      * the three registers, \p ts1, \p ts2 and \p ts3, must be of the same size;

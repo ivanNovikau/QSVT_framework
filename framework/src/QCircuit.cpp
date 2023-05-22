@@ -1055,7 +1055,45 @@ void QCircuit::read_structure_gate_adder1(YISS istr, YCS path_in, YCB flag_inv)
 
     // add the adder:
     x(ids_x);
-    adder_by_one(ids_target, ids_control, flag_inv);
+    adder_1(ids_target, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
+void QCircuit::read_structure_gate_adder2(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target, ids_control, ids_x;
+    long long nt;
+
+    // --- read target qubits ---
+    read_reg_int(istr, ids_target);
+
+    // --- read end of the gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // add the adder:
+    x(ids_x);
+    adder_2(ids_target, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
+void QCircuit::read_structure_gate_adder3(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target, ids_control, ids_x;
+    long long nt;
+
+    // --- read target qubits ---
+    read_reg_int(istr, ids_target);
+
+    // --- read end of the gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // add the adder:
+    x(ids_x);
+    adder_3(ids_target, ids_control, flag_inv);
     x(ids_x);
 }
 
@@ -1073,7 +1111,43 @@ void QCircuit::read_structure_gate_subtractor1(YISS istr, YCS path_in, YCB flag_
 
     // add the subtractor:
     x(ids_x);
-    subtractor_by_one(ids_target, ids_control, flag_inv);
+    subtractor_1(ids_target, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
+void QCircuit::read_structure_gate_subtractor2(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target, ids_control, ids_x;
+
+    // --- read target qubits ---
+    read_reg_int(istr, ids_target);
+
+    // --- read end of gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // add the subtractor:
+    x(ids_x);
+    subtractor_2(ids_target, ids_control, flag_inv);
+    x(ids_x);
+}
+
+
+void QCircuit::read_structure_gate_subtractor3(YISS istr, YCS path_in, YCB flag_inv)
+{
+    YVIv ids_target, ids_control, ids_x;
+
+    // --- read target qubits ---
+    read_reg_int(istr, ids_target);
+
+    // --- read end of gate structure ---
+    YVVIv ids_control_it, ids_x_it;
+    read_end_gate(istr, ids_control, ids_x, ids_control_it, ids_x_it);
+
+    // add the subtractor:
+    x(ids_x);
+    subtractor_3(ids_target, ids_control, flag_inv);
     x(ids_x);
 }
 
@@ -1443,7 +1517,7 @@ void QCircuit::read_structure_gate_qsvt(
 }
 
 
-YQCP QCircuit::adder_by_one(YCVI ts, YCVI cs, YCB flag_inv)
+YQCP QCircuit::adder_1(YCVI ts, YCVI cs, YCB flag_inv)
 {
     YVIv ids_target = YVIv(ts);
     uint32_t nt;
@@ -1465,13 +1539,80 @@ YQCP QCircuit::adder_by_one(YCVI ts, YCVI cs, YCB flag_inv)
     }
     else
     {
-        subtractor_by_one(ts, cs, false);
+        subtractor_1(ts, cs, false);
     }
     return get_the_circuit();
 }
 
 
-YQCP QCircuit::subtractor_by_one(YCVI ts, YCVI cs, YCB flag_inv)
+YQCP QCircuit::adder_2(YCVI ts, YCVI cs, YCB flag_inv)
+{
+    YVIv ids_target_init = YVIv(ts);
+    uint32_t nt;
+
+    if(!flag_inv)
+    {
+        // put the high-priority qubits at the beginning
+        sort(ids_target_init.begin(), ids_target_init.end(), greater<int>());
+        nt = ids_target_init.size()-1;
+        YVIv ids_target(nt);
+        copy(ids_target_init.begin(), ids_target_init.end()-1, ids_target.begin());
+        
+        // add CNOT and X gates with control nodes
+        for(unsigned i = 0; i < nt-1; ++i)
+        {
+            YVIv ids_cnot_cs = YVIv(ids_target.begin() + i + 1, ids_target.end());
+            ids_cnot_cs.insert(ids_cnot_cs.end(), cs.begin(), cs.end());
+            x(ids_target[i], ids_cnot_cs);
+        }
+        x(ids_target.back(), cs);
+    }
+    else
+    {
+        subtractor_2(ts, cs, false);
+    }
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::adder_3(YCVI ts, YCVI cs, YCB flag_inv)
+{
+    YVIv ids_target = YVIv(ts);
+    uint32_t nt;
+    uint32_t sh = 2;
+
+    if(!flag_inv)
+    {
+        // put the high-priority qubits at the beginning
+        sort(ids_target.begin(), ids_target.end(), greater<int>());
+        nt = ids_target.size();
+
+        // add CNOT and X gates with control nodes
+        for(unsigned i = 0; i < nt-1-sh; ++i)
+        {
+            YVIv ids_cnot_cs = YVIv(ids_target.begin() + i + 1, ids_target.end()-sh);
+            ids_cnot_cs.insert(ids_cnot_cs.end(), cs.begin(), cs.end());
+            x(ids_target[i], ids_cnot_cs);
+        }
+        x(ids_target[nt-1-sh], cs);
+
+        x(ids_target.back(), cs);
+        for(int i = nt-2; i >= 0; --i)
+        {
+            YVIv ids_cnot_cs = YVIv(ids_target.begin() + i + 1, ids_target.end());
+            ids_cnot_cs.insert(ids_cnot_cs.end(), cs.begin(), cs.end());
+            x(ids_target[i], ids_cnot_cs);
+        }
+    }
+    else
+    {
+        subtractor_3(ts, cs, false);
+    }
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::subtractor_1(YCVI ts, YCVI cs, YCB flag_inv)
 {
     YVIv ids_target = YVIv(ts);
     uint32_t nt;
@@ -1493,7 +1634,73 @@ YQCP QCircuit::subtractor_by_one(YCVI ts, YCVI cs, YCB flag_inv)
     }
     else
     {
-        adder_by_one(ts, cs, false);
+        adder_1(ts, cs, false);
+    }
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::subtractor_2(YCVI ts, YCVI cs, YCB flag_inv)
+{
+    YVIv ids_target_init = YVIv(ts);
+    uint32_t nt;
+
+    if(!flag_inv)
+    {
+        // put the low-priority qubits at the beginning 
+        sort(ids_target_init.begin(), ids_target_init.end());
+        nt = ids_target_init.size() - 1;
+        YVIv ids_target(nt);
+        copy(ids_target_init.begin()+1, ids_target_init.end(), ids_target.begin());
+
+        // add CNOT and X gates with control nodes 
+        x(ids_target[0], cs);
+        for(unsigned i = 1; i < nt; ++i)
+        {
+            YVIv ids_cnot_cs = YVIv(ids_target.begin(), ids_target.begin() + i);
+            ids_cnot_cs.insert(ids_cnot_cs.end(), cs.begin(), cs.end());
+            x(ids_target[i], ids_cnot_cs);
+        }
+    }
+    else
+    {
+        adder_2(ts, cs, false);
+    }
+    return get_the_circuit();
+}
+
+
+YQCP QCircuit::subtractor_3(YCVI ts, YCVI cs, YCB flag_inv)
+{
+    YVIv ids_target = YVIv(ts);
+    uint32_t nt;
+    uint32_t sh = 2;
+
+    if(!flag_inv)
+    {
+        // put the low-priority qubits at the beginning 
+        sort(ids_target.begin(), ids_target.end());
+        nt = ids_target.size();
+
+        for(unsigned i = nt-1; i > 0; --i)
+        {
+            YVIv ids_cnot_cs = YVIv(ids_target.begin(), ids_target.begin() + i);
+            ids_cnot_cs.insert(ids_cnot_cs.end(), cs.begin(), cs.end());
+            x(ids_target[i], ids_cnot_cs);
+        }
+        x(ids_target[0], cs);
+
+        x(ids_target[sh], cs);
+        for(unsigned i = sh+1; i < nt; ++i)
+        {
+            YVIv ids_cnot_cs = YVIv(ids_target.begin() + sh, ids_target.begin() + i);
+            ids_cnot_cs.insert(ids_cnot_cs.end(), cs.begin(), cs.end());
+            x(ids_target[i], ids_cnot_cs);
+        }
+    }
+    else
+    {
+        adder_3(ts, cs, false);
     }
     return get_the_circuit();
 }

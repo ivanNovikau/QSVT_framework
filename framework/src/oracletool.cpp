@@ -378,9 +378,29 @@ void OracleTool__::read_gate(YISS istr, YPQC oc, YCB flag_inv)
             oc->read_structure_gate_adder1(istr, path_inputs_, flag_inv);
             return;
         }
+        if(YMIX::compare_strings(gate_name, "adder2"))
+        {
+            oc->read_structure_gate_adder2(istr, path_inputs_, flag_inv);
+            return;
+        }
+        if(YMIX::compare_strings(gate_name, "adder3"))
+        {
+            oc->read_structure_gate_adder3(istr, path_inputs_, flag_inv);
+            return;
+        }
         if(YMIX::compare_strings(gate_name, YVSv{"decrementor", "subtractor1"}))
         {
             oc->read_structure_gate_subtractor1(istr, path_inputs_, flag_inv);
+            return;
+        }
+        if(YMIX::compare_strings(gate_name, "subtractor2"))
+        {
+            oc->read_structure_gate_subtractor2(istr, path_inputs_, flag_inv);
+            return;
+        }
+        if(YMIX::compare_strings(gate_name, "subtractor3"))
+        {
+            oc->read_structure_gate_subtractor3(istr, path_inputs_, flag_inv);
             return;
         }
         if(YMIX::compare_strings(gate_name, "adder"))
