@@ -1578,8 +1578,8 @@ YQCP QCircuit::adder_2(YCVI ts, YCVI cs, YCB flag_inv)
 YQCP QCircuit::adder_3(YCVI ts, YCVI cs, YCB flag_inv)
 {
     YVIv ids_target = YVIv(ts);
-    uint32_t nt;
-    uint32_t sh = 2;
+    int32_t nt;
+    int32_t sh = 2;
 
     if(!flag_inv)
     {
@@ -1588,13 +1588,13 @@ YQCP QCircuit::adder_3(YCVI ts, YCVI cs, YCB flag_inv)
         nt = ids_target.size();
 
         // add CNOT and X gates with control nodes
-        for(unsigned i = 0; i < nt-1-sh; ++i)
+        for(int i = 0; i < (nt-1-sh); ++i)
         {
             YVIv ids_cnot_cs = YVIv(ids_target.begin() + i + 1, ids_target.end()-sh);
             ids_cnot_cs.insert(ids_cnot_cs.end(), cs.begin(), cs.end());
             x(ids_target[i], ids_cnot_cs);
         }
-        x(ids_target[nt-1-sh], cs);
+        if((nt-1-sh) >= 0) x(ids_target[nt-1-sh], cs);
 
         x(ids_target.back(), cs);
         for(int i = nt-2; i >= 0; --i)
@@ -1690,7 +1690,7 @@ YQCP QCircuit::subtractor_3(YCVI ts, YCVI cs, YCB flag_inv)
         }
         x(ids_target[0], cs);
 
-        x(ids_target[sh], cs);
+        if(nt > sh) x(ids_target[sh], cs);
         for(unsigned i = sh+1; i < nt; ++i)
         {
             YVIv ids_cnot_cs = YVIv(ids_target.begin() + sh, ids_target.begin() + i);
