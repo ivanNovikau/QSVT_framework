@@ -587,7 +587,7 @@ void OracleTool__::read_subcircuit(YISS istr, YPQC oc, YCB flag_inv)
 
 void OracleTool__::read_main_circuit(YISS istr)
 {
-    YMIX::print_log( "Reading MAIN_CIRCUIT section...");
+    YMIX::print_log("Reading MAIN_CIRCUIT section...");
     string word, name_of_main_circuit;
     bool flag_init_file = false;
 
