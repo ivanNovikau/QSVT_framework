@@ -1,8 +1,9 @@
 # QSVT_framework
-QSVT Hamiltonian simulations and matrix inversion.
-To check the code used in Ref. [1](https://github.com/ivanNovikau/QSVT_framework/wiki/References), go to the branch PRA22.
+To check the code used in Ref. [1](https://github.com/ivanNovikau/QSVT_framework/wiki/References), go to the branch [PRA22](https://github.com/ivanNovikau/QSVT_framework/tree/PRA22).
+To check the code used in Ref. [8](https://github.com/ivanNovikau/QSVT_framework/wiki/References). go to the branch [MI](https://github.com/ivanNovikau/QSVT_framework/tree/MI).
+REMARK: this framework is not suppoted anymore. Please, see [QuCF](https://github.com/QuCF/QuCF) framework, which is a modified and extended version of the `QSVT_framework`.
 
-## Prepare the code
+<!-- ## Prepare the code
 One needs `cmake` to compile the framework and `python` to analyse the simulations.
 In particular, one needs the `qiskit` and `h5py` modules:
 
@@ -37,8 +38,8 @@ To understand the format of the `.oracle` file, see the [wiki](https://github.co
 
 ## Run the circuit reader:
 The circuit reader, `qc_circuit`,<br> 
---> either reads a `.circuit` file to create a quantum circuit and to compute its output states (`qc_circuit` always takes the zero input state);<br> 
---> or creates a random circuit, computes its output states and creates the `.circuit` output file of this random circuit.
+> either reads a `.circuit` file to create a quantum circuit and to compute its output states (`qc_circuit` always takes the zero input state);<br> 
+> or creates a random circuit, computes its output states and creates the `.circuit` output file of this random circuit.
 
 To run the circuit reader, use the following command:
 
@@ -47,7 +48,9 @@ To run the circuit reader, use the following command:
 `[optional-parameters]` include the same parameters as the `oracletool` (except the `-flag_circuit`).<br>
 `[optional-parameters]` also include `-flag_random`: <br>
       if `-flag_random 0`, then `qc_circuit` reads the `[file-name].circuit` file;<br>
-      if `-flag_random 1`, then `qc_circuit` reads the `[file-name].random` file. The `[file-name].random` file contains the number of qubits and the number of gates in the random circuit to create. Then, `qc_circuit` creates the random circuit and writes it down to the `[file-name].circuit` file.
+      if `-flag_random 1`, then `qc_circuit` reads the `[file-name].random` file. 
+      The `[file-name].random` file contains the number of qubits and the number of gates in the random circuit to create. 
+      Then, `qc_circuit` creates the random circuit and writes it down to the `[file-name].circuit` file. -->
 
 
 
