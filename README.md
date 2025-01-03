@@ -1,7 +1,7 @@
 # QSVT_framework
-To check the code used in Ref. [1](https://github.com/ivanNovikau/QSVT_framework/wiki/References), go to the branch [PRA22](https://github.com/ivanNovikau/QSVT_framework/tree/PRA22).
-To check the code used in Ref. [8](https://github.com/ivanNovikau/QSVT_framework/wiki/References). go to the branch [MI](https://github.com/ivanNovikau/QSVT_framework/tree/MI).
-REMARK: this framework is not suppoted anymore. Please, see [QuCF](https://github.com/QuCF/QuCF) framework, which is a modified and extended version of the `QSVT_framework`.
+To check the code used in Ref. [1](https://github.com/ivanNovikau/QSVT_framework/wiki/References), go to the branch [PRA22](https://github.com/ivanNovikau/QSVT_framework/tree/PRA22).<br>
+To check the code used in Ref. [8](https://github.com/ivanNovikau/QSVT_framework/wiki/References). go to the branch [MI](https://github.com/ivanNovikau/QSVT_framework/tree/MI).<br>
+REMARK: this framework is not suppoted anymore. Please, see [QuCF](https://github.com/QuCF/QuCF) framework, which is a modified and extended version of the `QSVT_framework`.<br>
 
 <!-- ## Prepare the code
 One needs `cmake` to compile the framework and `python` to analyse the simulations.
