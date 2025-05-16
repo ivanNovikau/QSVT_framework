@@ -1,12 +1,12 @@
 import numpy as np
 import importlib as imp
-# import pylib.Global_variables as GLO
+import pylib.Global_variables as GLO
 import sys
 
-try:
-    import pylib.Global_variables as GLO
-except:
-    import Global_variables as GLO
+# try:
+#     import pylib.Global_variables as GLO
+# except:
+#     import Global_variables as GLO
     
 
 
